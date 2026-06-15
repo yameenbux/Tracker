@@ -78,6 +78,9 @@
     border: 3px solid var(--coral); transform: translateX(-50%); transition: left 0.7s cubic-bezier(.4,0,.2,1); }
   .ends { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.6); }
   .ends b { font-family: var(--display); color: rgba(255,255,255,0.85); font-weight: 600; }
+  .goaldate { margin-top: 12px; text-align: center; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.82);
+    background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 10px; }
+  .goaldate b { font-family: var(--display); color: #FFC2A3; }
 
   .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
   .chip { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.12); border-radius: 13px; padding: 11px 12px; }
@@ -167,6 +170,7 @@
       <div class="marker" id="j-marker" style="left:0%"></div>
     </div>
     <div class="ends"><span>Start <b id="j-start">83.9</b></span><span>Goal <b id="j-goal">79.5</b></span></div>
+    <div class="goaldate" id="r-goaldate">Target · 71 kg by 22 Dec 2026</div>
   </div>
 
   <div class="chips">
@@ -210,8 +214,29 @@ const WEEKS = [
   { wk: 6, date: "21 Jul", target: 80.8 },
   { wk: 7, date: "28 Jul", target: 80.1 },
   { wk: 8, date: "4 Aug",  target: 79.5 },
+  { wk: 9, date: "11 Aug", target: 79.0 },
+  { wk: 10, date: "18 Aug", target: 78.5 },
+  { wk: 11, date: "25 Aug", target: 78.0 },
+  { wk: 12, date: "1 Sep", target: 77.5 },
+  { wk: 13, date: "8 Sep", target: 77.0 },
+  { wk: 14, date: "15 Sep", target: 76.5 },
+  { wk: 15, date: "22 Sep", target: 76.0 },
+  { wk: 16, date: "29 Sep", target: 75.5 },
+  { wk: 17, date: "6 Oct", target: 75.0 },
+  { wk: 18, date: "13 Oct", target: 74.5 },
+  { wk: 19, date: "20 Oct", target: 74.0 },
+  { wk: 20, date: "27 Oct", target: 73.6 },
+  { wk: 21, date: "3 Nov", target: 73.2 },
+  { wk: 22, date: "10 Nov", target: 72.8 },
+  { wk: 23, date: "17 Nov", target: 72.4 },
+  { wk: 24, date: "24 Nov", target: 72.1 },
+  { wk: 25, date: "1 Dec", target: 71.8 },
+  { wk: 26, date: "8 Dec", target: 71.5 },
+  { wk: 27, date: "15 Dec", target: 71.2 },
+  { wk: 28, date: "22 Dec", target: 71.0 },
 ];
-const GOAL = 79.5, BASELINE = 83.9, KEY = "tracker_actuals_v1", UNIT_KEY = "tracker_unit_v1";
+const GOAL_DATE = "22 Dec 2026";
+const GOAL = 71.0, BASELINE = 83.9, KEY = "tracker_actuals_v1", UNIT_KEY = "tracker_unit_v1";
 const KG_PER_LB = 0.45359237;
 let actuals = { 1: 83.9 };
 let unit = "kg";        // "kg" or "imp"
@@ -253,6 +278,8 @@ function renderHero() {
   // journey ends
   document.getElementById("j-start").textContent = unit === "kg" ? fmt(BASELINE) : toStLb(BASELINE, 0).replace(/\.0/, "");
   document.getElementById("j-goal").textContent  = unit === "kg" ? fmt(GOAL)     : toStLb(GOAL, 0).replace(/\.0/, "");
+  document.getElementById("r-goaldate").innerHTML =
+    "Target · <b>" + (unit === "kg" ? fmt(GOAL) + " kg" : toStLb(GOAL, 0).replace(/\.0/, "")) + "</b> by <b>" + GOAL_DATE + "</b>";
   let pct = (BASELINE - cur) / (BASELINE - GOAL) * 100;
   pct = Math.max(0, Math.min(100, pct));
   document.getElementById("j-fill").style.width = pct + "%";
@@ -361,7 +388,7 @@ function smooth(pts) {
 function renderChart() {
   const svg = document.getElementById("chart");
   const W = 720, H = 340, m = { t: 16, r: 18, b: 36, l: 44 };
-  const iw = W - m.l - m.r, ih = H - m.t - m.b, yMin = 78, yMax = 85;
+  const iw = W - m.l - m.r, ih = H - m.t - m.b, yMin = 70, yMax = 85;
   const x = i => m.l + (iw * i) / (WEEKS.length - 1);
   const y = v => m.t + ih * (1 - (v - yMin) / (yMax - yMin));
   const axisVal = v => unit === "kg" ? v : Math.round(v / KG_PER_LB);  // kg gridlines, labelled in chosen unit
@@ -372,11 +399,15 @@ function renderChart() {
     <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFA24B"/><stop offset="1" stop-color="#FF6B5E"/></linearGradient>
     <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6B5E" stop-opacity="0.26"/><stop offset="1" stop-color="#FF6B5E" stop-opacity="0"/></linearGradient>
   </defs>`;
-  for (let v = yMin; v <= yMax; v++) {
+  for (let v = 70; v <= 84; v += 2) {
     s += `<line class="gridline" x1="${m.l}" y1="${y(v)}" x2="${W - m.r}" y2="${y(v)}"/>`;
     s += `<text class="axislabel" x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${axisVal(v)}</text>`;
   }
-  WEEKS.forEach((w, i) => { s += `<text class="axislabel" x="${x(i)}" y="${H - 12}" text-anchor="middle">W${w.wk}</text>`; });
+  WEEKS.forEach((w, i) => {
+    if (i % 4 === 0 || i === WEEKS.length - 1) {
+      s += `<text class="axislabel" x="${x(i)}" y="${H - 12}" text-anchor="middle">W${w.wk}</text>`;
+    }
+  });
 
   let tp = WEEKS.map((w, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(w.target)}`).join(" ");
   s += `<path class="targetline" d="${tp}"/>`;
