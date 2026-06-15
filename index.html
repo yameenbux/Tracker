@@ -39,52 +39,37 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--body);
+    background: var(--bg); color: var(--ink); font-family: var(--body);
     -webkit-font-smoothing: antialiased;
-    padding:
-      calc(env(safe-area-inset-top) + 22px)
-      calc(env(safe-area-inset-right) + 16px)
-      calc(env(safe-area-inset-bottom) + 40px)
-      calc(env(safe-area-inset-left) + 16px);
-    max-width: 720px;
-    margin: 0 auto;
-    opacity: 0;
-    animation: fadein 0.5s ease forwards;
+    padding: calc(env(safe-area-inset-top) + 22px) calc(env(safe-area-inset-right) + 16px)
+             calc(env(safe-area-inset-bottom) + 40px) calc(env(safe-area-inset-left) + 16px);
+    max-width: 720px; margin: 0 auto; opacity: 0; animation: fadein 0.5s ease forwards;
   }
   @keyframes fadein { to { opacity: 1; } }
   .num { font-family: var(--display); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
-  /* header */
-  header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; padding: 0 4px; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 0 4px; gap: 12px; }
   .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--coral); }
   h1 { font-family: var(--display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
-  .tag { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+
+  /* unit toggle */
+  .seg { display: inline-flex; background: #F0E8E0; border-radius: 999px; padding: 3px; flex-shrink: 0; }
+  .seg button { font-family: var(--body); font-weight: 600; font-size: 12.5px; color: var(--ink-soft);
+    background: none; border: none; padding: 7px 13px; border-radius: 999px; cursor: pointer; transition: all 0.18s; white-space: nowrap; }
+  .seg button.active { background: var(--coral); color: #fff; box-shadow: 0 2px 6px -1px rgba(255,107,94,0.5); }
 
   /* hero */
-  .hero {
-    background: linear-gradient(150deg, var(--plum-1) 0%, var(--plum-2) 100%);
-    border-radius: 22px;
-    padding: 24px 22px 20px;
-    color: #fff;
-    box-shadow: 0 18px 40px -18px rgba(42, 30, 69, 0.55);
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::after {
-    content: ""; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px;
-    background: radial-gradient(circle, rgba(255,107,94,0.30), transparent 70%);
-    pointer-events: none;
-  }
+  .hero { background: linear-gradient(150deg, var(--plum-1) 0%, var(--plum-2) 100%); border-radius: 22px;
+    padding: 24px 22px 20px; color: #fff; box-shadow: 0 18px 40px -18px rgba(42,30,69,0.55); margin-bottom: 16px; position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(255,107,94,0.30), transparent 70%); pointer-events: none; }
   .hero .label { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.55); }
-  .hero .current { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; }
-  .hero .current .big { font-family: var(--display); font-size: 58px; font-weight: 700; line-height: 0.95; }
-  .hero .current .unit { font-size: 20px; font-weight: 500; color: rgba(255,255,255,0.6); }
-  .hero .when { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+  .hero .current { display: flex; align-items: baseline; gap: 7px; margin-top: 6px; flex-wrap: wrap; }
+  .hero .current .big { font-family: var(--display); font-size: 56px; font-weight: 700; line-height: 0.95; }
+  .hero .current .unit { font-size: 19px; font-weight: 500; color: rgba(255,255,255,0.6); }
+  .hero .alt { font-family: var(--display); font-size: 16px; font-weight: 600; color: #FFC2A3; margin-top: 6px; }
+  .hero .when { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 3px; }
 
-  /* journey meter */
   .journey { margin-top: 20px; }
   .track { position: relative; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.16); overflow: hidden; }
   .track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px;
@@ -94,16 +79,15 @@
   .ends { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.6); }
   .ends b { font-family: var(--display); color: rgba(255,255,255,0.85); font-weight: 600; }
 
-  /* chips */
   .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
   .chip { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.12); border-radius: 13px; padding: 11px 12px; }
   .chip .k { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 5px; }
-  .chip .v { font-family: var(--display); font-size: 19px; font-weight: 600; }
+  .chip .v { font-family: var(--display); font-size: 18px; font-weight: 600; }
   .chip .v small { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.6); }
+  .chip .v2 { font-family: var(--display); font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.45); margin-top: 3px; font-variant-numeric: tabular-nums; }
   .chip.good .v { color: #6EEBC0; }
   .chip.over .v { color: #FF9A8F; }
 
-  /* cards */
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px 14px 10px; margin-bottom: 16px; }
   .card .ctitle { font-family: var(--display); font-size: 15px; font-weight: 600; padding: 0 4px 4px; }
   .legend { display: flex; gap: 16px; padding: 2px 6px 12px; font-size: 12px; color: var(--ink-soft); }
@@ -122,21 +106,24 @@
   .endpoint { fill: var(--coral); }
   .endpoint-core { fill: #fff; }
 
-  /* table */
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
-    text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
-  td { padding: 6px 10px; border-bottom: 1px solid var(--line); }
+    text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
   tr:last-child td { border-bottom: none; }
   .wk { font-family: var(--display); font-weight: 600; color: var(--ink); }
   .dt { color: var(--ink-soft); font-size: 13px; }
-  .tgt { font-family: var(--display); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-  input.weight { font-family: var(--display); font-weight: 600; font-size: 16px; width: 78px; padding: 9px 10px;
+  .tgt { font-family: var(--display); color: var(--ink-soft); font-variant-numeric: tabular-nums; font-size: 13px; }
+  input.weight { font-family: var(--display); font-weight: 600; font-size: 16px; width: 76px; padding: 9px 9px;
     border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); text-align: right;
     font-variant-numeric: tabular-nums; transition: border-color 0.15s; }
   input.weight:focus { outline: none; border-color: var(--coral); }
-  .pill { display: inline-block; font-family: var(--display); font-weight: 600; font-size: 12px; font-variant-numeric: tabular-nums;
-    padding: 3px 9px; border-radius: 999px; }
+  .impentry { display: inline-flex; align-items: center; gap: 3px; }
+  input.wt-st, input.wt-lb { font-family: var(--display); font-weight: 600; font-size: 16px; width: 44px; padding: 9px 6px;
+    border: 1.5px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  input.wt-st:focus, input.wt-lb:focus { outline: none; border-color: var(--coral); }
+  .uunit { font-size: 11px; color: var(--ink-soft); font-weight: 600; }
+  .pill { display: inline-block; font-family: var(--display); font-weight: 600; font-size: 12px; font-variant-numeric: tabular-nums; padding: 3px 9px; border-radius: 999px; }
   .pill.good { background: var(--mint-bg); color: var(--mint); }
   .pill.over { background: var(--coral-bg); color: #E0533D; }
   .pill.none { color: var(--ink-soft); }
@@ -146,8 +133,9 @@
     background: none; border: none; text-decoration: underline; padding: 4px 0; cursor: pointer; }
 
   @media (max-width: 430px) {
-    .hero .current .big { font-size: 52px; }
-    .chip .v { font-size: 17px; }
+    .hero .current .big { font-size: 50px; }
+    h1 { font-size: 25px; }
+    .seg button { padding: 7px 11px; font-size: 12px; }
   }
   @media (prefers-reduced-motion: reduce) {
     body, .track .fill, .marker, .area { animation: none !important; transition: none !important; opacity: 1 !important; }
@@ -161,12 +149,16 @@
     <div class="eyebrow">8-Week Programme</div>
     <h1>Tracker</h1>
   </div>
-  <div class="tag">Mon weigh-ins</div>
+  <div class="seg" id="seg">
+    <button data-unit="kg" class="active">kg</button>
+    <button data-unit="imp">st / lb</button>
+  </div>
 </header>
 
 <section class="hero">
   <div class="label">Current weight</div>
-  <div class="current"><span class="big num" id="r-current">83.9</span><span class="unit">kg</span></div>
+  <div class="current" id="r-current"></div>
+  <div class="alt" id="r-alt"></div>
   <div class="when" id="r-date">Week 1 · 16 Jun</div>
 
   <div class="journey">
@@ -174,12 +166,12 @@
       <div class="fill" id="j-fill" style="width:0%"></div>
       <div class="marker" id="j-marker" style="left:0%"></div>
     </div>
-    <div class="ends"><span>Start <b>83.9</b></span><span>Goal <b>79.5</b></span></div>
+    <div class="ends"><span>Start <b id="j-start">83.9</b></span><span>Goal <b id="j-goal">79.5</b></span></div>
   </div>
 
   <div class="chips">
-    <div class="chip" id="chip-lost"><div class="k">Lost</div><div class="v num" id="r-lost">0.0<small> kg</small></div></div>
-    <div class="chip" id="chip-togo"><div class="k">To goal</div><div class="v num" id="r-togo">4.4<small> kg</small></div></div>
+    <div class="chip" id="chip-lost"><div class="k">Lost</div><div class="v num" id="r-lost"></div><div class="v2 num" id="r-lost2"></div></div>
+    <div class="chip" id="chip-togo"><div class="k">To goal</div><div class="v num" id="r-togo"></div><div class="v2 num" id="r-togo2"></div></div>
     <div class="chip" id="chip-vs"><div class="k">vs target</div><div class="v" id="r-vs" style="font-size:14px">On track</div></div>
   </div>
 </section>
@@ -189,6 +181,7 @@
   <div class="legend">
     <span><i class="sw-line"></i> Your weight</span>
     <span><i class="sw-dash"></i> Target line</span>
+    <span id="axis-unit" style="margin-left:auto;color:var(--target);font-weight:600"></span>
   </div>
   <svg id="chart" viewBox="0 0 720 340" preserveAspectRatio="xMidYMid meet"></svg>
 </div>
@@ -203,7 +196,7 @@
 
 <div class="footnote">
   Enter each Monday morning weight — after waking, after toilet, before food or drink.<br>
-  Saved on this device. The target line is a guide, not a verdict; waist and photos tell the fuller story.
+  Switch units any time with the toggle. Saved on this device; the target line is a guide, not a verdict.
 </div>
 <button class="reset" id="reset">Reset all entries</button>
 
@@ -218,46 +211,82 @@ const WEEKS = [
   { wk: 7, date: "28 Jul", target: 80.1 },
   { wk: 8, date: "4 Aug",  target: 79.5 },
 ];
-const GOAL = 79.5, BASELINE = 83.9, KEY = "tracker_actuals_v1";
+const GOAL = 79.5, BASELINE = 83.9, KEY = "tracker_actuals_v1", UNIT_KEY = "tracker_unit_v1";
+const KG_PER_LB = 0.45359237;
 let actuals = { 1: 83.9 };
+let unit = "kg";        // "kg" or "imp"
 let firstDraw = true;
 const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function load() {
   try { const ls = localStorage.getItem(KEY); if (ls) actuals = JSON.parse(ls); } catch (e) {}
+  try { const u = localStorage.getItem(UNIT_KEY); if (u === "kg" || u === "imp") unit = u; } catch (e) {}
+  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("active", b.dataset.unit === unit));
   render();
 }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(actuals)); } catch (e) {} }
+function saveUnit() { try { localStorage.setItem(UNIT_KEY, unit); } catch (e) {} }
 function lastEntry() { let last = null; WEEKS.forEach(w => { if (actuals[w.wk] != null) last = w; }); return last; }
 function fmt(n, d = 1) { return Number(n).toFixed(d); }
+
+// ---- unit helpers (kg is the stored source of truth) ----
+function stPart(kg) { let st = Math.floor((kg / KG_PER_LB) / 14); let lb = kg / KG_PER_LB - st * 14; if (lb >= 13.95) st += 1; return st; }
+function lbPart(kg) { let st = Math.floor((kg / KG_PER_LB) / 14); let lb = kg / KG_PER_LB - st * 14; if (lb >= 13.95) lb = 0; return lb; }
+function toStLb(kg, dp = 1) { return stPart(kg) + " st " + lbPart(kg).toFixed(dp) + " lb"; }
+function toLbNum(kg) { return kg / KG_PER_LB; }                       // signed pounds value
+function stLbToKg(st, lb) { return ((st * 14) + lb) * KG_PER_LB; }
 
 function renderHero() {
   const last = lastEntry();
   const cur = last ? actuals[last.wk] : BASELINE;
-  document.getElementById("r-current").textContent = fmt(cur);
+
+  if (unit === "kg") {
+    document.getElementById("r-current").innerHTML = `<span class="big">${fmt(cur)}</span><span class="unit">kg</span>`;
+    document.getElementById("r-alt").textContent = toStLb(cur);
+  } else {
+    document.getElementById("r-current").innerHTML =
+      `<span class="big">${stPart(cur)}</span><span class="unit">st</span><span class="big">${fmt(lbPart(cur))}</span><span class="unit">lb</span>`;
+    document.getElementById("r-alt").textContent = fmt(cur) + " kg";
+  }
   document.getElementById("r-date").textContent = last ? `Week ${last.wk} · ${last.date}` : "Week 1 · 16 Jun";
 
-  const lost = BASELINE - cur;
-  document.getElementById("r-lost").innerHTML = (lost < 0 ? "+" : "") + fmt(Math.abs(lost)) + '<small> kg</small>';
-  document.getElementById("r-togo").innerHTML = fmt(Math.max(0, cur - GOAL)) + '<small> kg</small>';
-
-  // journey meter
+  // journey ends
+  document.getElementById("j-start").textContent = unit === "kg" ? fmt(BASELINE) : toStLb(BASELINE, 0).replace(/\.0/, "");
+  document.getElementById("j-goal").textContent  = unit === "kg" ? fmt(GOAL)     : toStLb(GOAL, 0).replace(/\.0/, "");
   let pct = (BASELINE - cur) / (BASELINE - GOAL) * 100;
   pct = Math.max(0, Math.min(100, pct));
   document.getElementById("j-fill").style.width = pct + "%";
   document.getElementById("j-marker").style.left = pct + "%";
 
+  // chips
+  const lostKg = BASELINE - cur;
+  const togoKg = Math.max(0, cur - GOAL);
+  const chipLost = document.getElementById("chip-lost");
+  chipLost.classList.toggle("good", lostKg > 0.05);
+  if (unit === "kg") {
+    document.getElementById("r-lost").innerHTML = (lostKg < 0 ? "+" : "") + fmt(Math.abs(lostKg)) + '<small> kg</small>';
+    document.getElementById("r-lost2").textContent = (lostKg < 0 ? "+" : "") + Math.abs(toLbNum(lostKg)).toFixed(1) + " lb";
+    document.getElementById("r-togo").innerHTML = fmt(togoKg) + '<small> kg</small>';
+    document.getElementById("r-togo2").textContent = toLbNum(togoKg).toFixed(1) + " lb";
+  } else {
+    document.getElementById("r-lost").innerHTML = (lostKg < 0 ? "+" : "") + Math.abs(toLbNum(lostKg)).toFixed(1) + '<small> lb</small>';
+    document.getElementById("r-lost2").textContent = (lostKg < 0 ? "+" : "") + fmt(Math.abs(lostKg)) + " kg";
+    document.getElementById("r-togo").innerHTML = toLbNum(togoKg).toFixed(1) + '<small> lb</small>';
+    document.getElementById("r-togo2").textContent = fmt(togoKg) + " kg";
+  }
+
   // vs target
   const vsEl = document.getElementById("r-vs");
   const chipVs = document.getElementById("chip-vs");
-  const chipLost = document.getElementById("chip-lost");
-  chipVs.classList.remove("good", "over"); chipLost.classList.remove("good", "over");
+  chipVs.classList.remove("good", "over");
   if (last) {
-    const diff = cur - last.target;
-    if (diff <= 0.05) { vsEl.textContent = "On / ahead"; chipVs.classList.add("good"); }
-    else { vsEl.textContent = "+" + fmt(diff) + " kg"; chipVs.classList.add("over"); }
+    const diffKg = cur - last.target;
+    if (diffKg <= 0.05) { vsEl.textContent = "On / ahead"; chipVs.classList.add("good"); }
+    else {
+      vsEl.textContent = unit === "kg" ? "+" + fmt(diffKg) + " kg" : "+" + toLbNum(diffKg).toFixed(1) + " lb";
+      chipVs.classList.add("over");
+    }
   } else { vsEl.textContent = "On track"; }
-  if (lost > 0.05) chipLost.classList.add("good");
 }
 
 function renderTable() {
@@ -266,30 +295,56 @@ function renderTable() {
   WEEKS.forEach(w => {
     const tr = document.createElement("tr");
     const a = actuals[w.wk];
+
+    const tgtCell = unit === "kg" ? fmt(w.target) : (stPart(w.target) + " st " + Math.round(lbPart(w.target)) + " lb");
+
+    let entryCell;
+    if (unit === "kg") {
+      entryCell = `<input class="weight num" inputmode="decimal" data-wk="${w.wk}" value="${a != null ? fmt(a) : ""}" placeholder="—">`;
+    } else {
+      const stv = a != null ? stPart(a) : "";
+      const lbv = a != null ? fmt(lbPart(a)) : "";
+      entryCell = `<span class="impentry">
+        <input class="wt-st num" inputmode="numeric" data-wk="${w.wk}" value="${stv}" placeholder="—"><span class="uunit">st</span>
+        <input class="wt-lb num" inputmode="decimal" data-wk="${w.wk}" value="${lbv}" placeholder="—"><span class="uunit">lb</span></span>`;
+    }
+
     let pill = '<span class="pill none">—</span>';
     if (a != null) {
-      const d = a - w.target;
-      const cls = d <= 0.05 ? "good" : "over";
-      pill = `<span class="pill ${cls}">${d > 0 ? "+" : ""}${fmt(d)}</span>`;
+      const dKg = a - w.target;
+      const cls = dKg <= 0.05 ? "good" : "over";
+      const val = unit === "kg" ? (dKg > 0 ? "+" : "") + fmt(dKg) : (dKg > 0 ? "+" : "") + toLbNum(dKg).toFixed(1);
+      pill = `<span class="pill ${cls}">${val}</span>`;
     }
-    tr.innerHTML = `
-      <td class="wk">W${w.wk}</td>
-      <td class="dt">${w.date}</td>
-      <td class="tgt">${fmt(w.target)}</td>
-      <td><input class="weight num" inputmode="decimal" data-wk="${w.wk}" value="${a != null ? fmt(a) : ""}" placeholder="—"></td>
-      <td>${pill}</td>`;
+
+    tr.innerHTML = `<td class="wk">W${w.wk}</td><td class="dt">${w.date}</td><td class="tgt">${tgtCell}</td><td>${entryCell}</td><td>${pill}</td>`;
     tb.appendChild(tr);
   });
-  tb.querySelectorAll("input.weight").forEach(inp => {
-    inp.addEventListener("change", e => {
-      const wk = +e.target.dataset.wk, v = parseFloat(e.target.value);
-      if (!isNaN(v) && v > 0) actuals[wk] = Math.round(v * 10) / 10; else delete actuals[wk];
-      save(); render();
+
+  if (unit === "kg") {
+    tb.querySelectorAll("input.weight").forEach(inp => {
+      inp.addEventListener("change", e => {
+        const wk = +e.target.dataset.wk, v = parseFloat(e.target.value);
+        if (!isNaN(v) && v > 0) actuals[wk] = Math.round(v * 100) / 100; else delete actuals[wk];
+        save(); render();
+      });
     });
-  });
+  } else {
+    const commit = wk => {
+      const stI = tb.querySelector(`input.wt-st[data-wk="${wk}"]`);
+      const lbI = tb.querySelector(`input.wt-lb[data-wk="${wk}"]`);
+      const st = parseFloat(stI.value), lb = parseFloat(lbI.value);
+      const hasSt = !isNaN(st), hasLb = !isNaN(lb);
+      if (!hasSt && !hasLb) { delete actuals[wk]; }
+      else { const kg = stLbToKg(hasSt ? st : 0, hasLb ? lb : 0); if (kg > 0) actuals[wk] = Math.round(kg * 100) / 100; }
+      save(); render();
+    };
+    tb.querySelectorAll("input.wt-st, input.wt-lb").forEach(inp => {
+      inp.addEventListener("change", e => commit(+e.target.dataset.wk));
+    });
+  }
 }
 
-// Catmull-Rom -> bezier smoothing
 function smooth(pts) {
   if (pts.length < 2) return "";
   let d = `M${pts[0].x},${pts[0].y}`;
@@ -305,61 +360,49 @@ function smooth(pts) {
 
 function renderChart() {
   const svg = document.getElementById("chart");
-  const W = 720, H = 340, m = { t: 16, r: 18, b: 36, l: 38 };
+  const W = 720, H = 340, m = { t: 16, r: 18, b: 36, l: 44 };
   const iw = W - m.l - m.r, ih = H - m.t - m.b, yMin = 78, yMax = 85;
   const x = i => m.l + (iw * i) / (WEEKS.length - 1);
   const y = v => m.t + ih * (1 - (v - yMin) / (yMax - yMin));
+  const axisVal = v => unit === "kg" ? v : Math.round(v / KG_PER_LB);  // kg gridlines, labelled in chosen unit
 
-  let defs = `<defs>
-    <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#FFA24B"/><stop offset="1" stop-color="#FF6B5E"/>
-    </linearGradient>
-    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FF6B5E" stop-opacity="0.26"/>
-      <stop offset="1" stop-color="#FF6B5E" stop-opacity="0"/>
-    </linearGradient>
+  document.getElementById("axis-unit").textContent = unit === "kg" ? "kg" : "lb";
+
+  let s = `<defs>
+    <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFA24B"/><stop offset="1" stop-color="#FF6B5E"/></linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6B5E" stop-opacity="0.26"/><stop offset="1" stop-color="#FF6B5E" stop-opacity="0"/></linearGradient>
   </defs>`;
-
-  let s = defs;
   for (let v = yMin; v <= yMax; v++) {
     s += `<line class="gridline" x1="${m.l}" y1="${y(v)}" x2="${W - m.r}" y2="${y(v)}"/>`;
-    s += `<text class="axislabel" x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    s += `<text class="axislabel" x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${axisVal(v)}</text>`;
   }
   WEEKS.forEach((w, i) => { s += `<text class="axislabel" x="${x(i)}" y="${H - 12}" text-anchor="middle">W${w.wk}</text>`; });
 
-  // target (straight dashed = the plan)
   let tp = WEEKS.map((w, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(w.target)}`).join(" ");
   s += `<path class="targetline" d="${tp}"/>`;
 
-  // actual smoothed + area
-  const pts = WEEKS.map((w, i) => ({ i, v: actuals[w.wk] })).filter(p => p.v != null)
-                   .map(p => ({ x: x(p.i), y: y(p.v) }));
+  const pts = WEEKS.map((w, i) => ({ i, v: actuals[w.wk] })).filter(p => p.v != null).map(p => ({ x: x(p.i), y: y(p.v) }));
   if (pts.length >= 2) {
     const line = smooth(pts);
-    const area = line + ` L${pts[pts.length - 1].x},${y(yMin)} L${pts[0].x},${y(yMin)} Z`;
-    s += `<path class="area" d="${area}"/>`;
+    s += `<path class="area" d="${line} L${pts[pts.length - 1].x},${y(yMin)} L${pts[0].x},${y(yMin)} Z"/>`;
     s += `<path class="actualline" d="${line}"/>`;
   }
   pts.forEach((p, k) => {
-    if (k < pts.length - 1) {
-      s += `<circle class="dot-hollow" cx="${p.x}" cy="${p.y}" r="4.5"/>`;
-    } else {
+    if (k < pts.length - 1) s += `<circle class="dot-hollow" cx="${p.x}" cy="${p.y}" r="4.5"/>`;
+    else {
       s += `<circle class="glow" cx="${p.x}" cy="${p.y}" r="13"/>`;
       s += `<circle class="endpoint" cx="${p.x}" cy="${p.y}" r="6.5"/>`;
       s += `<circle class="endpoint-core" cx="${p.x}" cy="${p.y}" r="2.6"/>`;
     }
   });
-
   svg.innerHTML = s;
 
-  // animate line draw + area fade on first paint
   const linePath = svg.querySelector(".actualline");
   const areaPath = svg.querySelector(".area");
   if (linePath && firstDraw && !reduce) {
     const len = linePath.getTotalLength();
-    linePath.style.strokeDasharray = len;
-    linePath.style.strokeDashoffset = len;
-    linePath.getBoundingClientRect(); // reflow
+    linePath.style.strokeDasharray = len; linePath.style.strokeDashoffset = len;
+    linePath.getBoundingClientRect();
     linePath.style.transition = "stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1)";
     linePath.style.strokeDashoffset = "0";
   }
@@ -368,6 +411,13 @@ function renderChart() {
 }
 
 function render() { renderHero(); renderTable(); renderChart(); }
+
+document.getElementById("seg").addEventListener("click", e => {
+  const btn = e.target.closest("button"); if (!btn) return;
+  unit = btn.dataset.unit; saveUnit();
+  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("active", b.dataset.unit === unit));
+  render();
+});
 
 document.getElementById("reset").addEventListener("click", () => {
   if (confirm("Clear all entries and start from Week 1 baseline?")) { actuals = { 1: 83.9 }; save(); render(); }
