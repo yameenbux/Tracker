@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- iOS home-screen web app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<meta name="theme-color" content="#FAFAF7">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAD5klEQVR4nO3dUW7jNhSGUU/RfWQlzSaaZWYVWUmzkz4IGAixf0dRRfFe9Zy3mUEiI/xA0pQ8+fXP33/d4JE/Zr8A6hIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHET/A+8FU0KQzgu5AAAAAElFTkSuQmCC">
+<title>Tracker</title>
+<style>
+  :root {
+    --paper: #FAFAF7;
+    --panel: #F1EEE7;
+    --ink: #1C2230;
+    --ink-soft: #565E70;
+    --steel: #9AA3B2;
+    --target: #B7BECB;
+    --actual: #E0533D;
+    --green: #2D6A4F;
+    --grid: #E4E0D7;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    padding:
+      calc(env(safe-area-inset-top) + 20px)
+      calc(env(safe-area-inset-right) + 16px)
+      calc(env(safe-area-inset-bottom) + 36px)
+      calc(env(safe-area-inset-left) + 16px);
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 22px; }
+
+  .readout {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr;
+    gap: 1px;
+    background: var(--grid);
+    border: 1px solid var(--grid);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .cell { background: var(--paper); padding: 15px 14px 13px; }
+  .cell .label {
+    font-family: var(--mono);
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 8px;
+  }
+  .cell .big { font-family: var(--mono); font-size: 29px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
+  .cell .unit { font-size: 14px; color: var(--ink-soft); font-weight: 500; }
+  .cell .sub { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 6px; }
+  .delta-down { color: var(--green); }
+  .delta-up { color: var(--actual); }
+
+  .chartwrap { background: var(--paper); border: 1px solid var(--grid); border-radius: 12px; padding: 16px 10px 6px; margin-bottom: 20px; }
+  .legend { display: flex; gap: 18px; padding: 0 8px 12px; font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+  svg { width: 100%; height: auto; display: block; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axislabel { font-family: var(--mono); font-size: 10px; fill: var(--ink-soft); }
+  .targetband { fill: var(--panel); opacity: 0.6; }
+  .targetline { fill: none; stroke: var(--target); stroke-width: 2; stroke-dasharray: 4 4; }
+  .actualline { fill: none; stroke: var(--actual); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .dot { fill: var(--actual); }
+  .dot-hollow { fill: var(--paper); stroke: var(--actual); stroke-width: 2; }
+
+  .tablewrap { border: 1px solid var(--grid); border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); text-align: left; padding: 11px 12px; background: var(--panel); border-bottom: 1px solid var(--grid); }
+  td { padding: 5px 12px; border-bottom: 1px solid var(--grid); font-family: var(--mono); }
+  tr:last-child td { border-bottom: none; }
+  .wk { color: var(--ink-soft); }
+  .tgt { color: var(--steel); }
+  input.weight { font-family: var(--mono); font-size: 16px; width: 76px; padding: 9px 8px; border: 1px solid var(--grid); border-radius: 8px; background: var(--paper); color: var(--ink); text-align: right; }
+  input.weight:focus { outline: 2px solid var(--actual); outline-offset: 0; border-color: transparent; }
+  .vs { font-family: var(--mono); font-size: 12px; }
+  .footnote { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 16px; line-height: 1.6; }
+  .reset { margin-top: 18px; font-family: var(--mono); font-size: 11px; color: var(--steel); background: none; border: none; text-decoration: underline; padding: 4px 0; }
+  @media (max-width: 520px) {
+    .readout { grid-template-columns: 1fr 1fr; }
+    .cell:first-child { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="eyebrow">8-Week Programme · Mon weigh-ins</div>
+<h1>Tracker</h1>
+
+<div class="readout">
+  <div class="cell">
+    <div class="label">Current</div>
+    <div class="big" id="r-current">83.9<span class="unit"> kg</span></div>
+    <div class="sub" id="r-date">Week 1 · 16 Jun</div>
+  </div>
+  <div class="cell">
+    <div class="label">Lost so far</div>
+    <div class="big" id="r-lost">0.0<span class="unit"> kg</span></div>
+    <div class="sub" id="r-vstarget">on target</div>
+  </div>
+  <div class="cell">
+    <div class="label">To goal</div>
+    <div class="big" id="r-togo">4.4<span class="unit"> kg</span></div>
+    <div class="sub">goal 79.5 kg</div>
+  </div>
+</div>
+
+<div class="chartwrap">
+  <div class="legend">
+    <span><i class="swatch" style="background:var(--actual)"></i> Your weight</span>
+    <span><i class="swatch" style="background:var(--target)"></i> Target line</span>
+  </div>
+  <svg id="chart" viewBox="0 0 680 320" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead>
+      <tr><th>Week</th><th>Date</th><th>Target</th><th>Your weight</th><th>vs</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="footnote">
+  Enter each Monday morning weight — after toilet, before food or drink.<br>
+  Saved on this device. The target line is a guide, not a verdict; waist and photos matter as much as the scale.
+</div>
+<button class="reset" id="reset">Reset all entries</button>
+
+<script>
+const WEEKS = [
+  { wk: 1, date: "16 Jun", target: 83.9 },
+  { wk: 2, date: "23 Jun", target: 83.3 },
+  { wk: 3, date: "30 Jun", target: 82.7 },
+  { wk: 4, date: "7 Jul",  target: 82.1 },
+  { wk: 5, date: "14 Jul", target: 81.5 },
+  { wk: 6, date: "21 Jul", target: 80.8 },
+  { wk: 7, date: "28 Jul", target: 80.1 },
+  { wk: 8, date: "4 Aug",  target: 79.5 },
+];
+const GOAL = 79.5, BASELINE = 83.9, KEY = "tracker_actuals_v1";
+let actuals = { 1: 83.9 };
+
+function load() {
+  try {
+    // window.storage if running inside Claude; localStorage on a real device
+    const ls = localStorage.getItem(KEY);
+    if (ls) actuals = JSON.parse(ls);
+  } catch (e) { /* private mode / unavailable — in-memory only */ }
+  render();
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(actuals)); } catch (e) {}
+}
+
+function lastEntry() { let last = null; WEEKS.forEach(w => { if (actuals[w.wk] != null) last = w; }); return last; }
+function fmt(n, d = 1) { return Number(n).toFixed(d); }
+
+function renderReadout() {
+  const last = lastEntry();
+  const cur = last ? actuals[last.wk] : BASELINE;
+  document.getElementById("r-current").innerHTML = fmt(cur) + '<span class="unit"> kg</span>';
+  document.getElementById("r-date").textContent = last ? `Week ${last.wk} · ${last.date}` : "Week 1 · 16 Jun";
+  const lost = BASELINE - cur;
+  document.getElementById("r-lost").innerHTML = (lost >= 0 ? "" : "+") + fmt(Math.abs(lost)) + '<span class="unit"> kg</span>';
+  const vs = document.getElementById("r-vstarget");
+  if (last) {
+    const diff = cur - last.target;
+    if (diff <= 0.05) { vs.textContent = "on / ahead of target"; vs.className = "sub delta-down"; }
+    else { vs.textContent = `${fmt(diff)} kg above target`; vs.className = "sub delta-up"; }
+  } else { vs.textContent = "on target"; vs.className = "sub"; }
+  document.getElementById("r-togo").innerHTML = fmt(Math.max(0, cur - GOAL)) + '<span class="unit"> kg</span>';
+}
+
+function renderTable() {
+  const tb = document.getElementById("tbody");
+  tb.innerHTML = "";
+  WEEKS.forEach(w => {
+    const tr = document.createElement("tr");
+    const a = actuals[w.wk];
+    let vsCell = "—", vsColor = "var(--ink-soft)";
+    if (a != null) { const d = a - w.target; vsCell = (d > 0 ? "+" : "") + fmt(d); vsColor = d <= 0.05 ? "var(--green)" : "var(--actual)"; }
+    tr.innerHTML = `
+      <td class="wk">W${w.wk}</td>
+      <td class="wk">${w.date}</td>
+      <td class="tgt">${fmt(w.target)}</td>
+      <td><input class="weight" inputmode="decimal" data-wk="${w.wk}" value="${a != null ? fmt(a) : ""}" placeholder="—"></td>
+      <td class="vs" style="color:${vsColor}">${vsCell}</td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll("input.weight").forEach(inp => {
+    inp.addEventListener("change", e => {
+      const wk = +e.target.dataset.wk, v = parseFloat(e.target.value);
+      if (!isNaN(v) && v > 0) actuals[wk] = Math.round(v * 10) / 10; else delete actuals[wk];
+      save(); render();
+    });
+  });
+}
+
+function renderChart() {
+  const svg = document.getElementById("chart");
+  const W = 680, H = 320, m = { t: 18, r: 18, b: 34, l: 40 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b, yMin = 78, yMax = 85;
+  const x = i => m.l + (iw * i) / (WEEKS.length - 1);
+  const y = v => m.t + ih * (1 - (v - yMin) / (yMax - yMin));
+  let s = "";
+  for (let v = yMin; v <= yMax; v++) {
+    s += `<line class="gridline" x1="${m.l}" y1="${y(v)}" x2="${W - m.r}" y2="${y(v)}"/>`;
+    s += `<text class="axislabel" x="${m.l - 8}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+  }
+  s += `<rect class="targetband" x="${m.l}" y="${y(GOAL + 0.5)}" width="${iw}" height="${y(GOAL - 0.5) - y(GOAL + 0.5)}"/>`;
+  WEEKS.forEach((w, i) => { s += `<text class="axislabel" x="${x(i)}" y="${H - 12}" text-anchor="middle">W${w.wk}</text>`; });
+  let tp = WEEKS.map((w, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(w.target)}`).join(" ");
+  s += `<path class="targetline" d="${tp}"/>`;
+  const pts = WEEKS.map((w, i) => ({ i, v: actuals[w.wk] })).filter(p => p.v != null);
+  if (pts.length > 1) {
+    let ap = pts.map((p, k) => `${k === 0 ? "M" : "L"}${x(p.i)},${y(p.v)}`).join(" ");
+    s += `<path class="actualline" d="${ap}"/>`;
+  }
+  pts.forEach((p, k) => {
+    const isLast = k === pts.length - 1;
+    s += `<circle class="${isLast ? "dot" : "dot-hollow"}" cx="${x(p.i)}" cy="${y(p.v)}" r="${isLast ? 5 : 4}"/>`;
+  });
+  svg.innerHTML = s;
+}
+
+function render() { renderReadout(); renderTable(); renderChart(); }
+
+document.getElementById("reset").addEventListener("click", () => {
+  if (confirm("Clear all entries and start from Week 1 baseline?")) {
+    actuals = { 1: 83.9 }; save(); render();
+  }
+});
+
+load();
+</script>
+</body>
+</html>
