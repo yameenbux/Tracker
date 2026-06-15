@@ -7,146 +7,203 @@
 <!-- iOS home-screen web app -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Tracker">
-<meta name="theme-color" content="#FAFAF7">
-<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<meta name="theme-color" content="#2A1E45">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
 <title>Tracker</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
   :root {
-    --paper: #FAFAF7;
-    --panel: #F1EEE7;
-    --ink: #1C2230;
-    --ink-soft: #565E70;
-    --steel: #9AA3B2;
-    --target: #B7BECB;
-    --actual: #E0533D;
-    --green: #2D6A4F;
-    --grid: #E4E0D7;
-    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --bg: #FBF7F3;
+    --card: #FFFFFF;
+    --line: #EFE6DC;
+    --ink: #241B33;
+    --ink-soft: #6E6577;
+    --plum-1: #2A1E45;
+    --plum-2: #4B2E73;
+    --coral: #FF6B5E;
+    --amber: #FFA24B;
+    --mint: #12B886;
+    --mint-bg: #E4F7EF;
+    --coral-bg: #FFEAE6;
+    --target: #C9BFD6;
+    --display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --body: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    background: var(--paper);
+    background: var(--bg);
     color: var(--ink);
-    font-family: var(--sans);
+    font-family: var(--body);
     -webkit-font-smoothing: antialiased;
     padding:
-      calc(env(safe-area-inset-top) + 20px)
+      calc(env(safe-area-inset-top) + 22px)
       calc(env(safe-area-inset-right) + 16px)
-      calc(env(safe-area-inset-bottom) + 36px)
+      calc(env(safe-area-inset-bottom) + 40px)
       calc(env(safe-area-inset-left) + 16px);
-    max-width: 760px;
+    max-width: 720px;
     margin: 0 auto;
+    opacity: 0;
+    animation: fadein 0.5s ease forwards;
   }
-  .eyebrow {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 6px;
-  }
-  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 22px; }
+  @keyframes fadein { to { opacity: 1; } }
+  .num { font-family: var(--display); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
-  .readout {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr;
-    gap: 1px;
-    background: var(--grid);
-    border: 1px solid var(--grid);
-    border-radius: 12px;
+  /* header */
+  header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; padding: 0 4px; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--coral); }
+  h1 { font-family: var(--display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+  .tag { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+
+  /* hero */
+  .hero {
+    background: linear-gradient(150deg, var(--plum-1) 0%, var(--plum-2) 100%);
+    border-radius: 22px;
+    padding: 24px 22px 20px;
+    color: #fff;
+    box-shadow: 0 18px 40px -18px rgba(42, 30, 69, 0.55);
+    margin-bottom: 16px;
+    position: relative;
     overflow: hidden;
-    margin-bottom: 22px;
   }
-  .cell { background: var(--paper); padding: 15px 14px 13px; }
-  .cell .label {
-    font-family: var(--mono);
-    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--ink-soft); margin-bottom: 8px;
+  .hero::after {
+    content: ""; position: absolute; top: -40px; right: -40px; width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(255,107,94,0.30), transparent 70%);
+    pointer-events: none;
   }
-  .cell .big { font-family: var(--mono); font-size: 29px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
-  .cell .unit { font-size: 14px; color: var(--ink-soft); font-weight: 500; }
-  .cell .sub { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 6px; }
-  .delta-down { color: var(--green); }
-  .delta-up { color: var(--actual); }
+  .hero .label { font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+  .hero .current { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; }
+  .hero .current .big { font-family: var(--display); font-size: 58px; font-weight: 700; line-height: 0.95; }
+  .hero .current .unit { font-size: 20px; font-weight: 500; color: rgba(255,255,255,0.6); }
+  .hero .when { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
 
-  .chartwrap { background: var(--paper); border: 1px solid var(--grid); border-radius: 12px; padding: 16px 10px 6px; margin-bottom: 20px; }
-  .legend { display: flex; gap: 18px; padding: 0 8px 12px; font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
-  .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .swatch { width: 16px; height: 3px; border-radius: 2px; display: inline-block; }
+  /* journey meter */
+  .journey { margin-top: 20px; }
+  .track { position: relative; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.16); overflow: hidden; }
+  .track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber), var(--coral)); transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+  .marker { position: absolute; top: -3px; width: 16px; height: 16px; border-radius: 50%; background: #fff;
+    border: 3px solid var(--coral); transform: translateX(-50%); transition: left 0.7s cubic-bezier(.4,0,.2,1); }
+  .ends { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.6); }
+  .ends b { font-family: var(--display); color: rgba(255,255,255,0.85); font-weight: 600; }
+
+  /* chips */
+  .chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
+  .chip { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.12); border-radius: 13px; padding: 11px 12px; }
+  .chip .k { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 5px; }
+  .chip .v { font-family: var(--display); font-size: 19px; font-weight: 600; }
+  .chip .v small { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.6); }
+  .chip.good .v { color: #6EEBC0; }
+  .chip.over .v { color: #FF9A8F; }
+
+  /* cards */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px 14px 10px; margin-bottom: 16px; }
+  .card .ctitle { font-family: var(--display); font-size: 15px; font-weight: 600; padding: 0 4px 4px; }
+  .legend { display: flex; gap: 16px; padding: 2px 6px 12px; font-size: 12px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .sw-line { width: 18px; height: 3px; border-radius: 2px; background: var(--coral); }
+  .sw-dash { width: 18px; height: 0; border-top: 2px dashed var(--target); }
   svg { width: 100%; height: auto; display: block; }
-  .gridline { stroke: var(--grid); stroke-width: 1; }
-  .axislabel { font-family: var(--mono); font-size: 10px; fill: var(--ink-soft); }
-  .targetband { fill: var(--panel); opacity: 0.6; }
-  .targetline { fill: none; stroke: var(--target); stroke-width: 2; stroke-dasharray: 4 4; }
-  .actualline { fill: none; stroke: var(--actual); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
-  .dot { fill: var(--actual); }
-  .dot-hollow { fill: var(--paper); stroke: var(--actual); stroke-width: 2; }
+  .gridline { stroke: #F0E8E0; stroke-width: 1; }
+  .axislabel { font-family: var(--body); font-size: 11px; font-weight: 500; fill: var(--ink-soft); }
+  .targetline { fill: none; stroke: var(--target); stroke-width: 2; stroke-dasharray: 5 5; }
+  .actualline { fill: none; stroke: url(#stroke); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+  .area { fill: url(#area); opacity: 0; transition: opacity 0.8s ease 0.2s; }
+  .area.show { opacity: 1; }
+  .dot-hollow { fill: #fff; stroke: var(--coral); stroke-width: 2.5; }
+  .glow { fill: var(--coral); opacity: 0.18; }
+  .endpoint { fill: var(--coral); }
+  .endpoint-core { fill: #fff; }
 
-  .tablewrap { border: 1px solid var(--grid); border-radius: 12px; overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); text-align: left; padding: 11px 12px; background: var(--panel); border-bottom: 1px solid var(--grid); }
-  td { padding: 5px 12px; border-bottom: 1px solid var(--grid); font-family: var(--mono); }
+  /* table */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+    text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 6px 10px; border-bottom: 1px solid var(--line); }
   tr:last-child td { border-bottom: none; }
-  .wk { color: var(--ink-soft); }
-  .tgt { color: var(--steel); }
-  input.weight { font-family: var(--mono); font-size: 16px; width: 76px; padding: 9px 8px; border: 1px solid var(--grid); border-radius: 8px; background: var(--paper); color: var(--ink); text-align: right; }
-  input.weight:focus { outline: 2px solid var(--actual); outline-offset: 0; border-color: transparent; }
-  .vs { font-family: var(--mono); font-size: 12px; }
-  .footnote { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); margin-top: 16px; line-height: 1.6; }
-  .reset { margin-top: 18px; font-family: var(--mono); font-size: 11px; color: var(--steel); background: none; border: none; text-decoration: underline; padding: 4px 0; }
-  @media (max-width: 520px) {
-    .readout { grid-template-columns: 1fr 1fr; }
-    .cell:first-child { grid-column: 1 / -1; }
+  .wk { font-family: var(--display); font-weight: 600; color: var(--ink); }
+  .dt { color: var(--ink-soft); font-size: 13px; }
+  .tgt { font-family: var(--display); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  input.weight { font-family: var(--display); font-weight: 600; font-size: 16px; width: 78px; padding: 9px 10px;
+    border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); text-align: right;
+    font-variant-numeric: tabular-nums; transition: border-color 0.15s; }
+  input.weight:focus { outline: none; border-color: var(--coral); }
+  .pill { display: inline-block; font-family: var(--display); font-weight: 600; font-size: 12px; font-variant-numeric: tabular-nums;
+    padding: 3px 9px; border-radius: 999px; }
+  .pill.good { background: var(--mint-bg); color: var(--mint); }
+  .pill.over { background: var(--coral-bg); color: #E0533D; }
+  .pill.none { color: var(--ink-soft); }
+
+  .footnote { font-size: 12px; color: var(--ink-soft); line-height: 1.6; padding: 0 6px; margin-top: 4px; }
+  .reset { margin: 16px 6px 0; font-family: var(--body); font-size: 12px; font-weight: 600; color: var(--target);
+    background: none; border: none; text-decoration: underline; padding: 4px 0; cursor: pointer; }
+
+  @media (max-width: 430px) {
+    .hero .current .big { font-size: 52px; }
+    .chip .v { font-size: 17px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body, .track .fill, .marker, .area { animation: none !important; transition: none !important; opacity: 1 !important; }
   }
 </style>
 </head>
 <body>
 
-<div class="eyebrow">8-Week Programme · Mon weigh-ins</div>
-<h1>Tracker</h1>
+<header>
+  <div>
+    <div class="eyebrow">8-Week Programme</div>
+    <h1>Tracker</h1>
+  </div>
+  <div class="tag">Mon weigh-ins</div>
+</header>
 
-<div class="readout">
-  <div class="cell">
-    <div class="label">Current</div>
-    <div class="big" id="r-current">83.9<span class="unit"> kg</span></div>
-    <div class="sub" id="r-date">Week 1 · 16 Jun</div>
-  </div>
-  <div class="cell">
-    <div class="label">Lost so far</div>
-    <div class="big" id="r-lost">0.0<span class="unit"> kg</span></div>
-    <div class="sub" id="r-vstarget">on target</div>
-  </div>
-  <div class="cell">
-    <div class="label">To goal</div>
-    <div class="big" id="r-togo">4.4<span class="unit"> kg</span></div>
-    <div class="sub">goal 79.5 kg</div>
-  </div>
-</div>
+<section class="hero">
+  <div class="label">Current weight</div>
+  <div class="current"><span class="big num" id="r-current">83.9</span><span class="unit">kg</span></div>
+  <div class="when" id="r-date">Week 1 · 16 Jun</div>
 
-<div class="chartwrap">
+  <div class="journey">
+    <div class="track">
+      <div class="fill" id="j-fill" style="width:0%"></div>
+      <div class="marker" id="j-marker" style="left:0%"></div>
+    </div>
+    <div class="ends"><span>Start <b>83.9</b></span><span>Goal <b>79.5</b></span></div>
+  </div>
+
+  <div class="chips">
+    <div class="chip" id="chip-lost"><div class="k">Lost</div><div class="v num" id="r-lost">0.0<small> kg</small></div></div>
+    <div class="chip" id="chip-togo"><div class="k">To goal</div><div class="v num" id="r-togo">4.4<small> kg</small></div></div>
+    <div class="chip" id="chip-vs"><div class="k">vs target</div><div class="v" id="r-vs" style="font-size:14px">On track</div></div>
+  </div>
+</section>
+
+<div class="card">
+  <div class="ctitle">Progress</div>
   <div class="legend">
-    <span><i class="swatch" style="background:var(--actual)"></i> Your weight</span>
-    <span><i class="swatch" style="background:var(--target)"></i> Target line</span>
+    <span><i class="sw-line"></i> Your weight</span>
+    <span><i class="sw-dash"></i> Target line</span>
   </div>
-  <svg id="chart" viewBox="0 0 680 320" preserveAspectRatio="xMidYMid meet"></svg>
+  <svg id="chart" viewBox="0 0 720 340" preserveAspectRatio="xMidYMid meet"></svg>
 </div>
 
-<div class="tablewrap">
+<div class="card">
+  <div class="ctitle">Weekly weigh-ins</div>
   <table>
-    <thead>
-      <tr><th>Week</th><th>Date</th><th>Target</th><th>Your weight</th><th>vs</th></tr>
-    </thead>
+    <thead><tr><th>Week</th><th>Date</th><th>Target</th><th>Your weight</th><th>vs</th></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
 </div>
 
 <div class="footnote">
-  Enter each Monday morning weight — after toilet, before food or drink.<br>
-  Saved on this device. The target line is a guide, not a verdict; waist and photos matter as much as the scale.
+  Enter each Monday morning weight — after waking, after toilet, before food or drink.<br>
+  Saved on this device. The target line is a guide, not a verdict; waist and photos tell the fuller story.
 </div>
 <button class="reset" id="reset">Reset all entries</button>
 
@@ -163,36 +220,44 @@ const WEEKS = [
 ];
 const GOAL = 79.5, BASELINE = 83.9, KEY = "tracker_actuals_v1";
 let actuals = { 1: 83.9 };
+let firstDraw = true;
+const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function load() {
-  try {
-    // window.storage if running inside Claude; localStorage on a real device
-    const ls = localStorage.getItem(KEY);
-    if (ls) actuals = JSON.parse(ls);
-  } catch (e) { /* private mode / unavailable — in-memory only */ }
+  try { const ls = localStorage.getItem(KEY); if (ls) actuals = JSON.parse(ls); } catch (e) {}
   render();
 }
-function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(actuals)); } catch (e) {}
-}
-
+function save() { try { localStorage.setItem(KEY, JSON.stringify(actuals)); } catch (e) {} }
 function lastEntry() { let last = null; WEEKS.forEach(w => { if (actuals[w.wk] != null) last = w; }); return last; }
 function fmt(n, d = 1) { return Number(n).toFixed(d); }
 
-function renderReadout() {
+function renderHero() {
   const last = lastEntry();
   const cur = last ? actuals[last.wk] : BASELINE;
-  document.getElementById("r-current").innerHTML = fmt(cur) + '<span class="unit"> kg</span>';
+  document.getElementById("r-current").textContent = fmt(cur);
   document.getElementById("r-date").textContent = last ? `Week ${last.wk} · ${last.date}` : "Week 1 · 16 Jun";
+
   const lost = BASELINE - cur;
-  document.getElementById("r-lost").innerHTML = (lost >= 0 ? "" : "+") + fmt(Math.abs(lost)) + '<span class="unit"> kg</span>';
-  const vs = document.getElementById("r-vstarget");
+  document.getElementById("r-lost").innerHTML = (lost < 0 ? "+" : "") + fmt(Math.abs(lost)) + '<small> kg</small>';
+  document.getElementById("r-togo").innerHTML = fmt(Math.max(0, cur - GOAL)) + '<small> kg</small>';
+
+  // journey meter
+  let pct = (BASELINE - cur) / (BASELINE - GOAL) * 100;
+  pct = Math.max(0, Math.min(100, pct));
+  document.getElementById("j-fill").style.width = pct + "%";
+  document.getElementById("j-marker").style.left = pct + "%";
+
+  // vs target
+  const vsEl = document.getElementById("r-vs");
+  const chipVs = document.getElementById("chip-vs");
+  const chipLost = document.getElementById("chip-lost");
+  chipVs.classList.remove("good", "over"); chipLost.classList.remove("good", "over");
   if (last) {
     const diff = cur - last.target;
-    if (diff <= 0.05) { vs.textContent = "on / ahead of target"; vs.className = "sub delta-down"; }
-    else { vs.textContent = `${fmt(diff)} kg above target`; vs.className = "sub delta-up"; }
-  } else { vs.textContent = "on target"; vs.className = "sub"; }
-  document.getElementById("r-togo").innerHTML = fmt(Math.max(0, cur - GOAL)) + '<span class="unit"> kg</span>';
+    if (diff <= 0.05) { vsEl.textContent = "On / ahead"; chipVs.classList.add("good"); }
+    else { vsEl.textContent = "+" + fmt(diff) + " kg"; chipVs.classList.add("over"); }
+  } else { vsEl.textContent = "On track"; }
+  if (lost > 0.05) chipLost.classList.add("good");
 }
 
 function renderTable() {
@@ -201,14 +266,18 @@ function renderTable() {
   WEEKS.forEach(w => {
     const tr = document.createElement("tr");
     const a = actuals[w.wk];
-    let vsCell = "—", vsColor = "var(--ink-soft)";
-    if (a != null) { const d = a - w.target; vsCell = (d > 0 ? "+" : "") + fmt(d); vsColor = d <= 0.05 ? "var(--green)" : "var(--actual)"; }
+    let pill = '<span class="pill none">—</span>';
+    if (a != null) {
+      const d = a - w.target;
+      const cls = d <= 0.05 ? "good" : "over";
+      pill = `<span class="pill ${cls}">${d > 0 ? "+" : ""}${fmt(d)}</span>`;
+    }
     tr.innerHTML = `
       <td class="wk">W${w.wk}</td>
-      <td class="wk">${w.date}</td>
+      <td class="dt">${w.date}</td>
       <td class="tgt">${fmt(w.target)}</td>
-      <td><input class="weight" inputmode="decimal" data-wk="${w.wk}" value="${a != null ? fmt(a) : ""}" placeholder="—"></td>
-      <td class="vs" style="color:${vsColor}">${vsCell}</td>`;
+      <td><input class="weight num" inputmode="decimal" data-wk="${w.wk}" value="${a != null ? fmt(a) : ""}" placeholder="—"></td>
+      <td>${pill}</td>`;
     tb.appendChild(tr);
   });
   tb.querySelectorAll("input.weight").forEach(inp => {
@@ -220,39 +289,88 @@ function renderTable() {
   });
 }
 
+// Catmull-Rom -> bezier smoothing
+function smooth(pts) {
+  if (pts.length < 2) return "";
+  let d = `M${pts[0].x},${pts[0].y}`;
+  const t = 0.16;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const c1x = p1.x + (p2.x - p0.x) * t, c1y = p1.y + (p2.y - p0.y) * t;
+    const c2x = p2.x - (p3.x - p1.x) * t, c2y = p2.y - (p3.y - p1.y) * t;
+    d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
+
 function renderChart() {
   const svg = document.getElementById("chart");
-  const W = 680, H = 320, m = { t: 18, r: 18, b: 34, l: 40 };
+  const W = 720, H = 340, m = { t: 16, r: 18, b: 36, l: 38 };
   const iw = W - m.l - m.r, ih = H - m.t - m.b, yMin = 78, yMax = 85;
   const x = i => m.l + (iw * i) / (WEEKS.length - 1);
   const y = v => m.t + ih * (1 - (v - yMin) / (yMax - yMin));
-  let s = "";
+
+  let defs = `<defs>
+    <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFA24B"/><stop offset="1" stop-color="#FF6B5E"/>
+    </linearGradient>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF6B5E" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#FF6B5E" stop-opacity="0"/>
+    </linearGradient>
+  </defs>`;
+
+  let s = defs;
   for (let v = yMin; v <= yMax; v++) {
     s += `<line class="gridline" x1="${m.l}" y1="${y(v)}" x2="${W - m.r}" y2="${y(v)}"/>`;
-    s += `<text class="axislabel" x="${m.l - 8}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+    s += `<text class="axislabel" x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
   }
-  s += `<rect class="targetband" x="${m.l}" y="${y(GOAL + 0.5)}" width="${iw}" height="${y(GOAL - 0.5) - y(GOAL + 0.5)}"/>`;
   WEEKS.forEach((w, i) => { s += `<text class="axislabel" x="${x(i)}" y="${H - 12}" text-anchor="middle">W${w.wk}</text>`; });
+
+  // target (straight dashed = the plan)
   let tp = WEEKS.map((w, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(w.target)}`).join(" ");
   s += `<path class="targetline" d="${tp}"/>`;
-  const pts = WEEKS.map((w, i) => ({ i, v: actuals[w.wk] })).filter(p => p.v != null);
-  if (pts.length > 1) {
-    let ap = pts.map((p, k) => `${k === 0 ? "M" : "L"}${x(p.i)},${y(p.v)}`).join(" ");
-    s += `<path class="actualline" d="${ap}"/>`;
+
+  // actual smoothed + area
+  const pts = WEEKS.map((w, i) => ({ i, v: actuals[w.wk] })).filter(p => p.v != null)
+                   .map(p => ({ x: x(p.i), y: y(p.v) }));
+  if (pts.length >= 2) {
+    const line = smooth(pts);
+    const area = line + ` L${pts[pts.length - 1].x},${y(yMin)} L${pts[0].x},${y(yMin)} Z`;
+    s += `<path class="area" d="${area}"/>`;
+    s += `<path class="actualline" d="${line}"/>`;
   }
   pts.forEach((p, k) => {
-    const isLast = k === pts.length - 1;
-    s += `<circle class="${isLast ? "dot" : "dot-hollow"}" cx="${x(p.i)}" cy="${y(p.v)}" r="${isLast ? 5 : 4}"/>`;
+    if (k < pts.length - 1) {
+      s += `<circle class="dot-hollow" cx="${p.x}" cy="${p.y}" r="4.5"/>`;
+    } else {
+      s += `<circle class="glow" cx="${p.x}" cy="${p.y}" r="13"/>`;
+      s += `<circle class="endpoint" cx="${p.x}" cy="${p.y}" r="6.5"/>`;
+      s += `<circle class="endpoint-core" cx="${p.x}" cy="${p.y}" r="2.6"/>`;
+    }
   });
+
   svg.innerHTML = s;
+
+  // animate line draw + area fade on first paint
+  const linePath = svg.querySelector(".actualline");
+  const areaPath = svg.querySelector(".area");
+  if (linePath && firstDraw && !reduce) {
+    const len = linePath.getTotalLength();
+    linePath.style.strokeDasharray = len;
+    linePath.style.strokeDashoffset = len;
+    linePath.getBoundingClientRect(); // reflow
+    linePath.style.transition = "stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1)";
+    linePath.style.strokeDashoffset = "0";
+  }
+  if (areaPath) requestAnimationFrame(() => areaPath.classList.add("show"));
+  firstDraw = false;
 }
 
-function render() { renderReadout(); renderTable(); renderChart(); }
+function render() { renderHero(); renderTable(); renderChart(); }
 
 document.getElementById("reset").addEventListener("click", () => {
-  if (confirm("Clear all entries and start from Week 1 baseline?")) {
-    actuals = { 1: 83.9 }; save(); render();
-  }
+  if (confirm("Clear all entries and start from Week 1 baseline?")) { actuals = { 1: 83.9 }; save(); render(); }
 });
 
 load();
