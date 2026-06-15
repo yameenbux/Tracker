@@ -135,6 +135,26 @@
   .reset { margin: 16px 6px 0; font-family: var(--body); font-size: 12px; font-weight: 600; color: var(--target);
     background: none; border: none; text-decoration: underline; padding: 4px 0; cursor: pointer; }
 
+  /* daily habits */
+  .hcap { font-size: 12px; color: var(--ink-soft); padding: 0 4px 10px; }
+  .hhead, .hrow { display: grid; grid-template-columns: 1fr 30px 30px 30px; gap: 10px; align-items: center; }
+  .hhead { padding: 0 6px 8px; }
+  .hhead .ic { text-align: center; font-size: 15px; line-height: 1; }
+  .hhead .ic small { display: block; font-size: 8px; font-weight: 700; letter-spacing: 0.04em; color: var(--ink-soft); margin-top: 3px; }
+  .hrow { padding: 9px 6px; border-bottom: 1px solid var(--line); border-radius: 10px; }
+  .hrow:last-child { border-bottom: none; }
+  .hrow.today { background: #FFF3EF; box-shadow: inset 3px 0 0 var(--coral); }
+  .hday .d { font-family: var(--display); font-weight: 600; font-size: 14px; }
+  .hday .d .today-tag { font-family: var(--body); font-size: 9px; font-weight: 700; letter-spacing: 0.06em; color: var(--coral); margin-left: 6px; }
+  .hday .w { font-size: 11px; color: var(--ink-soft); margin-top: 1px; }
+  .cb { width: 28px; height: 28px; margin: 0 auto; border: 1.5px solid var(--line); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--bg); transition: all 0.15s; }
+  .cb svg { width: 15px; height: 15px; opacity: 0; transform: scale(0.6); transition: all 0.15s; }
+  .cb.on { background: var(--coral); border-color: var(--coral); }
+  .cb.on svg { opacity: 1; transform: scale(1); }
+  .cb.wk { background: #F3EEFA; border-color: #E4DAF2; }
+  .cb.wk.on { background: var(--coral); border-color: var(--coral); }
+
   @media (max-width: 430px) {
     .hero .current .big { font-size: 50px; }
     h1 { font-size: 25px; }
@@ -179,6 +199,18 @@
     <div class="chip" id="chip-vs"><div class="k">vs target</div><div class="v" id="r-vs" style="font-size:14px">On track</div></div>
   </div>
 </section>
+
+<div class="card">
+  <div class="ctitle">Daily habits</div>
+  <div class="hcap" id="h-cap">This week</div>
+  <div class="hhead">
+    <div></div>
+    <div class="ic">💧<small>3 L</small></div>
+    <div class="ic">👟<small>10K</small></div>
+    <div class="ic">🏋<small>WORK</small></div>
+  </div>
+  <div id="hgrid"></div>
+</div>
 
 <div class="card">
   <div class="ctitle">Progress</div>
@@ -238,6 +270,11 @@ const WEEKS = [
 const GOAL_DATE = "22 Dec 2026";
 const GOAL = 71.0, BASELINE = 83.9, KEY = "tracker_actuals_v1", UNIT_KEY = "tracker_unit_v1";
 const KG_PER_LB = 0.45359237;
+const HABITS_KEY = "tracker_habits_v1";
+const WORKOUTS = { 1: "Upper Body A", 2: "Easy run · 6–8km", 3: "Lower Body", 4: "Run + efforts",
+                   5: "Upper Body B", 6: "Long run", 0: "Recovery / walk" };
+const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+let habits = {};
 let actuals = { 1: 83.9 };
 let unit = "kg";        // "kg" or "imp"
 let firstDraw = true;
@@ -246,6 +283,7 @@ const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: 
 function load() {
   try { const ls = localStorage.getItem(KEY); if (ls) actuals = JSON.parse(ls); } catch (e) {}
   try { const u = localStorage.getItem(UNIT_KEY); if (u === "kg" || u === "imp") unit = u; } catch (e) {}
+  try { const h = localStorage.getItem(HABITS_KEY); if (h) habits = JSON.parse(h); } catch (e) {}
   document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("active", b.dataset.unit === unit));
   render();
 }
@@ -441,7 +479,61 @@ function renderChart() {
   firstDraw = false;
 }
 
-function render() { renderHero(); renderTable(); renderChart(); }
+function render() { renderHero(); renderHabits(); renderTable(); renderChart(); }
+
+// ---- daily habits ----
+function saveHabits() { try { localStorage.setItem(HABITS_KEY, JSON.stringify(habits)); } catch (e) {} }
+function dateKey(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function weekDays() {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const dow = now.getDay();                 // 0 Sun .. 6 Sat
+  const monOffset = dow === 0 ? -6 : 1 - dow;
+  const mon = new Date(now); mon.setDate(now.getDate() + monOffset);
+  const days = [];
+  for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); days.push(d); }
+  return days;
+}
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+
+function renderHabits() {
+  const days = weekDays();
+  const todayKey = dateKey(new Date());
+  document.getElementById("h-cap").textContent =
+    "Week of " + days[0].getDate() + "–" + days[6].getDate() + " " + MON[days[6].getMonth()];
+
+  const grid = document.getElementById("hgrid");
+  grid.innerHTML = "";
+  days.forEach(d => {
+    const key = dateKey(d);
+    const h = habits[key] || {};
+    const isToday = key === todayKey;
+    const row = document.createElement("div");
+    row.className = "hrow" + (isToday ? " today" : "");
+    row.innerHTML = `
+      <div class="hday">
+        <div class="d">${DAY_ABBR[d.getDay()]} ${d.getDate()}${isToday ? '<span class="today-tag">TODAY</span>' : ''}</div>
+        <div class="w">${WORKOUTS[d.getDay()]}</div>
+      </div>
+      <div class="cb${h.water ? " on" : ""}" data-key="${key}" data-h="water">${CHECK}</div>
+      <div class="cb${h.steps ? " on" : ""}" data-key="${key}" data-h="steps">${CHECK}</div>
+      <div class="cb wk${h.workout ? " on" : ""}" data-key="${key}" data-h="workout">${CHECK}</div>`;
+    grid.appendChild(row);
+  });
+
+  grid.querySelectorAll(".cb").forEach(cb => {
+    cb.addEventListener("click", () => {
+      const key = cb.dataset.key, name = cb.dataset.h;
+      if (!habits[key]) habits[key] = {};
+      habits[key][name] = !habits[key][name];
+      if (!habits[key].water && !habits[key].steps && !habits[key].workout) delete habits[key];
+      saveHabits();
+      cb.classList.toggle("on");
+    });
+  });
+}
 
 document.getElementById("seg").addEventListener("click", e => {
   const btn = e.target.closest("button"); if (!btn) return;
