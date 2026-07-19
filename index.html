@@ -302,41 +302,43 @@
 
 <script>
 const WEEKS = [
-  { wk: 1, date: "16 Jun", target: 83.9 },
-  { wk: 2, date: "23 Jun", target: 83.3 },
-  { wk: 3, date: "30 Jun", target: 82.7 },
-  { wk: 4, date: "7 Jul",  target: 82.1 },
-  { wk: 5, date: "14 Jul", target: 81.5 },
-  { wk: 6, date: "21 Jul", target: 80.8 },
-  { wk: 7, date: "28 Jul", target: 80.1 },
-  { wk: 8, date: "4 Aug",  target: 79.5 },
-  { wk: 9, date: "11 Aug", target: 79.0 },
-  { wk: 10, date: "18 Aug", target: 78.5 },
-  { wk: 11, date: "25 Aug", target: 78.0 },
-  { wk: 12, date: "1 Sep", target: 77.5 },
-  { wk: 13, date: "8 Sep", target: 77.0 },
-  { wk: 14, date: "15 Sep", target: 76.5 },
-  { wk: 15, date: "22 Sep", target: 76.0 },
-  { wk: 16, date: "29 Sep", target: 75.5 },
-  { wk: 17, date: "6 Oct", target: 75.0 },
-  { wk: 18, date: "13 Oct", target: 74.5 },
-  { wk: 19, date: "20 Oct", target: 74.0 },
-  { wk: 20, date: "27 Oct", target: 73.6 },
-  { wk: 21, date: "3 Nov", target: 73.2 },
-  { wk: 22, date: "10 Nov", target: 72.8 },
-  { wk: 23, date: "17 Nov", target: 72.4 },
-  { wk: 24, date: "24 Nov", target: 72.1 },
-  { wk: 25, date: "1 Dec", target: 71.8 },
-  { wk: 26, date: "8 Dec", target: 71.5 },
-  { wk: 27, date: "15 Dec", target: 71.2 },
-  { wk: 28, date: "22 Dec", target: 71.0 },
+  { wk: 1, date: "20 Jul", target: 82.0 },
+  { wk: 2, date: "27 Jul", target: 81.5 },
+  { wk: 3, date: "3 Aug", target: 81.0 },
+  { wk: 4, date: "10 Aug", target: 80.5 },
+  { wk: 5, date: "17 Aug", target: 80.0 },
+  { wk: 6, date: "24 Aug", target: 79.5 },
+  { wk: 7, date: "31 Aug", target: 79.0 },
+  { wk: 8, date: "7 Sep", target: 78.5 },
+  { wk: 9, date: "14 Sep", target: 78.0 },
+  { wk: 10, date: "21 Sep", target: 77.5 },
+  { wk: 11, date: "28 Sep", target: 77.0 },
+  { wk: 12, date: "5 Oct", target: 76.5 },
+  { wk: 13, date: "12 Oct", target: 76.0 },
+  { wk: 14, date: "19 Oct", target: 75.5 },
+  { wk: 15, date: "26 Oct", target: 75.0 },
+  { wk: 16, date: "2 Nov", target: 74.5 },
+  { wk: 17, date: "9 Nov", target: 74.0 },
+  { wk: 18, date: "16 Nov", target: 73.7 },
+  { wk: 19, date: "23 Nov", target: 73.4 },
+  { wk: 20, date: "30 Nov", target: 73.1 },
+  { wk: 21, date: "7 Dec", target: 72.8 },
+  { wk: 22, date: "14 Dec", target: 72.5 },
+  { wk: 23, date: "21 Dec", target: 72.5 },
+  { wk: 24, date: "28 Dec", target: 72.5 },
+  { wk: 25, date: "4 Jan", target: 72.5 },
+  { wk: 26, date: "11 Jan", target: 72.2 },
+  { wk: 27, date: "18 Jan", target: 71.9 },
+  { wk: 28, date: "25 Jan", target: 71.6 },
+  { wk: 29, date: "1 Feb", target: 71.3 },
+  { wk: 30, date: "8 Feb", target: 71.0 },
 ];
-const GOAL_DATE = "22 Dec 2026";
-const GOAL = 71.0, BASELINE = 83.9, KEY = "tracker_actuals_v1", UNIT_KEY = "tracker_unit_v1";
+const GOAL_DATE = "8 Feb 2027";
+const GOAL = 71.0, BASELINE = 82.0, KEY = "tracker_actuals_v2", UNIT_KEY = "tracker_unit_v1";
 const KG_PER_LB = 0.45359237;
 const HABITS_KEY = "tracker_habits_v1";
 const DAILYW_KEY = "tracker_dailyw_v1";
-const START_DATE = new Date(2026, 5, 16);   // Week 1 = 16 Jun 2026
+const START_DATE = new Date(2026, 6, 20);   // Week 1 = Mon 20 Jul 2026
 const WORKOUTS = { 1: "AM · Upper body + core", 2: "AM · Easy run 4–5km", 3: "AM · Lower body",
                    4: "AM · Walk only", 5: "AM · Upper body + core", 6: "AM · Run 6–8km",
                    0: "AM · Walk / rest" };
@@ -403,9 +405,9 @@ const MEALS = {
 };
 const BREAKFAST = { text: "40g oats, 100g Skyr, 10g pumpkin seeds, Snickers protein bar",
                     kcal: 390, p: 37, c: 35, f: 11 };
-const DINNER = { text: "3 eggs, 2–3 sourdough slices, ½ avocado",
-                 kcal: 620, p: 29, c: 53, f: 32 };
-const TARGET_KCAL = 1950, TARGET_P = 140, TARGET_C = 200, TARGET_F = 60;
+const DINNER = { text: "4 eggs, 2 Jason's sourdough slices, ½ avocado",
+                 kcal: 640, p: 34, c: 52, f: 33 };
+const TARGET_KCAL = 1800, TARGET_P = 140, TARGET_C = 175, TARGET_F = 60;
 const TOPUPS = [
   "Greek yoghurt 200g — 130 kcal, 20g P",
   "Cottage cheese 150g — 120 kcal, 18g P",
@@ -422,7 +424,7 @@ const SESSION_OVERRIDES = {
 };
 let habits = {};
 let dailyW = {};
-let actuals = { 1: 83.9 };
+let actuals = { 1: 82.0 };
 let unit = "kg";        // "kg" or "imp"
 let firstDraw = true;
 const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -676,7 +678,10 @@ function allWeights() {
   const map = {};
   WEEKS.forEach((w, i) => { if (actuals[w.wk] != null) map[dateKey(weekDate(i))] = actuals[w.wk]; });
   Object.keys(dailyW).forEach(k => { if (dailyW[k] != null) map[k] = dailyW[k]; });   // daily logged weight wins
-  return Object.keys(map).map(k => ({ k, d: parseKey(k), kg: map[k] })).sort((a, b) => a.d - b.d);
+  return Object.keys(map)
+    .map(k => ({ k, d: parseKey(k), kg: map[k] }))
+    .filter(p => p.d >= START_DATE)          // ignore anything before the current baseline
+    .sort((a, b) => a.d - b.d);
 }
 function latestWeight() {
   const arr = allWeights();
@@ -781,7 +786,7 @@ function renderHabits() {
           `<div class="ssdiv">dinner</div><div class="ssitem">${DINNER.text}${mac(DINNER)}</div>` +
           `<div class="mactot">3 meals total<br><b>${totK} kcal · ${totP}g P · ${totC}g C · ${totF}g F</b></div>` +
           `<div class="mactot" style="background:#E6F4EC;margin-top:6px">Daily target<br><b>${TARGET_KCAL} kcal · ${TARGET_P}g P · ${TARGET_C}g C · ${TARGET_F}g F</b></div>` +
-          `<div class="macgap">Short by <b>${TARGET_KCAL - totK} kcal and ${TARGET_P - totP}g protein</b> — add 2 top-ups below.</div>` +
+          `<div class="macgap">Short by <b>${TARGET_KCAL - totK} kcal and ${TARGET_P - totP}g protein</b> — close it with a top-up below.</div>` +
           `<div class="ssdiv">top-ups</div>` +
           TOPUPS.map(t => `<div class="ssitem">${t}</div>`).join("") +
           `<div class="ssnote">These are targets to <b>reach</b>, not limits to stay under. ` +
@@ -830,7 +835,7 @@ document.getElementById("seg").addEventListener("click", e => {
 });
 
 document.getElementById("reset").addEventListener("click", () => {
-  if (confirm("Clear all entries and start from Week 1 baseline?")) { actuals = { 1: 83.9 }; save(); render(); }
+  if (confirm("Clear all entries and start from Week 1 baseline?")) { actuals = { 1: 82.0 }; save(); render(); }
 });
 
 // ---- export ----
