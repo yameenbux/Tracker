@@ -394,19 +394,13 @@ const WORKOUT_DETAILS = {
         "Optional: light stretching or mobility"
       ], note: "Recovery matters as much as the sessions." }
 };
-const MEALS = {
-  1: { lunch: "Chicken, rice, salad", kcal: 560, p: 48, c: 60, f: 12 },
-  2: { lunch: "Tuna, jacket potato, veg", kcal: 500, p: 35, c: 65, f: 8 },
-  3: { lunch: "Chicken wrap, side salad", kcal: 500, p: 40, c: 45, f: 16 },
-  4: { lunch: "Lean mince chilli, rice", kcal: 600, p: 40, c: 70, f: 15 },
-  5: { lunch: "Tuna pasta, salad", kcal: 550, p: 40, c: 65, f: 12 },
-  6: { lunch: "Chicken, couscous, veg", kcal: 550, p: 45, c: 60, f: 12 },
-  0: { lunch: "Roast — meat, potatoes, veg", kcal: 700, p: 45, c: 70, f: 22 }
-};
-const BREAKFAST = { text: "40g oats, 100g Skyr, 10g pumpkin seeds, Snickers protein bar",
-                    kcal: 390, p: 37, c: 35, f: 11 };
-const DINNER = { text: "4 eggs, 2 Jason's sourdough slices, ½ avocado",
-                 kcal: 640, p: 34, c: 52, f: 33 };
+const WRAP = { lunch: "Chicken wrap — 150g chicken, wholemeal tortilla, 30g spinach, 30g pepper, chilli sauce",
+               kcal: 450, p: 47, c: 24, f: 17 };
+const MEALS = { 1: WRAP, 2: WRAP, 3: WRAP, 4: WRAP, 5: WRAP, 6: WRAP, 0: WRAP };
+const BREAKFAST = { text: "40g oats, 150g Fage 0%, 30g whey isolate",
+                    kcal: 345, p: 45, c: 32, f: 3 };
+const DINNER = { text: "4 eggs, 2 Jason's sourdough slices, ½ avocado, mushrooms, tomatoes",
+                 kcal: 680, p: 38, c: 57, f: 33 };
 const TARGET_KCAL = 1800, TARGET_P = 140, TARGET_C = 175, TARGET_F = 60;
 const TOPUPS = [
   "Greek yoghurt 200g — 130 kcal, 20g P",
@@ -782,14 +776,12 @@ function renderHabits() {
         panel.innerHTML =
           `<div class="sstitle">Meals & timings</div>` +
           `<div class="ssdiv">~6:00am · pre-train (optional)</div><div class="ssitem">Half a banana or a few dates. Fasted is fine for easy runs.</div>` +
-          `<div class="ssdiv">~8:00am · post-workout</div><div class="ssitem">Whey shake — 25g protein within the hour, especially after lifting.</div>` +
-          `<div class="ssdiv">10:00am · breakfast</div><div class="ssitem">${BREAKFAST.text}${mac(BREAKFAST)}</div>` +
+          `<div class="ssdiv">~8:30am · breakfast (post-workout)</div><div class="ssitem">${BREAKFAST.text}${mac(BREAKFAST)}</div>` +
           `<div class="ssdiv">1:00pm · lunch</div><div class="ssitem">${m.lunch}${mac(m)}</div>` +
-          `<div class="ssdiv">~4:00pm · snack</div><div class="ssitem">Yoghurt bowl or fruit — bridges the gap so dinner isn't a stuffed 7pm blowout.</div>` +
           `<div class="ssdiv">7:00pm · dinner (eat slowly)</div><div class="ssitem">${DINNER.text}${mac(DINNER)}</div>` +
           `<div class="mactot">3 meals total<br><b>${totK} kcal · ${totP}g P · ${totC}g C · ${totF}g F</b></div>` +
           `<div class="mactot" style="background:#E6F4EC;margin-top:6px">Daily target<br><b>${TARGET_KCAL} kcal · ${TARGET_P}g P · ${TARGET_C}g C · ${TARGET_F}g F</b></div>` +
-          `<div class="macgap">Short by <b>${TARGET_KCAL - totK} kcal and ${TARGET_P - totP}g protein</b> — the shake + snack above close it.</div>` +
+          `<div class="macgap">Short by <b>${TARGET_KCAL - totK} kcal and ${TARGET_P - totP}g protein</b> — a whey scoop or Greek yoghurt closes it.</div>` +
           `<div class="ssnote">These are targets to <b>reach</b>, not limits to stay under. ` +
           `Protein is the one that matters most — it's what protects muscle.</div>`;
       } else {
