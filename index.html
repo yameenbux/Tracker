@@ -780,15 +780,16 @@ function renderHabits() {
         const totC = BREAKFAST.c + m.c + DINNER.c;
         const totF = BREAKFAST.f + m.f + DINNER.f;
         panel.innerHTML =
-          `<div class="sstitle">Meals & macros</div>` +
-          `<div class="ssdiv">breakfast</div><div class="ssitem">${BREAKFAST.text}${mac(BREAKFAST)}</div>` +
-          `<div class="ssdiv">lunch</div><div class="ssitem">${m.lunch}${mac(m)}</div>` +
-          `<div class="ssdiv">dinner</div><div class="ssitem">${DINNER.text}${mac(DINNER)}</div>` +
+          `<div class="sstitle">Meals & timings</div>` +
+          `<div class="ssdiv">~6:00am · pre-train (optional)</div><div class="ssitem">Half a banana or a few dates. Fasted is fine for easy runs.</div>` +
+          `<div class="ssdiv">~8:00am · post-workout</div><div class="ssitem">Whey shake — 25g protein within the hour, especially after lifting.</div>` +
+          `<div class="ssdiv">10:00am · breakfast</div><div class="ssitem">${BREAKFAST.text}${mac(BREAKFAST)}</div>` +
+          `<div class="ssdiv">1:00pm · lunch</div><div class="ssitem">${m.lunch}${mac(m)}</div>` +
+          `<div class="ssdiv">~4:00pm · snack</div><div class="ssitem">Yoghurt bowl or fruit — bridges the gap so dinner isn't a stuffed 7pm blowout.</div>` +
+          `<div class="ssdiv">7:00pm · dinner (eat slowly)</div><div class="ssitem">${DINNER.text}${mac(DINNER)}</div>` +
           `<div class="mactot">3 meals total<br><b>${totK} kcal · ${totP}g P · ${totC}g C · ${totF}g F</b></div>` +
           `<div class="mactot" style="background:#E6F4EC;margin-top:6px">Daily target<br><b>${TARGET_KCAL} kcal · ${TARGET_P}g P · ${TARGET_C}g C · ${TARGET_F}g F</b></div>` +
-          `<div class="macgap">Short by <b>${TARGET_KCAL - totK} kcal and ${TARGET_P - totP}g protein</b> — close it with a top-up below.</div>` +
-          `<div class="ssdiv">top-ups</div>` +
-          TOPUPS.map(t => `<div class="ssitem">${t}</div>`).join("") +
+          `<div class="macgap">Short by <b>${TARGET_KCAL - totK} kcal and ${TARGET_P - totP}g protein</b> — the shake + snack above close it.</div>` +
           `<div class="ssnote">These are targets to <b>reach</b>, not limits to stay under. ` +
           `Protein is the one that matters most — it's what protects muscle.</div>`;
       } else {
