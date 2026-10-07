@@ -1,10 +1,29 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAY_ABBR, dateKey, MON } from '../core/dates';
 import { habitCounts, mealTotals, toggleHabit, weekDays } from '../core/plan';
 import type { HabitLog, Session, Settings } from '../core/types';
+import { tick } from '../feel';
+import { useReducedMotion } from '../motion';
 import { C, F } from '../theme';
 import { Card } from './ui';
+
+/** Habit checkbox: the tick springs in when turned on, with a light haptic. */
+function HabitBox({ on, label, onPress }: { on: boolean; label: string; onPress: () => void }) {
+  const reduced = useReducedMotion();
+  const [scale] = useState(() => new Animated.Value(on ? 1 : 0));
+  useEffect(() => {
+    if (reduced || !on) { scale.setValue(on ? 1 : 0); return; }
+    scale.setValue(0.4);
+    Animated.spring(scale, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }).start();
+  }, [on, reduced, scale]);
+  return (
+    <Pressable onPress={() => { tick(); onPress(); }} hitSlop={4} style={[s.cb, on && s.cbOn]}
+      accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={label}>
+      {on ? <Animated.Text style={[s.tick, { transform: [{ scale }] }]}>✓</Animated.Text> : null}
+    </Pressable>
+  );
+}
 
 function SessionPanel({ det }: { det: Session }) {
   return (
@@ -91,11 +110,8 @@ export function HabitsCard({ settings, habits, onChange }: { settings: Settings;
               {H.map(h => {
                 const on = !!day[h.id];
                 return (
-                  <Pressable key={h.id} onPress={() => onChange(toggleHabit(habits, key, h.id))} hitSlop={4}
-                    style={[s.cb, on && s.cbOn]} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
-                    accessibilityLabel={`${h.name}, ${DAY_ABBR[d.getDay()]} ${d.getDate()}`}>
-                    {on ? <Text style={s.tick}>✓</Text> : null}
-                  </Pressable>
+                  <HabitBox key={h.id} on={on} label={`${h.name}, ${DAY_ABBR[d.getDay()]} ${d.getDate()}`}
+                    onPress={() => onChange(toggleHabit(habits, key, h.id))} />
                 );
               })}
             </View>

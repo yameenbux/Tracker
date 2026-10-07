@@ -1,11 +1,13 @@
 // Backup format is shared with the web app (index.html), so a .txt exported from either one restores in the other.
 import { dateKey, longDate, shortDate } from './dates';
 import { legacySettings, LEGACY_START } from './legacy';
+import { cleanMeasurements, MEASURES } from './body';
 import { cleanHabits, cleanWeights, latestWeight, mergeLegacyActuals, normalizeSettings, weekDate } from './plan';
 import { fmt, toStLb } from './units';
-import type { HabitLog, Settings, TrackerState, Unit, Weights } from './types';
+import type { HabitLog, Measurements, Settings, TrackerState, Unit, Weights } from './types';
 
-export interface Restored { settings: Settings; weights: Weights; habits: HabitLog; unit?: Unit }
+/** What a backup holds. Photos are not included: they stay on the device (they'd make the file huge). */
+export interface Restored { settings: Settings; weights: Weights; habits: HabitLog; measurements: Measurements; unit?: Unit }
 
 /**
  * Accepts a .txt export (reads the JSON after the "raw backup" line) or a bare JSON file.
@@ -26,20 +28,20 @@ export function parseBackup(text: string, current: Settings | null): Restored {
   if (raw.version === 2) {
     const settings = normalizeSettings(raw.settings);
     if (!settings) throw new Error('The plan in that backup is incomplete.');
-    return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), unit };
+    return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), measurements: cleanMeasurements(raw.measurements), unit };
   }
   if (raw.actuals || raw.dailyW || raw.habits) {
     const settings = current ?? legacySettings();
     const weights = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
-    return { settings, weights, habits: cleanHabits(raw.habits), unit };
+    return { settings, weights, habits: cleanHabits(raw.habits), measurements: {}, unit };
   }
   throw new Error("That file doesn't look like a Tracker backup.");
 }
 
 const pad = (s: unknown, n: number) => { const t = String(s); return t + ' '.repeat(Math.max(0, n - t.length)); };
 
-export function buildExportText(state: TrackerState & { settings: Settings }, now = new Date()): string {
-  const { settings, weights, habits, unit } = state;
+export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings: Settings }, now = new Date()): string {
+  const { settings, weights, habits, unit, measurements } = state;
   const plan = settings.plan;
   const L: string[] = [];
   L.push('TRACKER EXPORT');
@@ -72,7 +74,16 @@ export function buildExportText(state: TrackerState & { settings: Settings }, no
   L.push('');
   H.forEach(h => L.push(pad(h.name, 16) + 'total days: ' + keys.filter(k => habits[k][h.id]).length));
   L.push('');
+  const mKeys = Object.keys(measurements).sort();
+  if (mKeys.length) {
+    L.push('MEASUREMENTS (cm)');
+    L.push(pad('Date', 13) + MEASURES.map(m => pad(m.label, 8)).join(''));
+    mKeys.forEach(k => L.push(pad(k, 13) + MEASURES.map(m => pad(measurements[k][m.key] != null ? fmt(measurements[k][m.key]!) : '-', 8)).join('')));
+    L.push('');
+  }
+  L.push('Progress photos are kept on your phone and are not included in this file.');
+  L.push('');
   L.push('--- raw backup (keep this to restore) ---');
-  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, unit }));
+  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, unit }));
   return L.join('\n');
 }
