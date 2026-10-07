@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAY_ABBR, dateKey, MON } from '../core/dates';
-import { habitCounts, mealTotals, toggleHabit, weekDays } from '../core/plan';
+import { consistency } from '../core/insights';
+import { mealTotals, toggleHabit, weekDays } from '../core/plan';
 import type { HabitLog, Session, Settings } from '../core/types';
 import { tick } from '../feel';
 import { useReducedMotion } from '../motion';
@@ -25,7 +26,7 @@ function HabitBox({ on, label, onPress }: { on: boolean; label: string; onPress:
   );
 }
 
-function SessionPanel({ det }: { det: Session }) {
+function SessionPanel({ det, onLog }: { det: Session; onLog?: () => void }) {
   return (
     <View style={s.panel}>
       <Text style={s.panelTitle}>{det.title || 'Session'}</Text>
@@ -33,6 +34,9 @@ function SessionPanel({ det }: { det: Session }) {
         ? <Text key={i} style={s.div}>{it.replace(/—|#/g, '').trim()}</Text>
         : <Text key={i} style={s.item}>{it}</Text>)}
       {det.note ? <Text style={s.note}>{det.note}</Text> : null}
+      {onLog && det.items.length > 0 && (
+        <Pressable onPress={onLog} style={s.logBtn} accessibilityRole="button"><Text style={s.logBtnTxt}>Log weights for this session</Text></Pressable>
+      )}
     </View>
   );
 }
@@ -65,13 +69,14 @@ function MealsPanel({ meals }: { meals: Settings['meals'] }) {
   );
 }
 
-export function HabitsCard({ settings, habits, onChange }: { settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void }) {
+export function HabitsCard({ settings, habits, onChange, onLogSession }: {
+  settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void;
+}) {
   const [open, setOpen] = useState<{ key: string; kind: 'sess' | 'meals' } | null>(null);
   const days = weekDays();
   const todayKey = dateKey(new Date());
   const H = settings.habits;
   const hasMeals = settings.meals.items.length > 0;
-  const weekKeys = days.map(dateKey);
   const anySession = days.some(d => { const x = settings.sessions[d.getDay()]; return x.title || x.items.length; });
 
   return (
@@ -115,16 +120,28 @@ export function HabitsCard({ settings, habits, onChange }: { settings: Settings;
                 );
               })}
             </View>
-            {open?.key === key && (open.kind === 'sess' ? <SessionPanel det={sess} /> : <MealsPanel meals={settings.meals} />)}
+            {open?.key === key && (open.kind === 'sess'
+              ? <SessionPanel det={sess} onLog={d <= new Date() && onLogSession ? () => onLogSession(key, d.getDay()) : undefined} />
+              : <MealsPanel meals={settings.meals} />)}
           </View>
         );
       })}
       {!anySession && !hasMeals && <Text style={s.empty}>Add your weekly sessions and meals in ⚙︎ Settings and they’ll show on each day.</Text>}
       {H.length > 0 && (
         <View style={s.summary}>
-          {H.map(h => { const c = habitCounts(habits, h.id, weekKeys); return (
-            <Text key={h.id} style={s.sumTxt}>{h.icon} <Text style={s.sumB}>{c.week}/7</Text> this week · {c.all} total</Text>
-          ); })}
+          {/* Consistency over the last 7 and 30 days, not streaks: one missed day doesn't wipe out a good month */}
+          {H.map(h => {
+            const w = consistency(habits, h.id, 7, new Date(), settings.plan.start);
+            const m = consistency(habits, h.id, 30, new Date(), settings.plan.start);
+            const pct = m.of ? Math.round(m.done / m.of * 100) : 0;
+            return (
+              <View key={h.id} style={s.sumItem} accessible accessibilityLabel={`${h.name}: ${w.done} of the last ${w.of} days, ${pct}% over ${m.of} days`}>
+                <Text style={s.sumTxt}>{h.icon} <Text style={s.sumB}>{w.done}/{w.of}</Text> last 7 days</Text>
+                <View style={s.bar}><View style={[s.barFill, { width: `${pct}%` }]} /></View>
+                <Text style={s.sumPct}>{pct}% of {m.of} days</Text>
+              </View>
+            );
+          })}
         </View>
       )}
     </Card>
@@ -158,6 +175,12 @@ const s = StyleSheet.create({
   gap: { backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 8, padding: 9, marginTop: 6 },
   gapTxt: { fontFamily: F.body, fontSize: 12, color: C.warnInk, lineHeight: 17 },
   empty: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, padding: 6, paddingTop: 10, lineHeight: 17 },
+  sumItem: { minWidth: '45%', flexGrow: 1 },
+  bar: { height: 5, borderRadius: 3, backgroundColor: C.line, marginTop: 5, overflow: 'hidden' },
+  barFill: { height: 5, borderRadius: 3, backgroundColor: C.coral },
+  sumPct: { fontFamily: F.body, fontSize: 11, color: C.inkSoft, marginTop: 3 },
+  logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.plum2, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
+  logBtnTxt: { fontFamily: F.bodyBold, fontSize: 12.5, color: '#fff' },
   summary: { marginTop: 12, padding: 10, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6 },
   sumTxt: { fontFamily: F.bodySemi, fontSize: 12, color: C.inkSoft },
   sumB: { fontFamily: F.display, color: C.ink },

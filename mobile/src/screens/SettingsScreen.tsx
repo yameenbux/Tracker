@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { DAY_FULL, DAY_ORDER, validKey } from '../core/dates';
-import { assessPlan, buildTargets, MAX_HABITS, normalizeSettings, planChanged } from '../core/plan';
+import { addDays, dateKey, DAY_FULL, DAY_ORDER, mondayOf, validKey } from '../core/dates';
+import { assessPlan, buildTargets, cleanBreaks, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
 import { fmt, numOrNull, toLbNum } from '../core/units';
-import type { Habit, Meal, Session, Settings, Unit } from '../core/types';
+import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/types';
 import { DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Button } from '../components/ui';
 import { C, F } from '../theme';
@@ -23,14 +23,16 @@ function Input(props: React.ComponentProps<typeof TextInput>) {
 }
 const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
-export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, lockName, onLockChange, onSave, onClose, onExport, onRestore, onReset }: {
+export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, lockName, onLockChange, onSave, onClose, onExport, onExportCsv, onRestore, onReset }: {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
   lock: boolean; lockAvailable: boolean; lockName: string; onLockChange: (on: boolean) => void;
-  onSave: (s: Settings) => void; onClose: () => void; onExport: () => void; onRestore: () => void; onReset: () => void;
+  onSave: (s: Settings) => void; onClose: () => void; onExport: () => void; onExportCsv: () => void; onRestore: () => void; onReset: () => void;
 }) {
   const insets = useSafeAreaInsets();
   const [plan, setPlan] = useState({ startKg: settings.plan.startKg as number | null, goalKg: settings.plan.goalKg as number | null,
-                                     start: settings.plan.start, goalDate: settings.plan.goalDate });
+                                     start: settings.plan.start, goalDate: settings.plan.goalDate, breaks: settings.plan.breaks ?? [] });
+  const [trackCalories, setTrackCalories] = useState(settings.trackCalories === true);
+  const setBreak = (i: number, patch: Partial<PlanBreak>) => setPlan(p => ({ ...p, breaks: p.breaks.map((b, j) => (j === i ? { ...b, ...patch } : b)) }));
   // A new event defaults to the goal date, and that is the date saved unless it's changed
   const [ev, setEv] = useState(settings.event ?? { name: '', date: settings.plan.goalDate, detail: '' });
   const [habits, setHabits] = useState<Habit[]>(settings.habits.map(h => ({ ...h })));
@@ -46,8 +48,11 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
 
   const save = () => {
     if (verdict.error) return;
-    const p = changed
-      ? { ...plan as { startKg: number; goalKg: number; start: string; goalDate: string }, targets: buildTargets(plan.startKg!, plan.goalKg!, plan.start, plan.goalDate) }
+    const p = onlyBreaksChanged(settings.plan, plan)
+      ? withBreaks(settings.plan, plan.breaks)           // keep past weeks (and any re-plan) as they are
+      : changed
+      ? { ...plan as { startKg: number; goalKg: number; start: string; goalDate: string; breaks: PlanBreak[] },
+          targets: buildTargets(plan.startKg!, plan.goalKg!, plan.start, plan.goalDate, cleanBreaks(plan.breaks)) }
       : settings.plan;   // untouched plans keep any hand-shaped target line (e.g. a held week over Christmas)
     const sess: Record<number, Session> = {};
     for (const d of DAY_ORDER) sess[d] = { ...sessions[d], items: itemsText[d].split('\n').map(x => x.trim()).filter(Boolean) };
@@ -57,6 +62,7 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
       habits: habits.filter(h => h.short.trim() || h.name.trim()),
       sessions: sess,
       meals: { items: meals, target },
+      trackCalories,
     });
     if (next) onSave(next);
   };
@@ -73,7 +79,9 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
         <Button label="Save" kind="coral" small onPress={save} disabled={!!verdict.error} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40 }} keyboardShouldPersistTaps="handled">
-        <Section title="Plan" hint={changed ? 'Saving rebuilds the target line as a straight line from start to goal. Your weigh-ins are kept.' : undefined}>
+        <Section title="Plan" hint={!changed ? undefined : onlyBreaksChanged(settings.plan, plan)
+          ? 'Saving updates the line from this week on. Past weeks stay as they are.'
+          : 'Saving rebuilds the target line from start to goal, flat during breaks. Your weigh-ins are kept.'}>
           <View style={{ alignSelf: 'flex-start', marginBottom: 12 }}><UnitToggle unit={unit} onChange={setUnit} /></View>
           <View style={s.two}>
             <Field label="Starting weight"><WeightInput unit={unit} kg={plan.startKg} live onChange={v => setPlan(p => ({ ...p, startKg: v }))} label="Starting weight" /></Field>
@@ -89,6 +97,21 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
                 (verdict.warn ? "\nThat's faster than ~1% a week, which most people find hard to sustain." : '')}
             </Text>
           </View>
+          <Text style={[s.secTitle, { fontSize: 13.5, marginTop: 16 }]}>Planned breaks</Text>
+          <Text style={s.hint}>Weeks where the target holds steady: holidays, Christmas, a hard month. Long plans with planned breaks are easier to stick to. The pace above already allows for them.</Text>
+          {plan.breaks.map((b, i) => (
+            <View key={i} style={s.breakRow}>
+              <View style={{ flex: 1 }}><DateInput value={b.start} onChange={v => setBreak(i, { start: v })} label={`Break ${i + 1} start`} /></View>
+              <View style={s.stepper}>
+                <Pressable onPress={() => setBreak(i, { weeks: Math.max(1, b.weeks - 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel="Fewer weeks"><Text style={s.stepTxt}>−</Text></Pressable>
+                <Text style={s.stepVal}>{b.weeks} wk</Text>
+                <Pressable onPress={() => setBreak(i, { weeks: Math.min(MAX_BREAK_WEEKS, b.weeks + 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel="More weeks"><Text style={s.stepTxt}>+</Text></Pressable>
+              </View>
+              <Pressable onPress={() => setPlan(p => ({ ...p, breaks: p.breaks.filter((_, j) => j !== i) }))} style={s.x} accessibilityRole="button" accessibilityLabel="Remove break"><Text style={s.xTxt}>×</Text></Pressable>
+            </View>
+          ))}
+          <Button label="+ Add break" kind="ghost" small style={{ alignSelf: 'flex-start' }}
+            onPress={() => setPlan(p => ({ ...p, breaks: [...p.breaks, { start: dateKey(addDays(mondayOf(new Date()), 28)), weeks: 1 }] }))} />
         </Section>
 
         <Section title="Event" hint="Optional: a race, holiday or date you're working towards. Leave the name blank to hide it.">
@@ -169,6 +192,16 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
           </View>
         </Section>
 
+        <Section title="Extras">
+          <View style={s.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.switchTitle}>Track calories</Text>
+              <Text style={s.hint}>One number a day. After 2 weeks, Tracker estimates what you really burn from your own data.</Text>
+            </View>
+            <Switch value={trackCalories} onValueChange={setTrackCalories} trackColor={{ true: C.coral, false: C.line }} accessibilityLabel="Track calories" />
+          </View>
+        </Section>
+
         <Section title="Privacy">
           <View style={s.switchRow}>
             <View style={{ flex: 1 }}>
@@ -182,6 +215,7 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
         <Section title="Your data" hint="Everything lives on this phone only. Export now and then. If you lose the phone, the backup is the only copy.">
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <Button label="Export backup" small onPress={onExport} />
+            <Button label="Export CSV" kind="ghost" small onPress={onExportCsv} />
             <Button label="Restore from backup" kind="ghost" small onPress={onRestore} />
           </View>
           <Pressable onPress={onReset} style={{ marginTop: 14 }} accessibilityRole="button"><Text style={s.reset}>Clear all weigh-ins and habit ticks…</Text></Pressable>
@@ -203,6 +237,11 @@ const s = StyleSheet.create({
   prevWarn: { backgroundColor: C.warnBg },
   prevErr: { backgroundColor: C.coralBg },
   prevTxt: { fontFamily: F.body, fontSize: 13, color: C.ink, lineHeight: 19 },
+  breakRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  stepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.chip, borderRadius: 10 },
+  stepBtn: { width: 34, height: 38, alignItems: 'center', justifyContent: 'center' },
+  stepTxt: { fontFamily: F.bodyBold, fontSize: 18, color: C.ink },
+  stepVal: { fontFamily: F.displaySemi, fontSize: 14, color: C.ink, minWidth: 44, textAlign: 'center' },
   habitRow: { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 8 },
   x: { width: 36, height: 40, borderRadius: 8, backgroundColor: C.coralBg, alignItems: 'center', justifyContent: 'center' },
   xTxt: { color: '#E0533D', fontFamily: F.bodyBold, fontSize: 18 },
