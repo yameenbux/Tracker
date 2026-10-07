@@ -1,6 +1,6 @@
-# Tracker — iPhone app
+# Plumb — iPhone app
 
-The native version of Tracker, built with Expo (React Native) so it can be developed without a Mac.
+The native version of Tracker, now called **Plumb**, built with Expo (React Native) so it can be developed without a Mac.
 Same idea as the web app: no account, nothing leaves the phone, and the target line is a guide, not a verdict.
 
 ## Try it on your iPhone (free, no Apple developer account)

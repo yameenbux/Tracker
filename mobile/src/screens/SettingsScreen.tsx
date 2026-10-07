@@ -196,7 +196,7 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
           <View style={s.switchRow}>
             <View style={{ flex: 1 }}>
               <Text style={s.switchTitle}>Track calories</Text>
-              <Text style={s.hint}>One number a day. After 2 weeks, Tracker estimates what you really burn from your own data.</Text>
+              <Text style={s.hint}>One number a day. After 2 weeks, Plumb estimates what you really burn from your own data.</Text>
             </View>
             <Switch value={trackCalories} onValueChange={setTrackCalories} trackColor={{ true: C.coral, false: C.line }} accessibilityLabel="Track calories" />
           </View>
@@ -206,7 +206,7 @@ export function SettingsScreen({ settings, unit, setUnit, lock, lockAvailable, l
           <View style={s.switchRow}>
             <View style={{ flex: 1 }}>
               <Text style={s.switchTitle}>Lock with {lockName}</Text>
-              <Text style={s.hint}>{lockAvailable ? `Ask for ${lockName} every time Tracker opens.` : `Set up ${lockName} or a passcode on this phone to use the lock.`}</Text>
+              <Text style={s.hint}>{lockAvailable ? `Ask for ${lockName} every time Plumb opens.` : `Set up ${lockName} or a passcode on this phone to use the lock.`}</Text>
             </View>
             <Switch value={lock} onValueChange={onLockChange} disabled={!lockAvailable} trackColor={{ true: C.coral, false: C.line }} />
           </View>

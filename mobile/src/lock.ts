@@ -22,7 +22,7 @@ export async function biometricName(): Promise<string> {
 }
 
 /** Asks for Face ID, falling back to the device passcode so nobody is locked out of their own data. */
-export async function unlock(reason = 'Unlock Tracker'): Promise<boolean> {
+export async function unlock(reason = 'Unlock Plumb'): Promise<boolean> {
   try {
     const r = await LocalAuthentication.authenticateAsync({ promptMessage: reason, fallbackLabel: 'Use passcode' });
     return r.success;

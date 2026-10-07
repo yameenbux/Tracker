@@ -39,7 +39,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     const weights = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
     return { settings, weights, habits: cleanHabits(raw.habits), measurements: {}, intake: {}, lifts: {}, unit };
   }
-  throw new Error("That file doesn't look like a Tracker backup.");
+  throw new Error("That file doesn't look like a Plumb backup.");
 }
 
 const pad = (s: unknown, n: number) => { const t = String(s); return t + ' '.repeat(Math.max(0, n - t.length)); };

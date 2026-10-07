@@ -190,7 +190,7 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
           </Pressable>
         ))}
       </View>
-      <Text style={s.tip}>Same spot, same light, same clothes each time, so the only thing that changes is you. Photos stay inside Tracker and aren’t included in backups.</Text>
+      <Text style={s.tip}>Same spot, same light, same clothes each time, so the only thing that changes is you. Photos stay inside Plumb and aren’t included in backups.</Text>
       <Button label="Done" kind="primary" onPress={onClose} style={{ marginTop: 12 }} />
     </SheetFrame>
   );

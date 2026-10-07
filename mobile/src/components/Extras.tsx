@@ -111,7 +111,7 @@ export function CaloriesCard({ settings, weights, intake, onChange }: {
       <Text style={s.line}>
         {est
           ? <>From what you ate and how your trend moved over {est.window} days, you burn about <Text style={s.b}>{est.tdee.toLocaleString()} kcal a day</Text>. Your plan’s pace means eating around <Text style={s.b}>{intakeForPace(est.tdee, pace).toLocaleString()} kcal</Text>.</>
-          : <>Log {CAL_MIN_DAYS} of the last {CAL_WINDOW} days and Tracker estimates what you really burn, from your own data rather than a formula.</>}
+          : <>Log {CAL_MIN_DAYS} of the last {CAL_WINDOW} days and Plumb estimates what you really burn, from your own data rather than a formula.</>}
       </Text>
       {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low.</Text>}
     </Card>

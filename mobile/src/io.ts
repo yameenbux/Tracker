@@ -17,7 +17,7 @@ export async function shareBackup(filename: string, text: string, kind: 'text' |
   file.create({ overwrite: true });
   file.write(text);
   await Sharing.shareAsync(file.uri, { mimeType, UTI: kind === 'csv' ? 'public.comma-separated-values-text' : 'public.plain-text',
-                                       dialogTitle: kind === 'csv' ? 'Tracker data (CSV)' : 'Tracker backup' });
+                                       dialogTitle: kind === 'csv' ? 'Plumb data (CSV)' : 'Plumb backup' });
 }
 
 /** Lets the user pick a backup file; resolves to its text, or null if they cancelled. */

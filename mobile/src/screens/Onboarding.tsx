@@ -7,6 +7,7 @@ import { fmt, lbPart, parseWeightInput, plausible, showWeight, stPart, toLbNum }
 import type { Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
 import { ProgressChart } from '../components/ProgressChart';
+import { PlumbIcon } from '../components/Logo';
 import { Button } from '../components/ui';
 import { C, F } from '../theme';
 
@@ -79,7 +80,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
         {step === 'welcome' && (
           <View style={{ paddingTop: 40 }}>
-            <Text style={s.eyebrow}>Tracker</Text>
+            <PlumbIcon size={64} />
+            <Text style={[s.eyebrow, { marginTop: 22 }]}>Plumb</Text>
             <Text style={s.h1}>A weight tracker that stays yours.</Text>
             {[
               ['🔒', 'No account, no sign-up. Your data never leaves this phone.'],
@@ -157,8 +159,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'lock' && (
           <View style={{ paddingTop: 40 }}>
             <Text style={{ fontSize: 44 }}>🔒</Text>
-            <Text style={s.h2}>Lock Tracker with {lockName}?</Text>
-            <Text style={s.sub}>Your weight and habits are personal. With the lock on, Tracker asks for {lockName} each time it opens. You can change this in Settings.</Text>
+            <Text style={s.h2}>Lock Plumb with {lockName}?</Text>
+            <Text style={s.sub}>Your weight and habits are personal. With the lock on, Plumb asks for {lockName} each time it opens. You can change this in Settings.</Text>
           </View>
         )}
       </ScrollView>

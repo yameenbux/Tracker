@@ -99,7 +99,7 @@ function Main() {
       const b = parseBackup(text, state.settings);
       const nW = Object.keys(b.weights).length, nH = Object.keys(b.habits).length;
       const ok = await confirm('Restore this backup?',
-        `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Tracker.`, 'Restore');
+        `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Plumb.`, 'Restore');
       if (!ok) return;
       // Photos aren't in backups, so the ones already on this phone are kept
       t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, measurements: b.measurements, photos: state.photos,
@@ -110,12 +110,12 @@ function Main() {
     }
   };
   const exportCsv = async () => {
-    try { await shareBackup('tracker-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
+    try { await shareBackup('plumb-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
     catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
   const exportData = async () => {
     if (!state.settings) return;
-    try { await shareBackup('tracker-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings })); }
+    try { await shareBackup('plumb-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings })); }
     catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
   const reset = async () => {
@@ -157,7 +157,7 @@ function Main() {
         <View style={s.header}>
           <View>
             <Text style={s.eyebrow}>{settings.plan.targets.length}-week plan</Text>
-            <Text style={s.h1}>Tracker</Text>
+            <Text style={s.h1}>Plumb</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <UnitToggle unit={state.unit} onChange={t.setUnit} />
