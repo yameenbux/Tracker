@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { cmToUnit, lengthToCm, MEASURES, measureSummary, photoDates, plausibleCm, POSES, setMeasureDay, setPhotoRef, showLength } from '../core/body';
 import { dateKey, longDate, parseKey, shortDate } from '../core/dates';
@@ -39,7 +39,7 @@ function trendOn(series: TrendPoint[], k: string): number | null {
   return v;
 }
 
-export function BodyCard({ settings, weights, unit, measurements, photos, onMeasurements, onPhotos }: {
+export const BodyCard = memo(function BodyCard({ settings, weights, unit, measurements, photos, onMeasurements, onPhotos }: {
   settings: Settings; weights: Weights; unit: Unit; measurements: Measurements; photos: PhotoLog;
   onMeasurements: (m: Measurements) => void; onPhotos: (p: PhotoLog) => void;
 }) {
@@ -116,7 +116,7 @@ export function BodyCard({ settings, weights, unit, measurements, photos, onMeas
       {sheet === 'photos' && <PhotoSheet photos={photos} onClose={() => setSheet(null)} onChange={onPhotos} />}
     </Card>
   );
-}
+});
 
 function MeasureSheet({ unit, measurements, onSave, onClose }: {
   unit: Unit; measurements: Measurements; onSave: (m: Measurements) => void; onClose: () => void;

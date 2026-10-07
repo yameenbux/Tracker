@@ -16,7 +16,7 @@ export function TabScreen({ eyebrow, title, onSettings, children }: {
   const insets = useSafeAreaInsets();
   return (
     <ScrollView contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16 }}
-      keyboardShouldPersistTaps="handled">
+      keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
       <View style={s.header}>
         <View style={{ flex: 1 }}>
           {eyebrow ? <Text style={s.eyebrow} maxFontSizeMultiplier={1.4}>{eyebrow}</Text> : null}

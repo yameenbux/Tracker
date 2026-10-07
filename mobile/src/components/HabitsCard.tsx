@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAY_ABBR, dateKey, MON } from '../core/dates';
 import { consistency } from '../core/insights';
@@ -69,7 +69,7 @@ function MealsPanel({ meals }: { meals: Settings['meals'] }) {
   );
 }
 
-export function HabitsCard({ settings, habits, onChange, onLogSession }: {
+export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange, onLogSession }: {
   settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void;
 }) {
   const [open, setOpen] = useState<{ key: string; kind: 'sess' | 'meals' } | null>(null);
@@ -148,7 +148,7 @@ export function HabitsCard({ settings, habits, onChange, onLogSession }: {
       )}
     </Card>
   );
-}
+});
 
 const s = StyleSheet.create({
   cap: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, paddingHorizontal: 4, marginTop: -4, marginBottom: 8 },

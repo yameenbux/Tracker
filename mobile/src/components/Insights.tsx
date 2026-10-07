@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { DAY_ABBR, dateKey, parseKey } from '../core/dates';
@@ -69,7 +69,7 @@ export function WeekDots({ log, ids, today = new Date() }: { log: HabitLog; ids:
 }
 
 /** Trend change over 3, 7, 14 and 30 days (Bevel-style table). */
-export function ChangeTable({ series, unit }: { series: TrendPoint[]; unit: Unit }) {
+export const ChangeTable = memo(function ChangeTable({ series, unit }: { series: TrendPoint[]; unit: Unit }) {
   const rows = changeTable(series);
   return (
     <Card title="Trend change">
@@ -88,10 +88,10 @@ export function ChangeTable({ series, unit }: { series: TrendPoint[]; unit: Unit
       <Text style={s.foot}>Change in your trend weight, so a salty dinner doesn’t show up as a gain. A dash means you weren’t tracking that far back.</Text>
     </Card>
   );
-}
+});
 
 /** 30-day dot grid per habit (MacroFactor-style), with the consistency figure beside it. */
-export function HabitGrids({ settings, habits }: { settings: Settings; habits: HabitLog }) {
+export const HabitGrids = memo(function HabitGrids({ settings, habits }: { settings: Settings; habits: HabitLog }) {
   if (!settings.habits.length) return null;
   return (
     <Card title="Last 30 days">
@@ -114,7 +114,7 @@ export function HabitGrids({ settings, habits }: { settings: Settings; habits: H
       <Text style={s.foot}>Consistency, not streaks: a missed day is one empty square, not a reset to zero.</Text>
     </Card>
   );
-}
+});
 
 /** Today's habits as large tap targets, plus today's session if one is planned. */
 export function TodayHabits({ settings, habits, onChange, onOpenSession }: {

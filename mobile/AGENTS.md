@@ -25,8 +25,13 @@ Run lint and typecheck before declaring any task done.
 
 ## Navigation & Routing
 
-> This app currently has three screens (setup, dashboard, settings) and switches between them with React state and a
-> `Modal` in `src/App.tsx`. Move to Expo Router if it grows beyond that.
+> This app uses a small state-based shell instead of Expo Router: onboarding, then four tabs (Today, Trend, Habits, Body)
+> rendered by `src/App.tsx` with the tab bar in `src/components/Shell.tsx`, Settings in a pageSheet `Modal` with its own
+> sub-pages, and quick-entry tasks in the shared `src/components/Sheet.tsx`. Keep to that pattern unless deep links or
+> pushed detail screens are needed; then move to Expo Router.
+>
+> Accessibility rules used across the app: text colours from `theme.ts` (`coralInk`, `mintInk`, `danger`; never `coral`
+> or `mint` as text), 44pt minimum touch targets, `maxFontSizeMultiplier` on large numbers, and a label on every control.
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.

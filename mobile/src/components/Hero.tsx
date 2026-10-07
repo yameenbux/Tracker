@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
@@ -7,7 +8,7 @@ import type { Settings, Unit, Weights } from '../core/types';
 import { useAnimatedNumber, useAnimatedPercent } from '../motion';
 import { C, F } from '../theme';
 
-export function Hero({ settings, weights, unit }: { settings: Settings; weights: Weights; unit: Unit }) {
+export const Hero = memo(function Hero({ settings, weights, unit }: { settings: Settings; weights: Weights; unit: Unit }) {
   const plan = settings.plan;
   const lw = latestWeight(plan, weights);
   const cur = lw ? lw.kg : plan.startKg;
@@ -74,7 +75,7 @@ export function Hero({ settings, weights, unit }: { settings: Settings; weights:
       </View>
     </LinearGradient>
   );
-}
+});
 
 const s = StyleSheet.create({
   hero: { borderRadius: 22, paddingTop: 24, paddingHorizontal: 22, paddingBottom: 20, marginBottom: 16 },

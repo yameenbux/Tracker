@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
 import { daysBetween, parseKey, shortDate } from '../core/dates';
@@ -25,7 +25,7 @@ function smooth(pts: { x: number; y: number }[]): string {
   return d;
 }
 
-export function ProgressChart({ settings, weights, unit, fixedRange }: { settings: Settings; weights: Weights; unit: Unit; fixedRange?: boolean }) {
+export const ProgressChart = memo(function ProgressChart({ settings, weights, unit, fixedRange }: { settings: Settings; weights: Weights; unit: Unit; fixedRange?: boolean }) {
   const [range, setRange] = useState<ChartRange>('plan');
   const [w, setW] = useState(0);
   const plan = settings.plan;
@@ -107,7 +107,7 @@ export function ProgressChart({ settings, weights, unit, fixedRange }: { setting
       </View>
     </Card>
   );
-}
+});
 
 const s = StyleSheet.create({
   legend: { flexDirection: 'row', gap: 14, paddingHorizontal: 4, paddingBottom: 6, alignItems: 'center' },

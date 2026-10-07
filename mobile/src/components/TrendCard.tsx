@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
 import { behindBy, replanFromHere, weightSeries } from '../core/plan';
@@ -13,7 +14,7 @@ const change = (kg: number, unit: Unit, dp = 2) => showChange(kg, unit, dp);
  * Trend weight: what the scale is really doing once daily water swings are smoothed out,
  * the honest weekly rate, and why a sudden jump on the scale isn't fat.
  */
-export function TrendCard({ settings, weights, unit, onReplan }: {
+export const TrendCard = memo(function TrendCard({ settings, weights, unit, onReplan }: {
   settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void;
 }) {
   const plan = settings.plan;
@@ -87,7 +88,7 @@ export function TrendCard({ settings, weights, unit, onReplan }: {
         Latest weigh-in: {showWeight(last.kg, unit)}.</Text>
     </Card>
   );
-}
+});
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10, paddingHorizontal: 4 },
