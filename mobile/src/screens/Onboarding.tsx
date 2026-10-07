@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, mondayOf, parseKey } from '../core/dates';
 import { assessPlan, buildTargets, defaultSettings, goalDateForPace, PACES, PaceId } from '../core/plan';
@@ -7,6 +7,7 @@ import { fmt, lbPart, parseWeightInput, plausible, showWeight, stPart, toLbNum }
 import type { Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
 import { ProgressChart } from '../components/ProgressChart';
+import { Icon, IconName } from '../components/Icons';
 import { PlumbIcon } from '../components/Logo';
 import { Button } from '../components/ui';
 import { C, F } from '../theme';
@@ -27,7 +28,7 @@ function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onCh
   };
   const box = (i: 0 | 1, w: number, label: string, suffix: string) => (
     <View style={s.bigBox}>
-      <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { width: w }]} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'}
+      <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'}
         placeholder="0" placeholderTextColor={C.line} autoFocus={i === 0} accessibilityLabel={label} />
       <Text style={s.bigUnit}>{suffix}</Text>
     </View>
@@ -37,10 +38,11 @@ function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onCh
     : <View style={s.bigRow}>{box(0, 70, 'Stone', 'st')}{box(1, 100, 'Pounds', 'lb')}</View>;
 }
 
-export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onRestore }: {
+export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onRestore, notice }: {
   unit: Unit; setUnit: (u: Unit) => void; lockAvailable: boolean; lockName: string;
-  onDone: (settings: Settings, lock: boolean) => void; onRestore: () => void;
+  onDone: (settings: Settings, lock: boolean) => void; onRestore: () => void; notice?: string;
 }) {
+  const [why, setWhy] = useState(false);
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>('welcome');
   const [startKg, setStartKg] = useState<number | null>(null);
@@ -70,25 +72,34 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   };
 
   return (
-    <View style={[s.wrap, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 16 }]}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[s.wrap, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 16 }]}>
       {step !== 'welcome' && (
         <View style={s.top}>
-          <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back"><Text style={s.back}>‹</Text></Pressable>
-          <View style={s.progress}><View style={[s.progressFill, { width: `${(idx / (order.length - 1)) * 100}%` }]} /></View>
+          <Pressable onPress={back} style={s.backBtn} accessibilityRole="button" accessibilityLabel="Back"><Icon name="back" size={26} color={C.ink} strokeWidth={2.4} /></Pressable>
+          <View style={s.progress} accessibilityRole="progressbar" accessibilityLabel="Setup progress"
+            accessibilityValue={{ min: 1, max: order.length, now: idx + 1, text: `Step ${idx + 1} of ${order.length}` }}>
+            <View style={[s.progressFill, { width: `${(idx / (order.length - 1)) * 100}%` }]} />
+          </View>
         </View>
       )}
-      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {step === 'welcome' && (
           <View style={{ paddingTop: 40 }}>
             <PlumbIcon size={64} />
             <Text style={[s.eyebrow, { marginTop: 22 }]}>Plumb</Text>
             <Text style={s.h1}>A weight tracker that stays yours.</Text>
-            {[
-              ['🔒', 'No account, no sign-up. Your data never leaves this phone.'],
-              ['📉', 'A steady target line, with a pace you can actually keep.'],
-              ['🧭', 'The line is a guide, not a verdict. Bad weeks are part of it.'],
-            ].map(([i, t]) => (
-              <View key={i} style={s.promise}><Text style={s.promiseIcon}>{i}</Text><Text style={s.promiseTxt}>{t}</Text></View>
+            {notice && (
+              <View style={s.notice} accessibilityRole="alert"><Icon name="shield" size={20} color={C.warnInk} /><Text style={s.noticeTxt}>{notice}</Text></View>
+            )}
+            {([
+              ['lock', 'No account, no sign-up. Your data never leaves this phone.'],
+              ['trend', 'A trend that smooths out daily water swings, so you see what’s really happening.'],
+              ['target', 'A steady target line at a pace you can keep. A guide, not a verdict.'],
+            ] as [IconName, string][]).map(([i, t]) => (
+              <View key={i} style={s.promise}>
+                <View style={s.promiseIcon}><Icon name={i} size={20} color={C.plum2} /></View>
+                <Text style={s.promiseTxt}>{t}</Text>
+              </View>
             ))}
           </View>
         )}
@@ -135,7 +146,9 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
             {pace === 'fast' && <Text style={s.warn}>1% of body weight a week is the upper end. Most people can’t hold it for long, and it costs more muscle. Fine for a short push.</Text>}
             <View style={s.startRow}>
               <Text style={s.sub}>Starting {longDate(start)}</Text>
-              <Pressable onPress={() => setEditStart(e => !e)} hitSlop={8}><Text style={s.link}>{editStart ? 'Done' : 'Change'}</Text></Pressable>
+              <Pressable onPress={() => setEditStart(e => !e)} style={s.linkBtn} accessibilityRole="button" accessibilityLabel={editStart ? 'Done changing start date' : 'Change start date'}>
+                <Text style={s.link}>{editStart ? 'Done' : 'Change'}</Text>
+              </Pressable>
             </View>
             {editStart && <DateInput value={start} onChange={setStart} label="Start date" />}
           </>
@@ -144,21 +157,36 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'plan' && settings && (
           <>
             <Text style={s.eyebrow}>Your plan is ready</Text>
-            <Text style={s.h2}>Reach <Text style={{ color: C.coral }}>{showWeight(settings.plan.goalKg, unit)}</Text> by {longDate(settings.plan.goalDate)}</Text>
+            <Text style={s.h2}>Reach <Text style={{ color: C.coralInk }}>{showWeight(settings.plan.goalKg, unit)}</Text> by {longDate(settings.plan.goalDate)}</Text>
             <View style={{ marginTop: 16 }}>
-              <ProgressChart settings={settings} weights={{ [start]: settings.plan.startKg }} unit={unit} />
+              <ProgressChart settings={settings} weights={{ [start]: settings.plan.startKg }} unit={unit} fixedRange />
             </View>
             {[
               `${settings.plan.targets.length} weeks at about ${rate(pct)} a week`,
-              'Weigh in once a week, same day, same conditions',
-              'Add habits, sessions and meals later from ⚙︎ Settings',
-            ].map(t => <Text key={t} style={s.bullet}>✓  {t}</Text>)}
+              'Weigh in most mornings: more weigh-ins, clearer trend',
+              'Habits, sessions and meals can be added later in Settings',
+            ].map(t => (
+              <View key={t} style={s.bulletRow}><Icon name="check" size={18} color={C.mintInk} strokeWidth={2.6} /><Text style={s.bullet}>{t}</Text></View>
+            ))}
+            <Pressable onPress={() => setWhy(w => !w)} style={s.why} accessibilityRole="button" accessibilityState={{ expanded: why }}>
+              <Icon name="info" size={18} color={C.plum2} />
+              <Text style={s.whyTxt}>How is this worked out?</Text>
+            </Pressable>
+            {why && (
+              <View style={s.whyBox}>
+                <Text style={s.whyBody}>
+                  Your pace is a share of body weight per week: {PACES.find(x => x.id === pace)!.label} is {pct}%, so from {showWeight(settings.plan.startKg, unit)} that’s about {rate(pct)} a week.
+                  {'\n\n'}Dividing the {showWeight(settings.plan.startKg - settings.plan.goalKg, unit).replace(/^0 st /, '')} you want to lose by that pace gives {settings.plan.targets.length - 1} weeks, so the goal date is {longDate(settings.plan.goalDate)}.
+                  {'\n\n'}The dashed line drops by the same amount each week. Your own weigh-ins are smoothed into a trend, so a salty dinner or a hard workout won’t knock you off it.
+                </Text>
+              </View>
+            )}
           </>
         )}
 
         {step === 'lock' && (
           <View style={{ paddingTop: 40 }}>
-            <Text style={{ fontSize: 44 }}>🔒</Text>
+            <View style={s.lockBadge}><Icon name="lock" size={34} color={C.plum2} strokeWidth={2.2} /></View>
             <Text style={s.h2}>Lock Plumb with {lockName}?</Text>
             <Text style={s.sub}>Your weight and habits are personal. With the lock on, Plumb asks for {lockName} each time it opens. You can change this in Settings.</Text>
           </View>
@@ -184,41 +212,50 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           <Pressable onPress={() => finish(false)} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Not now</Text></Pressable>
         </>}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20 },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 14, height: 36 },
-  back: { fontSize: 34, color: C.ink, lineHeight: 36, paddingRight: 4 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 44 },
+  backBtn: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   progress: { flex: 1, height: 6, borderRadius: 3, backgroundColor: C.chip, overflow: 'hidden' },
   progressFill: { height: 6, backgroundColor: C.coral, borderRadius: 3 },
   body: { paddingTop: 24, paddingBottom: 24 },
-  eyebrow: { fontFamily: F.bodySemi, fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase', color: C.coral },
+  eyebrow: { fontFamily: F.bodySemi, fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase', color: C.coralInk },
   h1: { fontFamily: F.display, fontSize: 34, lineHeight: 40, color: C.ink, marginTop: 8, marginBottom: 26, letterSpacing: -0.5 },
   h2: { fontFamily: F.display, fontSize: 28, lineHeight: 34, color: C.ink, letterSpacing: -0.5, marginTop: 6 },
   sub: { fontFamily: F.body, fontSize: 15, color: C.inkSoft, marginTop: 8, lineHeight: 21 },
   promise: { flexDirection: 'row', gap: 14, alignItems: 'flex-start', backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16, marginBottom: 10 },
-  promiseIcon: { fontSize: 22 },
+  promiseIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: C.panel, alignItems: 'center', justifyContent: 'center' },
   promiseTxt: { flex: 1, fontFamily: F.bodyMed, fontSize: 15, color: C.ink, lineHeight: 21 },
   bigRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 40, marginBottom: 24 },
   bigBox: { flexDirection: 'row', alignItems: 'baseline', borderBottomWidth: 2, borderBottomColor: C.line, paddingBottom: 6 },
   bigIn: { fontFamily: F.display, fontSize: 56, color: C.ink, textAlign: 'center', padding: 0 },
   bigUnit: { fontFamily: F.bodySemi, fontSize: 18, color: C.inkSoft, marginLeft: 4 },
-  err: { fontFamily: F.bodySemi, fontSize: 13.5, color: '#B2392A', textAlign: 'center', marginBottom: 10, lineHeight: 19 },
+  err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, textAlign: 'center', marginBottom: 10, lineHeight: 19 },
   warn: { fontFamily: F.body, fontSize: 13, color: C.warnInk, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 12, padding: 12, lineHeight: 19, marginTop: 4 },
   pace: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.line, borderRadius: 16, padding: 16, marginTop: 10 },
   paceOn: { borderColor: C.plum2, backgroundColor: '#F7F3FB' },
   paceName: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
   paceMeta: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 3 },
   rec: { backgroundColor: C.mintBg, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
-  recTxt: { fontFamily: F.bodyBold, fontSize: 10.5, color: C.mint },
+  recTxt: { fontFamily: F.bodyBold, fontSize: 11.5, color: C.mintInk },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: C.line },
   radioOn: { borderColor: C.plum2, borderWidth: 7 },
   startRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14 },
-  link: { fontFamily: F.bodyBold, fontSize: 14, color: C.coral },
-  bullet: { fontFamily: F.bodyMed, fontSize: 14.5, color: C.ink, marginTop: 8 },
+  link: { fontFamily: F.bodyBold, fontSize: 15, color: C.coralInk },
+  bulletRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
+  bullet: { flex: 1, fontFamily: F.bodyMed, fontSize: 15, color: C.ink },
+  why: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginTop: 14, alignSelf: 'flex-start', paddingHorizontal: 12, borderRadius: 999, backgroundColor: C.panel },
+  whyTxt: { fontFamily: F.bodySemi, fontSize: 14, color: C.plum2 },
+  whyBox: { marginTop: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 },
+  whyBody: { fontFamily: F.body, fontSize: 14, color: C.ink, lineHeight: 20 },
+  lockBadge: { width: 72, height: 72, borderRadius: 20, backgroundColor: C.panel, alignItems: 'center', justifyContent: 'center' },
+  notice: { flexDirection: 'row', gap: 10, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 14, padding: 14, marginBottom: 14 },
+  noticeTxt: { flex: 1, fontFamily: F.body, fontSize: 14, color: C.warnInk, lineHeight: 20 },
+  linkBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
   footer: { paddingTop: 8 },
   secondary: { paddingVertical: 14, alignItems: 'center' },
   secondaryTxt: { fontFamily: F.bodyBold, fontSize: 14.5, color: C.ink },

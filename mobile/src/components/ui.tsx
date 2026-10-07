@@ -22,15 +22,15 @@ export function Button({ label, onPress, kind = 'primary', small, disabled, styl
   return (
     <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityState={{ disabled }}
       style={({ pressed }) => [s.btn, s[kind], small && s.btnSmall, (pressed || disabled) && { opacity: disabled ? 0.45 : 0.85 }, style]}>
-      <Text style={[s.btnTxt, small && s.btnTxtSmall, (kind === 'ghost' || kind === 'danger') && { color: kind === 'danger' ? '#E0533D' : C.ink }]}>{label}</Text>
+      <Text maxFontSizeMultiplier={1.5} style={[s.btnTxt, small && s.btnTxtSmall, (kind === 'ghost' || kind === 'danger' || kind === 'coral') && { color: kind === 'danger' ? C.danger : C.ink }]}>{label}</Text>
     </Pressable>
   );
 }
 
 /** Row of mutually exclusive choices (chart range, pace). */
-export function Tabs<T extends string>({ value, options, onChange }: { value: T; options: { id: T; label: string }[]; onChange: (v: T) => void }) {
+export function Tabs<T extends string>({ value, options, onChange, label }: { value: T; options: { id: T; label: string }[]; onChange: (v: T) => void; label?: string }) {
   return (
-    <View style={s.tabs} accessibilityRole="tablist">
+    <View style={s.tabs} accessibilityRole="tablist" accessibilityLabel={label}>
       {options.map(o => (
         <Pressable key={o.id} onPress={() => onChange(o.id)} style={[s.tab, value === o.id && s.tabOn]}
           accessibilityRole="tab" accessibilityState={{ selected: value === o.id }}>
@@ -45,7 +45,7 @@ export function Pill({ kg, text }: { kg: number | null; text: string }) {
   const good = kg != null && kg <= 0.05;
   return (
     <View style={[s.pill, kg == null ? null : good ? s.pillGood : s.pillOver]}>
-      <Text style={[s.pillTxt, { color: kg == null ? C.inkSoft : good ? C.mint : '#E0533D' }]}>{text}</Text>
+      <Text style={[s.pillTxt, { color: kg == null ? C.inkSoft : good ? C.mintInk : C.danger }]}>{text}</Text>
     </View>
   );
 }
@@ -53,22 +53,22 @@ export function Pill({ kg, text }: { kg: number | null; text: string }) {
 const s = StyleSheet.create({
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingTop: 16, paddingHorizontal: 14, paddingBottom: 12, marginBottom: 16 },
   cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 8 },
-  cardTitle: { fontFamily: F.displaySemi, fontSize: 15, color: C.ink },
-  btn: { borderRadius: 14, paddingVertical: 15, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
-  btnSmall: { borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
+  cardTitle: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
+  btn: { borderRadius: 14, minHeight: 52, paddingVertical: 15, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
+  btnSmall: { borderRadius: 12, minHeight: 44, paddingVertical: 8, paddingHorizontal: 14 },
   primary: { backgroundColor: C.plum2 },
   coral: { backgroundColor: C.coral },
   ghost: { backgroundColor: C.chip },
   danger: { backgroundColor: C.coralBg },
-  btnTxt: { fontFamily: F.bodyBold, fontSize: 15, color: '#fff' },
-  btnTxtSmall: { fontSize: 12.5 },
+  btnTxt: { fontFamily: F.bodyBold, fontSize: 16, color: '#fff' },
+  btnTxtSmall: { fontSize: 14 },
   tabs: { flexDirection: 'row', backgroundColor: C.chip, borderRadius: 999, padding: 3, alignSelf: 'flex-start' },
-  tab: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999 },
+  tab: { minHeight: 36, minWidth: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 12, borderRadius: 999 },
   tabOn: { backgroundColor: C.ink },
-  tabTxt: { fontFamily: F.bodySemi, fontSize: 12, color: C.inkSoft },
+  tabTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   tabTxtOn: { color: '#fff' },
   pill: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: 999 },
   pillGood: { backgroundColor: C.mintBg },
   pillOver: { backgroundColor: C.coralBg },
-  pillTxt: { fontFamily: F.displaySemi, fontSize: 12 },
+  pillTxt: { fontFamily: F.displaySemi, fontSize: 13 },
 });

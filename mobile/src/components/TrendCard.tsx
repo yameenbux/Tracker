@@ -2,17 +2,12 @@ import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
 import { behindBy, replanFromHere, weightSeries } from '../core/plan';
 import { latestJump, projectedGoalDate, trendSeries, weeklyRate } from '../core/trend';
-import { showWeight, toLbNum } from '../core/units';
+import { showChange, showWeight } from '../core/units';
 import type { Plan, Settings, Unit, Weights } from '../core/types';
 import { C, F } from '../theme';
 import { Button, Card } from './ui';
 
-/** Small weight change in the chosen unit, signed: "−0.42 kg" / "+0.9 lb". */
-function change(kg: number, unit: Unit, dp = 2): string {
-  const v = unit === 'kg' ? kg : toLbNum(kg);
-  const sign = v > 0.0049 ? '+' : v < -0.0049 ? '−' : '';
-  return sign + Math.abs(v).toFixed(unit === 'kg' ? dp : 1) + (unit === 'kg' ? ' kg' : ' lb');
-}
+const change = (kg: number, unit: Unit, dp = 2) => showChange(kg, unit, dp);
 
 /**
  * Trend weight: what the scale is really doing once daily water swings are smoothed out,
@@ -25,7 +20,7 @@ export function TrendCard({ settings, weights, unit, onReplan }: {
   const series = trendSeries(weightSeries(plan, weights));
   if (series.length < 2) {
     return (
-      <Card title="Trend">
+      <Card title="Your trend">
         <Text style={s.empty}>Your trend appears after a couple of weigh-ins. Weighing in most days gives the clearest picture. Daily ups and downs get smoothed out.</Text>
       </Card>
     );
@@ -40,16 +35,16 @@ export function TrendCard({ settings, weights, unit, onReplan }: {
   const replan = rate && behind > Math.max(1, last.trend * 0.01) ? replanFromHere(plan, last.trend) : null;
 
   return (
-    <Card title="Trend">
+    <Card title="Your trend">
       <View style={s.row}>
         <View style={s.cell}>
           <Text style={s.k}>Trend weight</Text>
-          <Text style={s.big}>{showWeight(last.trend, unit)}</Text>
+          <Text style={s.big} maxFontSizeMultiplier={1.3} adjustsFontSizeToFit numberOfLines={1}>{showWeight(last.trend, unit)}</Text>
         </View>
         <View style={s.cell}>
           <Text style={s.k}>Per week</Text>
           {rate
-            ? <Text style={[s.big, { color: rate.perWeek < -0.05 ? C.mint : rate.perWeek > 0.05 ? '#E0533D' : C.ink }]}>{change(rate.perWeek, unit)}</Text>
+            ? <Text style={[s.big, { color: rate.perWeek < -0.05 ? C.mintInk : rate.perWeek > 0.05 ? C.coralInk : C.ink }]}>{change(rate.perWeek, unit)}</Text>
             : <Text style={s.pending}>Not enough data yet</Text>}
         </View>
       </View>
@@ -62,7 +57,7 @@ export function TrendCard({ settings, weights, unit, onReplan }: {
             : rate.perWeek > 0.05
               ? <>Your trend has crept up over the last {rate.days} days. One or two weeks like this is normal; a month is worth a look.</>
               : last.trend <= plan.goalKg
-                ? <>You’re at your goal. 🎉</>
+                ? <>You’re at your goal. Holding it for a few weeks is the next win.</>
                 : <>Your trend is roughly flat over the last {rate.days} days.</>
           : <>The weekly rate shows once you have 4 weigh-ins spread over 10 days or more.</>}
         {rate && pct > 1 ? ' That pace is above 1% of body weight a week; going a little slower protects muscle.' : ''}
@@ -97,17 +92,17 @@ export function TrendCard({ settings, weights, unit, onReplan }: {
 const s = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10, paddingHorizontal: 4 },
   cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 13, padding: 12 },
-  k: { fontFamily: F.bodySemi, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: C.inkSoft, marginBottom: 5 },
-  big: { fontFamily: F.display, fontSize: 20, color: C.ink },
+  k: { fontFamily: F.bodySemi, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: C.inkSoft, marginBottom: 5 },
+  big: { fontFamily: F.display, fontSize: 21, color: C.ink },
   pending: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft, marginTop: 4 },
-  line: { fontFamily: F.body, fontSize: 13.5, color: C.ink, lineHeight: 20, paddingHorizontal: 4, marginTop: 12 },
+  line: { fontFamily: F.body, fontSize: 14.5, color: C.ink, lineHeight: 20, paddingHorizontal: 4, marginTop: 12 },
   b: { fontFamily: F.bodyBold },
   jump: { marginTop: 12, marginHorizontal: 4, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 12, padding: 12 },
   jumpDown: { backgroundColor: C.mintBg, borderColor: '#BFEBD8' },
-  jumpTitle: { fontFamily: F.bodyBold, fontSize: 13, color: C.ink, marginBottom: 4 },
-  jumpTxt: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 18 },
-  replan: { marginTop: 12, marginHorizontal: 4, backgroundColor: '#F3EEFA', borderWidth: 1, borderColor: '#E4DAF2', borderRadius: 12, padding: 12 },
-  replanTxt: { fontFamily: F.body, fontSize: 12.5, color: C.ink, lineHeight: 18 },
-  foot: { fontFamily: F.body, fontSize: 11.5, color: C.inkSoft, lineHeight: 16, paddingHorizontal: 4, marginTop: 10 },
-  empty: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 19, paddingHorizontal: 4 },
+  jumpTitle: { fontFamily: F.bodyBold, fontSize: 14, color: C.ink, marginBottom: 4 },
+  jumpTxt: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, lineHeight: 18 },
+  replan: { marginTop: 12, marginHorizontal: 4, backgroundColor: C.panel, borderWidth: 1, borderColor: '#E4DAF2', borderRadius: 12, padding: 12 },
+  replanTxt: { fontFamily: F.body, fontSize: 13.5, color: C.ink, lineHeight: 18 },
+  foot: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 18, paddingHorizontal: 4, marginTop: 10 },
+  empty: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19, paddingHorizontal: 4 },
 });

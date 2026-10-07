@@ -34,10 +34,12 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), measurements: cleanMeasurements(raw.measurements),
              intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit };
   }
-  if (raw.actuals || raw.dailyW || raw.habits) {
-    const settings = current ?? legacySettings();
+  // Old web-app exports: identified by their weight fields, never by habits alone
+  if (raw.actuals || raw.dailyW) {
     const weights = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
-    return { settings, weights, habits: cleanHabits(raw.habits), measurements: {}, intake: {}, lifts: {}, unit };
+    const habits = cleanHabits(raw.habits);
+    if (!Object.keys(weights).length && !Object.keys(habits).length) throw new Error('That backup has no weigh-ins or habits in it.');
+    return { settings: current ?? legacySettings(), weights, habits, measurements: {}, intake: {}, lifts: {}, unit };
   }
   throw new Error("That file doesn't look like a Plumb backup.");
 }
@@ -48,10 +50,10 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   const { settings, weights, habits, unit, measurements, intake, lifts } = state;
   const plan = settings.plan;
   const L: string[] = [];
-  L.push('TRACKER EXPORT');
+  L.push('PLUMB EXPORT');
   L.push('Generated: ' + now.toLocaleString());
   L.push('');
-  L.push('Goal:  ' + fmt(plan.goalKg) + ' kg  (' + toStLb(plan.goalKg, 0).replace(/\.0/, '') + ')  by ' + longDate(plan.goalDate));
+  L.push('Goal:  ' + fmt(plan.goalKg) + ' kg  (' + toStLb(plan.goalKg, 0) + ')  by ' + longDate(plan.goalDate));
   L.push('Start: ' + fmt(plan.startKg) + ' kg  on ' + longDate(plan.start));
   const lw = latestWeight(plan, weights);
   if (lw) L.push('Latest: ' + fmt(lw.kg) + ' kg  (' + longDate(lw.k) + ')');

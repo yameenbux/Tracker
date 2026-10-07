@@ -4,7 +4,7 @@ import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } 
 import { daysBetween, parseKey, shortDate } from '../core/dates';
 import { chartRange, ChartRange, chartWindow, latestWeight, weekDate, targetAt, weightSeries } from '../core/plan';
 import { trendSeries } from '../core/trend';
-import { KG_PER_LB } from '../core/units';
+import { KG_PER_LB, showWeight } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
 import { C, F } from '../theme';
 import { Card, Tabs } from './ui';
@@ -25,7 +25,7 @@ function smooth(pts: { x: number; y: number }[]): string {
   return d;
 }
 
-export function ProgressChart({ settings, weights, unit }: { settings: Settings; weights: Weights; unit: Unit }) {
+export function ProgressChart({ settings, weights, unit, fixedRange }: { settings: Settings; weights: Weights; unit: Unit; fixedRange?: boolean }) {
   const [range, setRange] = useState<ChartRange>('plan');
   const [w, setW] = useState(0);
   const plan = settings.plan;
@@ -45,24 +45,29 @@ export function ProgressChart({ settings, weights, unit }: { settings: Settings;
   const x = (d: Date) => M.l + iw * daysBetween(from, d) / spanDays;
   const y = (kg: number) => M.t + ih * (1 - (kg - yr.min) / (yr.max - yr.min));
   const pts = series.map(p => ({ x: x(p.d), y: y(p.trend) }));      // trend line
-  const raw = series.map(p => ({ x: x(p.d), y: y(p.kg) }));         // individual weigh-ins as dots
+  // Individual weigh-ins as dots; on long ranges keep every nth so the chart stays light (the trend line uses all of them)
+  const every = Math.max(1, Math.ceil(series.length / 120));
+  const raw = series.filter((_, i) => i % every === 0 || i === series.length - 1).map(p => ({ x: x(p.d), y: y(p.kg) }));
   const grid: number[] = [];
   for (let v = yr.min; v <= yr.max; v += yr.step) grid.push(v);
   const ev = settings.event && inWin(parseKey(settings.event.date)) ? parseKey(settings.event.date) : null;
 
-  const summary = series.length
-    ? `${series.length} weigh-ins shown, from ${shortDate(series[0].d)} to ${shortDate(series[series.length - 1].d)}`
-    : 'No weigh-ins in this range yet';
+  const first = series[0], lastP = series[series.length - 1];
+  const summary = series.length >= 2
+    ? `${series.length} weigh-ins from ${shortDate(first.d)} to ${shortDate(lastP.d)}. Trend went from ${showWeight(first.trend, unit)} to ${showWeight(lastP.trend, unit)}. ` +
+      `Target on ${shortDate(lastP.d)} is ${showWeight(targetAt(plan, lastP.d), unit)}; goal ${showWeight(plan.goalKg, unit)}.`
+    : series.length === 1 ? `One weigh-in: ${showWeight(first.kg, unit)} on ${shortDate(first.d)}. Target line runs to ${showWeight(plan.goalKg, unit)}.`
+    : `No weigh-ins in this range yet. Target line runs to ${showWeight(plan.goalKg, unit)}.`;
 
   return (
-    <Card title="Progress" right={
-      <Tabs value={range} onChange={setRange} options={[{ id: '4w', label: '4W' }, { id: '12w', label: '12W' }, { id: 'plan', label: 'Plan' }]} />
+    <Card title="Progress" right={fixedRange ? undefined :
+      <Tabs value={range} onChange={setRange} label="Chart range" options={[{ id: '4w', label: '4W' }, { id: '12w', label: '12W' }, { id: 'plan', label: 'Plan' }]} />
     }>
       <View style={s.legend}>
         <View style={s.lg}><View style={s.swLine} /><Text style={s.lgTxt}>Trend</Text></View>
         <View style={s.lg}><View style={s.swDot} /><Text style={s.lgTxt}>Weigh-ins</Text></View>
         <View style={s.lg}><View style={s.swDash} /><Text style={s.lgTxt}>Target</Text></View>
-        <Text style={[s.lgTxt, { marginLeft: 'auto', color: C.target }]}>{unit === 'kg' ? 'kg' : 'lb'}</Text>
+        <Text style={[s.lgTxt, { marginLeft: 'auto', color: C.inkSoft }]}>{unit === 'kg' ? 'kg' : 'lb'}</Text>
       </View>
       <View onLayout={e => setW(e.nativeEvent.layout.width)} accessible accessibilityLabel={'Progress chart. ' + summary}>
         {w > 0 && (
@@ -85,7 +90,7 @@ export function ProgressChart({ settings, weights, unit }: { settings: Settings;
               <Path d={tWin.map((p, i) => `${i ? 'L' : 'M'}${x(p.d)},${y(p.kg)}`).join(' ')} fill="none" stroke={C.target} strokeWidth={2} strokeDasharray="5 5" />
             )}
             {ev && <Line x1={x(ev)} x2={x(ev)} y1={M.t + 8} y2={M.t + ih} stroke={C.mint} strokeWidth={1.5} strokeDasharray="3 3" opacity={0.7} />}
-            {ev && <SvgText x={x(ev)} y={M.t + 2} fontSize={10} textAnchor="middle">🏁</SvgText>}
+            {ev && <Circle cx={x(ev)} cy={M.t + 4} r={4} fill={C.mint} />}
             {pts.length >= 2 && (
               <>
                 {/* Shade under the line only once it spans a fair width; a few close points would draw a thin bar */}
@@ -95,7 +100,7 @@ export function ProgressChart({ settings, weights, unit }: { settings: Settings;
                 <Path d={smooth(pts)} fill="none" stroke="url(#stroke)" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" />
               </>
             )}
-            {raw.map((p, i) => <Circle key={'r' + i} cx={p.x} cy={p.y} r={3} fill="#fff" stroke={C.coral} strokeWidth={1.8} opacity={0.75} />)}
+            {raw.map(p => <Circle key={`r${p.x.toFixed(1)}`} cx={p.x} cy={p.y} r={3} fill="#fff" stroke={C.coral} strokeWidth={1.8} opacity={0.75} />)}
             {pts.length > 0 && <Circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r={6.5} fill={C.coral} stroke="#fff" strokeWidth={2.5} />}
           </Svg>
         )}
@@ -107,7 +112,7 @@ export function ProgressChart({ settings, weights, unit }: { settings: Settings;
 const s = StyleSheet.create({
   legend: { flexDirection: 'row', gap: 14, paddingHorizontal: 4, paddingBottom: 6, alignItems: 'center' },
   lg: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lgTxt: { fontFamily: F.body, fontSize: 12, color: C.inkSoft },
+  lgTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft },
   swLine: { width: 18, height: 3, borderRadius: 2, backgroundColor: C.coral },
   swDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.8, borderColor: C.coral, backgroundColor: '#fff' },
   swDash: { width: 18, height: 0, borderTopWidth: 2, borderStyle: 'dashed', borderColor: C.target },
