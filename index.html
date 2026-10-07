@@ -210,18 +210,78 @@
   @media (prefers-reduced-motion: reduce) {
     body, .track .fill, .marker, .area { animation: none !important; transition: none !important; opacity: 1 !important; }
   }
+
+  /* header actions */
+  .hdr-right { display: flex; align-items: center; gap: 8px; }
+  .gear { width: 36px; height: 36px; border-radius: 50%; border: none; background: #F0E8E0; color: var(--ink-soft);
+    font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .hempty { font-size: 12px; color: var(--ink-soft); padding: 4px 6px 10px; line-height: 1.5; }
+  .hsummary.neutral { background: var(--bg); border-color: var(--line); color: var(--ink-soft); flex-wrap: wrap; gap: 6px 14px; justify-content: flex-start; }
+  .hsummary.neutral b { font-family: var(--display); color: var(--ink); }
+  .dayimp { display: inline-flex; align-items: center; gap: 3px; }
+  input.dayw.st { width: 38px; }
+  input.dayw.lb { width: 50px; }
+
+  /* settings / onboarding sheet */
+  .sheet { position: fixed; inset: 0; z-index: 50; background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: calc(env(safe-area-inset-top) + 14px) calc(env(safe-area-inset-right) + 16px)
+             calc(env(safe-area-inset-bottom) + 40px) calc(env(safe-area-inset-left) + 16px); }
+  .sheet[hidden] { display: none; }
+  .sheet-inner { max-width: 720px; margin: 0 auto; }
+  .sheet-bar { position: sticky; top: calc(-14px - env(safe-area-inset-top)); z-index: 2; background: var(--bg);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 2px 12px; }
+  .sheet-bar h2 { font-family: var(--display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .btn.ghost { background: #F0E8E0; color: var(--ink); }
+  .btn.coral { background: var(--coral); }
+  .btn.small { padding: 8px 12px; font-size: 12px; border-radius: 10px; }
+  .fsec { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px 14px; margin-bottom: 14px; }
+  .fsec h3 { font-family: var(--display); font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .fhint { font-size: 12px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 10px; }
+  .fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .fgrid.one { grid-template-columns: 1fr; }
+  .fld { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .fld > span { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  .fld .wrow { display: flex; align-items: center; gap: 4px; }
+  .f-in, .f-ta { font-family: var(--body); font-size: 16px; color: var(--ink); background: var(--bg);
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 10px; width: 100%; min-width: 0; }
+  .f-in:focus, .f-ta:focus { outline: none; border-color: var(--coral); }
+  .f-in.num { font-family: var(--display); font-weight: 600; }
+  .f-in.w-st { width: 64px; } .f-in.w-lb { width: 78px; }
+  .f-ta { min-height: 92px; resize: vertical; line-height: 1.45; font-size: 14px; }
+  .preview { margin-top: 12px; font-size: 13px; line-height: 1.5; border-radius: 10px; padding: 10px 12px; background: #EDE6F6; color: var(--ink); }
+  .preview.warn { background: #FFF3D8; color: #8A5A1F; border: 1px solid #F2E0B5; }
+  .preview.err { background: var(--coral-bg); color: #B2392A; }
+  .ed-row { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-bottom: 8px; background: #FFFCF9; }
+  .ed-row .ed-top { display: flex; gap: 6px; align-items: center; }
+  .ed-x { flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; border: none; background: var(--coral-bg); color: #E0533D;
+    font-weight: 700; font-size: 15px; cursor: pointer; }
+  .habit-row { display: grid; grid-template-columns: 52px 72px 1fr 32px; gap: 6px; align-items: center; margin-bottom: 8px; }
+  .habit-row .f-in { padding: 8px; text-align: center; }
+  .habit-row .f-in.name { text-align: left; }
+  .day-ed summary { cursor: pointer; font-family: var(--display); font-weight: 600; font-size: 14px; padding: 6px 2px; }
+  .day-ed summary small { font-family: var(--body); font-weight: 500; color: var(--ink-soft); margin-left: 6px; }
+  .day-ed .fgrid { margin: 6px 0 4px; }
+  .macro-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 6px; }
+  .datarow { display: flex; flex-wrap: wrap; gap: 8px; }
+  .reset.danger { color: #E0533D; margin: 10px 0 0; }
+  .welcome { padding: 6px 4px 14px; }
+  .welcome p { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin-top: 6px; }
+  body.sheet-open { overflow: hidden; }
 </style>
 </head>
 <body>
 
 <header>
   <div>
-    <div class="eyebrow">8-Week Programme</div>
+    <div class="eyebrow" id="eyebrow">Your plan</div>
     <h1>Tracker</h1>
   </div>
-  <div class="seg" id="seg">
-    <button data-unit="kg" class="active">kg</button>
-    <button data-unit="imp">st / lb</button>
+  <div class="hdr-right">
+    <div class="seg" id="seg">
+      <button data-unit="kg" class="active">kg</button>
+      <button data-unit="imp">st / lb</button>
+    </div>
+    <button class="gear" id="open-settings" aria-label="Plan &amp; settings">⚙︎</button>
   </div>
 </header>
 
@@ -229,16 +289,16 @@
   <div class="label">Current weight</div>
   <div class="current" id="r-current"></div>
   <div class="alt" id="r-alt"></div>
-  <div class="when" id="r-date">Week 1 · 16 Jun</div>
+  <div class="when" id="r-date">Not logged yet</div>
 
   <div class="journey">
     <div class="track">
       <div class="fill" id="j-fill" style="width:0%"></div>
       <div class="marker" id="j-marker" style="left:0%"></div>
     </div>
-    <div class="ends"><span>Start <b id="j-start">83.9</b></span><span>Goal <b id="j-goal">79.5</b></span></div>
-    <div class="goaldate" id="r-goaldate">Target · 71 kg by 22 Dec 2026</div>
-    <div class="racebanner" id="r-race">🏁 10K race · 24 Sep</div>
+    <div class="ends"><span>Start <b id="j-start"></b></span><span>Goal <b id="j-goal"></b></span></div>
+    <div class="goaldate" id="r-goaldate"></div>
+    <div class="racebanner" id="r-race" hidden></div>
   </div>
 
   <div class="chips">
@@ -248,12 +308,12 @@
   </div>
 </section>
 
-<div class="card racecard">
+<div class="card racecard" id="race-card" hidden>
   <div class="racetop">
     <div>
-      <div class="racelabel">Next race</div>
-      <div class="racename" id="race-name">Run Media City 10k</div>
-      <div class="racemeta" id="race-meta">MediaCity UK, Salford · Thu 24 Sep 2026 · flat, 4 laps</div>
+      <div class="racelabel">Next event</div>
+      <div class="racename" id="race-name"></div>
+      <div class="racemeta" id="race-meta"></div>
     </div>
     <div class="racecount"><div class="rcnum" id="race-num">—</div><div class="rclab" id="race-lab">days to go</div></div>
   </div>
@@ -262,15 +322,10 @@
 <div class="card">
   <div class="ctitle">Daily habits</div>
   <div class="hcap" id="h-cap">This week</div>
-  <div class="hhead">
-    <div></div>
-    <div class="ic">💧<small>3 L</small></div>
-    <div class="ic">👟<small>8K</small></div>
-    <div class="ic">🏋<small>WORK</small></div>
-    <div class="ic">❤️<small>SEX</small></div>
-  </div>
+  <div class="hhead" id="hhead"></div>
   <div id="hgrid"></div>
-  <div class="hsummary" id="h-summary"><span>❤️ Intimacy</span><span class="num2" id="h-sex">0 days</span></div>
+  <div class="hempty" id="h-empty" hidden>Add your weekly sessions and meals in <b>⚙︎ Plan &amp; settings</b> and they'll show on each day.</div>
+  <div class="hsummary neutral" id="h-summary"></div>
 </div>
 
 <div class="card">
@@ -292,152 +347,122 @@
 </div>
 
 <div class="footnote">
-  Enter each Monday morning weight — after waking, after toilet, before food or drink.<br>
+  Weigh in on the same day each week — after waking, after toilet, before food or drink.<br>
   Switch units any time with the toggle. Saved on this device; the target line is a guide, not a verdict.
 </div>
 <div class="actions">
   <button class="btn" id="export">Export data (.txt)</button>
+  <button class="btn ghost" id="import-btn">Restore from backup</button>
 </div>
+<input type="file" id="import-file" accept=".txt,.json,text/plain,application/json" hidden>
 <button class="reset" id="reset">Reset all entries</button>
 
+<div class="sheet" id="sheet" hidden><div class="sheet-inner" id="sheet-inner"></div></div>
+
 <script>
-const WEEKS = [
-  { wk: 1, date: "28 Sep", target: 83.0 },
-  { wk: 2, date: "5 Oct", target: 82.5 },
-  { wk: 3, date: "12 Oct", target: 82.0 },
-  { wk: 4, date: "19 Oct", target: 81.5 },
-  { wk: 5, date: "26 Oct", target: 81.0 },
-  { wk: 6, date: "2 Nov", target: 80.5 },
-  { wk: 7, date: "9 Nov", target: 80.0 },
-  { wk: 8, date: "16 Nov", target: 79.5 },
-  { wk: 9, date: "23 Nov", target: 79.0 },
-  { wk: 10, date: "30 Nov", target: 78.5 },
-  { wk: 11, date: "7 Dec", target: 78.0 },
-  { wk: 12, date: "14 Dec", target: 77.5 },
-  { wk: 13, date: "21 Dec", target: 77.5 },
-  { wk: 14, date: "28 Dec", target: 77.5 },
-  { wk: 15, date: "4 Jan", target: 77.5 },
-  { wk: 16, date: "11 Jan", target: 77.0 },
-  { wk: 17, date: "18 Jan", target: 76.5 },
-  { wk: 18, date: "25 Jan", target: 76.0 },
-  { wk: 19, date: "1 Feb", target: 75.5 },
-  { wk: 20, date: "8 Feb", target: 75.0 },
-  { wk: 21, date: "15 Feb", target: 74.5 },
-  { wk: 22, date: "22 Feb", target: 74.0 },
-  { wk: 23, date: "1 Mar", target: 73.7 },
-  { wk: 24, date: "8 Mar", target: 73.4 },
-  { wk: 25, date: "15 Mar", target: 73.1 },
-  { wk: 26, date: "22 Mar", target: 72.8 },
-  { wk: 27, date: "29 Mar", target: 72.5 },
-  { wk: 28, date: "5 Apr", target: 72.2 },
-  { wk: 29, date: "12 Apr", target: 71.9 },
-  { wk: 30, date: "19 Apr", target: 71.6 },
-  { wk: 31, date: "26 Apr", target: 71.3 },
-  { wk: 32, date: "3 May", target: 71.0 },
-];
-const GOAL_DATE = "3 May 2027";
-const GOAL = 71.0, BASELINE = 83.0, KEY = "tracker_actuals_v3", UNIT_KEY = "tracker_unit_v1";
-const KG_PER_LB = 0.45359237;
+// ---- storage keys ----
+const KEY = "tracker_actuals_v3";        // legacy weekly weigh-ins by week number — read once on migration, then left as a backup
+const UNIT_KEY = "tracker_unit_v1";
 const HABITS_KEY = "tracker_habits_v1";
-const DAILYW_KEY = "tracker_dailyw_v1";
-const START_DATE = new Date(2026, 8, 28);   // Week 1 = Mon 28 Sep 2026 (reset after 4-week fall-off)
-const WORKOUTS = { 1: "AM · Upper body + core", 2: "AM · Bike / incline walk (Achilles)", 3: "AM · Lower body",
-                   4: "AM · Walk only", 5: "AM · Upper body + core", 6: "AM · Bike / incline walk (Achilles)",
-                   0: "AM · Walk / rest" };
+const DAILYW_KEY = "tracker_dailyw_v1";  // every weigh-in, keyed by date (weekly ones are just entries on the week's date)
+const SETTINGS_KEY = "tracker_settings_v1";
+const KG_PER_LB = 0.45359237;
+const DAY_MS = 86400000, WEEK_MS = 7 * DAY_MS;
 const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const WORKOUT_DETAILS = {
-  1: { title: "Upper body + core", items: [
-        "Lat pulldown — 3 × 10–12",
-        "Seated cable row — 3 × 10–12",
-        "Dumbbell bench press — 3 × 10–12",
-        "Dumbbell shoulder press — 3 × 10–12",
-        "Band pull-aparts — 3 × 15",
-        "— core —",
-        "Dead bug — 3 × 8 each side",
-        "Bird-dog — 3 × 8 each side",
-        "Pallof press — 3 × 10 each side"
-      ], note: "Eat something small first. Controlled reps, 2 sec down." },
-  2: { title: "Bike / incline walk (Achilles)", items: [
-        "25–30 min stationary bike, easy-moderate resistance — OR —",
-        "30–35 min incline treadmill walk, 5–8% grade, brisk pace",
-        "Achilles: 3 × 15 isometric calf holds (mid-range, no stretch into pain)",
-        "Ice 10 min after if any tightness"
-      ], note: "No running, no sprint work, no jumping until cleared. Sharp pain = stop and reassess." },
-  3: { title: "Lower body", items: [
-        "Goblet squat — 3 × 10–12",
-        "Romanian deadlift (DB) — 3 × 10–12",
-        "Leg press — 3 × 12–15",
-        "Glute bridge — 3 × 12",
-        "Calf raise — 2 × 12, light, pain-free range only (Achilles — drop this if it's sore next day)",
-        "— core —",
-        "Side plank — 3 × 30 sec each side"
-      ], note: "Start lighter than you think. First real load on the leg. Squat/RDL/leg press are all fine on the Achilles — it's the calf raise and any explosive push-off to watch." },
-  4: { title: "Walk only", items: [
-        "8,000 steps across the day",
-        "Optional: 10 min mobility / stretching"
-      ], note: "Genuine rest day. Keep the morning slot, just walk." },
-  5: { title: "Upper body + core", items: [
-        "Incline dumbbell press — 3 × 10–12",
-        "Chest-supported row — 3 × 10–12",
-        "Face pulls — 3 × 15",
-        "Lateral raise — 3 × 12",
-        "Bicep curl / tricep extension — 2 × 12 each",
-        "— core —",
-        "Plank — 3 × 30–45 sec",
-        "Bird-dog — 3 × 8 each side"
-      ], note: "Different angles to Monday. Same controlled tempo." },
-  6: { title: "Bike / incline walk (Achilles)", items: [
-        "40–50 min stationary bike, easy-moderate resistance — OR —",
-        "45–60 min incline treadmill walk, 5–8% grade",
-        "Achilles: 3 × 15 eccentric heel drops off a step (bent + straight knee)",
-        "Stretch calves gently after, no bouncing"
-      ], note: "This is the long session, just lower-impact. Once pain-free for 2 full weeks, reintroduce easy running here first." },
-  0: { title: "Walk / rest", items: [
-        "8,000 steps",
-        "Optional: light stretching or mobility"
-      ], note: "Recovery matters as much as the sessions." }
-};
-const WRAP = { lunch: "Chicken wrap — 150g chicken, wholemeal tortilla, 30g spinach, 30g pepper, chilli sauce",
-               kcal: 450, p: 47, c: 24, f: 17 };
-const MEALS = { 1: WRAP, 2: WRAP, 3: WRAP, 4: WRAP, 5: WRAP, 6: WRAP, 0: WRAP };
-const BREAKFAST = { text: "40g oats, 150g Fage 0%, 30g whey isolate",
-                    kcal: 345, p: 45, c: 32, f: 3 };
-const DINNER = { text: "4 eggs, 2 Jason's sourdough slices, ½ avocado, mushrooms, tomatoes",
-                 kcal: 680, p: 38, c: 57, f: 33 };
-const TARGET_KCAL = 1800, TARGET_P = 140, TARGET_C = 175, TARGET_F = 60;
-const TOPUPS = [
-  "Greek yoghurt 200g — 130 kcal, 20g P",
-  "Cottage cheese 150g — 120 kcal, 18g P",
-  "2 boiled eggs — 140 kcal, 12g P",
-  "Protein shake — 120 kcal, 25g P",
-  "Banana + peanut butter — 250 kcal, 8g P"
+const DAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MIN_KG = 25, MAX_KG = 350;
+const MAX_HABITS = 6;
+const DEFAULT_HABITS = [
+  { id: "water", icon: "💧", short: "3 L", name: "Water 3 L" },
+  { id: "steps", icon: "👟", short: "8K", name: "Steps 8k" },
+  { id: "workout", icon: "🏋", short: "WORK", name: "Workout" }
 ];
-const RACE = { name: "10K race", date: new Date(2026, 8, 24), label: "24 Sep" };
-const SESSION_OVERRIDES = {
-  "2026-09-03": "Tempo · 10K prep",
-  "2026-09-10": "Tempo · 10K prep",
-  "2026-09-17": "Tempo · 10K prep",
-  "2026-09-24": "🏁 10K RACE DAY",
-};
+
+// The original hard-coded programme. Anyone who already has data on this device gets it on first load,
+// so the app looks exactly as it did before plans became configurable.
+function legacySettings() {
+  return {
+    plan: {
+      start: "2026-09-28", startKg: 83.0, goalKg: 71.0, goalDate: "2027-05-03",
+      targets: [83.0, 82.5, 82.0, 81.5, 81.0, 80.5, 80.0, 79.5, 79.0, 78.5, 78.0, 77.5, 77.5, 77.5, 77.5, 77.0,
+                76.5, 76.0, 75.5, 75.0, 74.5, 74.0, 73.7, 73.4, 73.1, 72.8, 72.5, 72.2, 71.9, 71.6, 71.3, 71.0]
+    },
+    event: { name: "Run Media City 10k", date: "2026-09-24", detail: "MediaCity UK, Salford · flat, 4 laps" },
+    habits: DEFAULT_HABITS.concat([{ id: "sex", icon: "❤️", short: "SEX", name: "Intimacy" }]),
+    sessions: {
+      1: { title: "AM · Upper body + core", items: [
+            "Lat pulldown — 3 × 10–12", "Seated cable row — 3 × 10–12", "Dumbbell bench press — 3 × 10–12",
+            "Dumbbell shoulder press — 3 × 10–12", "Band pull-aparts — 3 × 15", "— core —",
+            "Dead bug — 3 × 8 each side", "Bird-dog — 3 × 8 each side", "Pallof press — 3 × 10 each side"],
+           note: "Eat something small first. Controlled reps, 2 sec down." },
+      2: { title: "AM · Bike / incline walk (Achilles)", items: [
+            "25–30 min stationary bike, easy-moderate resistance — OR —",
+            "30–35 min incline treadmill walk, 5–8% grade, brisk pace",
+            "Achilles: 3 × 15 isometric calf holds (mid-range, no stretch into pain)",
+            "Ice 10 min after if any tightness"],
+           note: "No running, no sprint work, no jumping until cleared. Sharp pain = stop and reassess." },
+      3: { title: "AM · Lower body", items: [
+            "Goblet squat — 3 × 10–12", "Romanian deadlift (DB) — 3 × 10–12", "Leg press — 3 × 12–15", "Glute bridge — 3 × 12",
+            "Calf raise — 2 × 12, light, pain-free range only (Achilles — drop this if it's sore next day)",
+            "— core —", "Side plank — 3 × 30 sec each side"],
+           note: "Start lighter than you think. First real load on the leg. Squat/RDL/leg press are all fine on the Achilles — it's the calf raise and any explosive push-off to watch." },
+      4: { title: "AM · Walk only", items: ["8,000 steps across the day", "Optional: 10 min mobility / stretching"],
+           note: "Genuine rest day. Keep the morning slot, just walk." },
+      5: { title: "AM · Upper body + core", items: [
+            "Incline dumbbell press — 3 × 10–12", "Chest-supported row — 3 × 10–12", "Face pulls — 3 × 15", "Lateral raise — 3 × 12",
+            "Bicep curl / tricep extension — 2 × 12 each", "— core —", "Plank — 3 × 30–45 sec", "Bird-dog — 3 × 8 each side"],
+           note: "Different angles to Monday. Same controlled tempo." },
+      6: { title: "AM · Bike / incline walk (Achilles)", items: [
+            "40–50 min stationary bike, easy-moderate resistance — OR —", "45–60 min incline treadmill walk, 5–8% grade",
+            "Achilles: 3 × 15 eccentric heel drops off a step (bent + straight knee)", "Stretch calves gently after, no bouncing"],
+           note: "This is the long session, just lower-impact. Once pain-free for 2 full weeks, reintroduce easy running here first." },
+      0: { title: "AM · Walk / rest", items: ["8,000 steps", "Optional: light stretching or mobility"],
+           note: "Recovery matters as much as the sessions." }
+    },
+    meals: {
+      items: [
+        { when: "~6:00am · pre-train (optional)", text: "Half a banana or a few dates. Fasted is fine for easy runs.", kcal: null, p: null, c: null, f: null },
+        { when: "~8:30am · breakfast (post-workout)", text: "40g oats, 150g Fage 0%, 30g whey isolate", kcal: 345, p: 45, c: 32, f: 3 },
+        { when: "1:00pm · lunch", text: "Chicken wrap — 150g chicken, wholemeal tortilla, 30g spinach, 30g pepper, chilli sauce", kcal: 450, p: 47, c: 24, f: 17 },
+        { when: "7:00pm · dinner (eat slowly)", text: "4 eggs, 2 Jason's sourdough slices, ½ avocado, mushrooms, tomatoes", kcal: 680, p: 38, c: 57, f: 33 }
+      ],
+      target: { kcal: 1800, p: 140, c: 175, f: 60 }
+    }
+  };
+}
+
+function emptySessions() { const s = {}; for (let d = 0; d < 7; d++) s[d] = { title: "", items: [], note: "" }; return s; }
+function defaultSettings(plan) {
+  return { plan, event: null, habits: DEFAULT_HABITS.map(h => ({ ...h })), sessions: emptySessions(),
+           meals: { items: [], target: { kcal: null, p: null, c: null, f: null } } };
+}
+
+let settings = null;
 let habits = {};
-let dailyW = {};
-let actuals = { 1: 83.0 };
+let weights = {};       // { "YYYY-MM-DD": kg }
 let unit = "kg";        // "kg" or "imp"
 let firstDraw = true;
 const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-function load() {
-  try { const ls = localStorage.getItem(KEY); if (ls) actuals = JSON.parse(ls); } catch (e) {}
-  try { const u = localStorage.getItem(UNIT_KEY); if (u === "kg" || u === "imp") unit = u; } catch (e) {}
-  try { const h = localStorage.getItem(HABITS_KEY); if (h) habits = JSON.parse(h); } catch (e) {}
-  try { const dw = localStorage.getItem(DAILYW_KEY); if (dw) dailyW = JSON.parse(dw); } catch (e) {}
-  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("active", b.dataset.unit === unit));
-  render();
-}
-function save() { try { localStorage.setItem(KEY, JSON.stringify(actuals)); } catch (e) {} }
-function saveUnit() { try { localStorage.setItem(UNIT_KEY, unit); } catch (e) {} }
-function lastEntry() { let last = null; WEEKS.forEach(w => { if (actuals[w.wk] != null) last = w; }); return last; }
+// ---- small helpers ----
 function fmt(n, d = 1) { return Number(n).toFixed(d); }
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function plausible(kg) { return typeof kg === "number" && isFinite(kg) && kg >= MIN_KG && kg <= MAX_KG; }
+function numOrNull(v) { const n = typeof v === "number" ? v : parseFloat(v); return isFinite(n) ? n : null; }
+function dateKey(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function parseKey(k) { const p = String(k).split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function validKey(k) { return /^\d{4}-\d{2}-\d{2}$/.test(k) && !isNaN(parseKey(k)); }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function today0() { const t = new Date(); t.setHours(0, 0, 0, 0); return t; }
+function mondayOf(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); const dow = x.getDay(); return addDays(x, dow === 0 ? -6 : 1 - dow); }
+function longDate(k) { const d = parseKey(k); return d.getDate() + " " + MON[d.getMonth()] + " " + d.getFullYear(); }
+function shortDate(d) { return d.getDate() + " " + MON[d.getMonth()]; }
 
 // ---- unit helpers (kg is the stored source of truth) ----
 function stPart(kg) { let st = Math.floor((kg / KG_PER_LB) / 14); let lb = kg / KG_PER_LB - st * 14; if (lb >= 13.95) st += 1; return st; }
@@ -445,12 +470,142 @@ function lbPart(kg) { let st = Math.floor((kg / KG_PER_LB) / 14); let lb = kg / 
 function toStLb(kg, dp = 1) { return stPart(kg) + " st " + lbPart(kg).toFixed(dp) + " lb"; }
 function toLbNum(kg) { return kg / KG_PER_LB; }                       // signed pounds value
 function stLbToKg(st, lb) { return ((st * 14) + lb) * KG_PER_LB; }
+function showW(kg) { return unit === "kg" ? fmt(kg) + " kg" : toStLb(kg, 0).replace(/\.0/, ""); }
+
+// ---- plan ----
+function startDate() { return parseKey(settings.plan.start); }
+function targets() { return settings.plan.targets; }
+function weekDate(i) { return addDays(startDate(), i * 7); }
+function buildTargets(startKg, goalKg, startK, goalK) {
+  const weeks = Math.max(1, Math.round((parseKey(goalK) - parseKey(startK)) / WEEK_MS));
+  const t = [];
+  for (let i = 0; i <= weeks; i++) t.push(Math.round((startKg - (startKg - goalKg) * i / weeks) * 10) / 10);
+  return t;
+}
+// Checks a proposed plan; returns { error } or { weeks, perWeek, pct, warn }
+function assessPlan(p) {
+  if (!plausible(p.startKg)) return { error: "Enter your current weight." };
+  if (!plausible(p.goalKg)) return { error: "Enter a goal weight." };
+  if (p.goalKg >= p.startKg) return { error: "This version tracks weight loss, so the goal needs to be below your current weight." };
+  if (!validKey(p.start) || !validKey(p.goalDate)) return { error: "Pick a start date and a goal date." };
+  const weeks = Math.round((parseKey(p.goalDate) - parseKey(p.start)) / WEEK_MS);
+  if (weeks < 2) return { error: "The goal date needs to be at least 2 weeks after the start." };
+  if (weeks > 156) return { error: "Keep the plan under 3 years — you can always start a new one after." };
+  const perWeek = (p.startKg - p.goalKg) / weeks;
+  const pct = perWeek / p.startKg * 100;
+  return { weeks, perWeek, pct, warn: pct > 1 };
+}
+
+// Fill in anything missing or malformed, so bad storage or a hand-edited backup can't break rendering.
+function normalizeSettings(s) {
+  if (!s || typeof s !== "object" || !s.plan) return null;
+  const p = s.plan;
+  const plan = { start: p.start, startKg: numOrNull(p.startKg), goalKg: numOrNull(p.goalKg), goalDate: p.goalDate, targets: p.targets };
+  if (!validKey(plan.start) || !validKey(plan.goalDate) || !plausible(plan.startKg) || !plausible(plan.goalKg)) return null;
+  if (!Array.isArray(plan.targets) || plan.targets.length < 2 || !plan.targets.every(plausible)) {
+    plan.targets = buildTargets(plan.startKg, plan.goalKg, plan.start, plan.goalDate);
+  }
+  const ev = s.event && s.event.name && validKey(s.event.date)
+    ? { name: String(s.event.name), date: s.event.date, detail: String(s.event.detail || "") } : null;
+  const seen = {};
+  const hab = (Array.isArray(s.habits) ? s.habits : DEFAULT_HABITS)
+    .filter(h => h && h.id && !seen[h.id] && (seen[h.id] = true))
+    .slice(0, MAX_HABITS)
+    .map(h => ({ id: String(h.id), icon: String(h.icon || "✓"), short: String(h.short || "").slice(0, 5), name: String(h.name || h.short || "Habit") }));
+  const sessions = emptySessions();
+  for (let d = 0; d < 7; d++) {
+    const x = s.sessions && s.sessions[d];
+    if (x) sessions[d] = { title: String(x.title || ""), items: Array.isArray(x.items) ? x.items.map(String) : [], note: String(x.note || "") };
+  }
+  const m = s.meals || {};
+  const mt = m.target || {};
+  const meals = {
+    items: (Array.isArray(m.items) ? m.items : []).filter(x => x && (x.text || x.when)).map(x => ({
+      when: String(x.when || ""), text: String(x.text || ""),
+      kcal: numOrNull(x.kcal), p: numOrNull(x.p), c: numOrNull(x.c), f: numOrNull(x.f) })),
+    target: { kcal: numOrNull(mt.kcal), p: numOrNull(mt.p), c: numOrNull(mt.c), f: numOrNull(mt.f) }
+  };
+  return { plan, event: ev, habits: hab, sessions, meals };
+}
+function cleanWeights(obj) {
+  const out = {};
+  if (obj && typeof obj === "object") Object.keys(obj).forEach(k => { const v = numOrNull(obj[k]); if (validKey(k) && plausible(v)) out[k] = Math.round(v * 100) / 100; });
+  return out;
+}
+function cleanHabits(obj) {
+  const out = {};
+  if (obj && typeof obj === "object") Object.keys(obj).forEach(k => {
+    const h = obj[k];
+    if (!validKey(k) || !h || typeof h !== "object") return;
+    const day = {};
+    Object.keys(h).forEach(id => { if (h[id] === true) day[id] = true; });
+    if (Object.keys(day).length) out[k] = day;
+  });
+  return out;
+}
+// Old weekly weigh-ins were keyed by week number; place them on that week's date. Daily entries win a clash,
+// matching how the old chart merged them.
+function mergeLegacyActuals(actuals, into, start) {
+  Object.keys(actuals || {}).forEach(wk => {
+    const v = numOrNull(actuals[wk]), i = parseInt(wk, 10) - 1;
+    if (!plausible(v) || !(i >= 0)) return;
+    const k = dateKey(addDays(parseKey(start), i * 7));
+    if (into[k] == null) into[k] = Math.round(v * 100) / 100;
+  });
+  return into;
+}
+
+// ---- storage ----
+function readJSON(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function hasKey(k) { try { return localStorage.getItem(k) != null; } catch (e) { return false; } }
+function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {} }
+function saveWeights() { try { localStorage.setItem(DAILYW_KEY, JSON.stringify(weights)); } catch (e) {} }
+function saveHabits() { try { localStorage.setItem(HABITS_KEY, JSON.stringify(habits)); } catch (e) {} }
+function saveUnit() { try { localStorage.setItem(UNIT_KEY, unit); } catch (e) {} }
+
+function load() {
+  try { const u = localStorage.getItem(UNIT_KEY); if (u === "kg" || u === "imp") unit = u; } catch (e) {}
+  habits = cleanHabits(readJSON(HABITS_KEY));
+  weights = cleanWeights(readJSON(DAILYW_KEY));
+  settings = normalizeSettings(readJSON(SETTINGS_KEY));
+
+  if (!settings && (hasKey(KEY) || hasKey(HABITS_KEY) || hasKey(DAILYW_KEY))) {
+    // Existing user from before plans were configurable: keep their programme and fold weekly entries into the date log.
+    settings = normalizeSettings(legacySettings());
+    const actuals = hasKey(KEY) ? readJSON(KEY) : { 1: 83.0 };   // the old app showed 83.0 at week 1 when nothing was saved
+    mergeLegacyActuals(actuals, weights, settings.plan.start);
+    saveSettings(); saveWeights();
+  }
+  syncSeg();
+  if (!settings) { openOnboarding(); return; }
+  render();
+}
+function syncSeg() { document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("active", b.dataset.unit === unit)); }
+
+// ---- weight series ----
+function allWeights() {
+  const start = startDate();
+  return Object.keys(weights)
+    .map(k => ({ k, d: parseKey(k), kg: weights[k] }))
+    .filter(p => p.d >= start)          // ignore anything before the current plan's start
+    .sort((a, b) => a.d - b.d);
+}
+function latestWeight() {
+  const arr = allWeights();
+  if (!arr.length) return null;
+  const p = arr[arr.length - 1];
+  const frac = (p.d - startDate()) / WEEK_MS;
+  p.weekIdx = Math.max(0, Math.min(targets().length - 1, Math.floor(frac)));
+  return p;
+}
 
 function renderHero() {
+  const plan = settings.plan;
   const lw = latestWeight();
-  const cur = lw ? lw.kg : BASELINE;
-  const curWeek = lw ? WEEKS[lw.weekIdx] : null;
+  const cur = lw ? lw.kg : plan.startKg;
+  const curTarget = lw ? targets()[lw.weekIdx] : null;
 
+  document.getElementById("eyebrow").textContent = targets().length + "-week plan";
   if (unit === "kg") {
     document.getElementById("r-current").innerHTML = `<span class="big">${fmt(cur)}</span><span class="unit">kg</span>`;
     document.getElementById("r-alt").textContent = toStLb(cur);
@@ -461,32 +616,33 @@ function renderHero() {
   }
   const todayK = dateKey(new Date());
   document.getElementById("r-date").textContent = lw
-    ? "Latest · " + lw.d.getDate() + " " + MON[lw.d.getMonth()] + (lw.k === todayK ? " · today" : "")
+    ? "Latest · " + shortDate(lw.d) + (lw.k === todayK ? " · today" : "")
     : "Not logged yet";
 
-  // journey ends
-  document.getElementById("j-start").textContent = unit === "kg" ? fmt(BASELINE) : toStLb(BASELINE, 0).replace(/\.0/, "");
-  document.getElementById("j-goal").textContent  = unit === "kg" ? fmt(GOAL)     : toStLb(GOAL, 0).replace(/\.0/, "");
+  document.getElementById("j-start").textContent = showW(plan.startKg).replace(" kg", "");
+  document.getElementById("j-goal").textContent = showW(plan.goalKg).replace(" kg", "");
   document.getElementById("r-goaldate").innerHTML =
-    "Target · <b>" + (unit === "kg" ? fmt(GOAL) + " kg" : toStLb(GOAL, 0).replace(/\.0/, "")) + "</b> by <b>" + GOAL_DATE + "</b>";
+    "Target · <b>" + esc(showW(plan.goalKg)) + "</b> by <b>" + esc(longDate(plan.goalDate)) + "</b>";
 
-  // race countdown
-  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-  const dRace = Math.round((RACE.date - t0) / 86400000);
   const raceEl = document.getElementById("r-race");
-  if (dRace > 0) raceEl.innerHTML = "🏁 " + RACE.name + " · " + RACE.label + " · in <b>" + dRace + "</b> day" + (dRace === 1 ? "" : "s");
-  else if (dRace === 0) raceEl.innerHTML = "🏁 " + RACE.name + " · <b>today — good luck!</b>";
-  else raceEl.innerHTML = "🏁 " + RACE.name + " · <b>done ✓</b>";
-  let pct = (BASELINE - cur) / (BASELINE - GOAL) * 100;
+  const ev = settings.event;
+  raceEl.hidden = !ev;
+  if (ev) {
+    const dEv = Math.round((parseKey(ev.date) - today0()) / DAY_MS);
+    const label = shortDate(parseKey(ev.date));
+    if (dEv > 0) raceEl.innerHTML = "🏁 " + esc(ev.name) + " · " + label + " · in <b>" + dEv + "</b> day" + (dEv === 1 ? "" : "s");
+    else if (dEv === 0) raceEl.innerHTML = "🏁 " + esc(ev.name) + " · <b>today — good luck!</b>";
+    else raceEl.innerHTML = "🏁 " + esc(ev.name) + " · <b>done ✓</b>";
+  }
+
+  let pct = (plan.startKg - cur) / (plan.startKg - plan.goalKg) * 100;
   pct = Math.max(0, Math.min(100, pct));
   document.getElementById("j-fill").style.width = pct + "%";
   document.getElementById("j-marker").style.left = pct + "%";
 
-  // chips
-  const lostKg = BASELINE - cur;
-  const togoKg = Math.max(0, cur - GOAL);
-  const chipLost = document.getElementById("chip-lost");
-  chipLost.classList.toggle("good", lostKg > 0.05);
+  const lostKg = plan.startKg - cur;
+  const togoKg = Math.max(0, cur - plan.goalKg);
+  document.getElementById("chip-lost").classList.toggle("good", lostKg > 0.05);
   if (unit === "kg") {
     document.getElementById("r-lost").innerHTML = (lostKg < 0 ? "+" : "") + fmt(Math.abs(lostKg)) + '<small> kg</small>';
     document.getElementById("r-lost2").textContent = (lostKg < 0 ? "+" : "") + Math.abs(toLbNum(lostKg)).toFixed(1) + " lb";
@@ -499,12 +655,11 @@ function renderHero() {
     document.getElementById("r-togo2").textContent = fmt(togoKg) + " kg";
   }
 
-  // vs target
   const vsEl = document.getElementById("r-vs");
   const chipVs = document.getElementById("chip-vs");
   chipVs.classList.remove("good", "over");
-  if (curWeek) {
-    const diffKg = cur - curWeek.target;
+  if (curTarget != null) {
+    const diffKg = cur - curTarget;
     if (diffKg <= 0.05) { vsEl.textContent = "On / ahead"; chipVs.classList.add("good"); }
     else {
       vsEl.textContent = unit === "kg" ? "+" + fmt(diffKg) + " kg" : "+" + toLbNum(diffKg).toFixed(1) + " lb";
@@ -513,59 +668,61 @@ function renderHero() {
   } else { vsEl.textContent = "On track"; }
 }
 
+function setWeight(k, kg) {
+  if (kg == null) delete weights[k]; else weights[k] = Math.round(kg * 100) / 100;
+  saveWeights();
+}
+
 function renderTable() {
   const tb = document.getElementById("tbody");
   tb.innerHTML = "";
-  WEEKS.forEach(w => {
+  targets().forEach((target, i) => {
     const tr = document.createElement("tr");
-    const a = actuals[w.wk];
-
-    const tgtCell = unit === "kg" ? fmt(w.target) : (stPart(w.target) + " st " + Math.round(lbPart(w.target)) + " lb");
+    const k = dateKey(weekDate(i));
+    const a = weights[k];
+    const tgtCell = unit === "kg" ? fmt(target) : (stPart(target) + " st " + Math.round(lbPart(target)) + " lb");
 
     let entryCell;
     if (unit === "kg") {
-      entryCell = `<input class="weight num" inputmode="decimal" data-wk="${w.wk}" value="${a != null ? fmt(a) : ""}" placeholder="—">`;
+      entryCell = `<input class="weight num" inputmode="decimal" data-k="${k}" value="${a != null ? fmt(a) : ""}" placeholder="—">`;
     } else {
       const stv = a != null ? stPart(a) : "";
       const lbv = a != null ? fmt(lbPart(a)) : "";
       entryCell = `<span class="impentry">
-        <input class="wt-st num" inputmode="numeric" data-wk="${w.wk}" value="${stv}" placeholder="—"><span class="uunit">st</span>
-        <input class="wt-lb num" inputmode="decimal" data-wk="${w.wk}" value="${lbv}" placeholder="—"><span class="uunit">lb</span></span>`;
+        <input class="wt-st num" inputmode="numeric" data-k="${k}" value="${stv}" placeholder="—"><span class="uunit">st</span>
+        <input class="wt-lb num" inputmode="decimal" data-k="${k}" value="${lbv}" placeholder="—"><span class="uunit">lb</span></span>`;
     }
 
     let pill = '<span class="pill none">—</span>';
     if (a != null) {
-      const dKg = a - w.target;
+      const dKg = a - target;
       const cls = dKg <= 0.05 ? "good" : "over";
       const val = unit === "kg" ? (dKg > 0 ? "+" : "") + fmt(dKg) : (dKg > 0 ? "+" : "") + toLbNum(dKg).toFixed(1);
       pill = `<span class="pill ${cls}">${val}</span>`;
     }
 
-    tr.innerHTML = `<td class="wk">W${w.wk}</td><td class="dt">${w.date}</td><td class="tgt">${tgtCell}</td><td>${entryCell}</td><td>${pill}</td>`;
+    tr.innerHTML = `<td class="wk">W${i + 1}</td><td class="dt">${shortDate(weekDate(i))}</td><td class="tgt">${tgtCell}</td><td>${entryCell}</td><td>${pill}</td>`;
     tb.appendChild(tr);
   });
 
   if (unit === "kg") {
     tb.querySelectorAll("input.weight").forEach(inp => {
       inp.addEventListener("change", e => {
-        const wk = +e.target.dataset.wk, v = parseFloat(e.target.value);
-        if (!isNaN(v) && v > 0) actuals[wk] = Math.round(v * 100) / 100; else delete actuals[wk];
-        save(); render();
+        const v = parseFloat(e.target.value);
+        if (e.target.value.trim() === "") setWeight(e.target.dataset.k, null);
+        else if (plausible(v)) setWeight(e.target.dataset.k, v);
+        render();
       });
     });
   } else {
-    const commit = wk => {
-      const stI = tb.querySelector(`input.wt-st[data-wk="${wk}"]`);
-      const lbI = tb.querySelector(`input.wt-lb[data-wk="${wk}"]`);
-      const st = parseFloat(stI.value), lb = parseFloat(lbI.value);
-      const hasSt = !isNaN(st), hasLb = !isNaN(lb);
-      if (!hasSt && !hasLb) { delete actuals[wk]; }
-      else { const kg = stLbToKg(hasSt ? st : 0, hasLb ? lb : 0); if (kg > 0) actuals[wk] = Math.round(kg * 100) / 100; }
-      save(); render();
+    const commit = k => {
+      const st = parseFloat(tb.querySelector(`input.wt-st[data-k="${k}"]`).value);
+      const lb = parseFloat(tb.querySelector(`input.wt-lb[data-k="${k}"]`).value);
+      if (isNaN(st) && isNaN(lb)) setWeight(k, null);
+      else { const kg = stLbToKg(isNaN(st) ? 0 : st, isNaN(lb) ? 0 : lb); if (plausible(kg)) setWeight(k, kg); }
+      render();
     };
-    tb.querySelectorAll("input.wt-st, input.wt-lb").forEach(inp => {
-      inp.addEventListener("change", e => commit(+e.target.dataset.wk));
-    });
+    tb.querySelectorAll("input.wt-st, input.wt-lb").forEach(inp => inp.addEventListener("change", e => commit(e.target.dataset.k)));
   }
 }
 
@@ -585,8 +742,16 @@ function smooth(pts) {
 function renderChart() {
   const svg = document.getElementById("chart");
   const W = 720, H = 340, m = { t: 16, r: 18, b: 36, l: 44 };
-  const iw = W - m.l - m.r, ih = H - m.t - m.b, yMin = 70, yMax = 85;
-  const x = i => m.l + (iw * i) / (WEEKS.length - 1);
+  const T = targets(), n = T.length;
+  const series = allWeights();
+  // y range fits the plan and every logged weight, snapped to a tidy gridline step
+  const vals = T.concat(series.map(p => p.kg), [settings.plan.startKg]);
+  const span = Math.max(...vals) - Math.min(...vals);
+  const step = span <= 16 ? 2 : span <= 40 ? 5 : 10;
+  const yMin = Math.floor((Math.min(...vals) - 1) / step) * step;
+  const yMax = Math.ceil((Math.max(...vals) + 1) / step) * step;
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const x = i => m.l + (iw * i) / (n - 1);
   const y = v => m.t + ih * (1 - (v - yMin) / (yMax - yMin));
   const axisVal = v => unit === "kg" ? v : Math.round(v / KG_PER_LB);  // kg gridlines, labelled in chosen unit
 
@@ -596,31 +761,30 @@ function renderChart() {
     <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFA24B"/><stop offset="1" stop-color="#FF6B5E"/></linearGradient>
     <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6B5E" stop-opacity="0.26"/><stop offset="1" stop-color="#FF6B5E" stop-opacity="0"/></linearGradient>
   </defs>`;
-  for (let v = 70; v <= 84; v += 2) {
+  for (let v = yMin; v <= yMax; v += step) {
     s += `<line class="gridline" x1="${m.l}" y1="${y(v)}" x2="${W - m.r}" y2="${y(v)}"/>`;
     s += `<text class="axislabel" x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${axisVal(v)}</text>`;
   }
-  WEEKS.forEach((w, i) => {
-    if (i % 4 === 0 || i === WEEKS.length - 1) {
-      s += `<text class="axislabel" x="${x(i)}" y="${H - 12}" text-anchor="middle">W${w.wk}</text>`;
-    }
+  const every = Math.max(1, Math.ceil(n / 8));
+  T.forEach((_, i) => {
+    if ((i % every === 0 && n - 1 - i >= every / 2) || i === n - 1) s +=`<text class="axislabel" x="${x(i)}" y="${H - 12}" text-anchor="middle">W${i + 1}</text>`;
   });
 
-  let tp = WEEKS.map((w, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(w.target)}`).join(" ");
-  s += `<path class="targetline" d="${tp}"/>`;
+  s += `<path class="targetline" d="${T.map((v, i) => `${i === 0 ? "M" : "L"}${x(i)},${y(v)}`).join(" ")}"/>`;
 
-  // race marker
-  let rFrac = (RACE.date - START_DATE) / (7 * 86400000);
-  if (rFrac >= 0 && rFrac <= WEEKS.length - 1) {
-    const xR = m.l + iw * rFrac / (WEEKS.length - 1);
-    s += `<line class="raceline" x1="${xR}" y1="${m.t + 8}" x2="${xR}" y2="${m.t + ih}"/>`;
-    s += `<text class="racemark" x="${xR}" y="${m.t + 2}" text-anchor="middle">🏁10K</text>`;
+  const ev = settings.event;
+  if (ev) {
+    const rFrac = (parseKey(ev.date) - startDate()) / WEEK_MS;
+    if (rFrac >= 0 && rFrac <= n - 1) {
+      const xR = x(rFrac);
+      s += `<line class="raceline" x1="${xR}" y1="${m.t + 8}" x2="${xR}" y2="${m.t + ih}"/>`;
+      s += `<text class="racemark" x="${xR}" y="${m.t + 2}" text-anchor="middle">🏁</text>`;
+    }
   }
 
-  const pts = allWeights().map(p => {
-    let frac = (p.d - START_DATE) / (7 * 86400000);
-    frac = Math.max(0, Math.min(WEEKS.length - 1, frac));
-    return { x: m.l + iw * frac / (WEEKS.length - 1), y: y(p.kg) };
+  const pts = series.map(p => {
+    const frac = Math.max(0, Math.min(n - 1, (p.d - startDate()) / WEEK_MS));
+    return { x: x(frac), y: y(p.kg) };
   });
   if (pts.length >= 2) {
     const line = smooth(pts);
@@ -653,103 +817,139 @@ function renderChart() {
 function render() { renderHero(); renderRace(); renderHabits(); renderTable(); renderChart(); }
 
 function renderRace() {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const diff = Math.round((RACE.date - today) / 86400000);
+  const card = document.getElementById("race-card");
+  const ev = settings.event;
+  card.hidden = !ev;
+  if (!ev) return;
+  const d = parseKey(ev.date);
+  document.getElementById("race-name").textContent = ev.name;
+  document.getElementById("race-meta").textContent =
+    [ev.detail, DAY_ABBR[d.getDay()] + " " + longDate(ev.date)].filter(Boolean).join(" · ");
+  const diff = Math.round((d - today0()) / DAY_MS);
   const numEl = document.getElementById("race-num"), labEl = document.getElementById("race-lab");
   if (diff > 1) { numEl.textContent = diff; labEl.textContent = "days to go"; }
   else if (diff === 1) { numEl.textContent = "1"; labEl.textContent = "day to go"; }
-  else if (diff === 0) { numEl.textContent = "🏁"; labEl.textContent = "race day"; }
+  else if (diff === 0) { numEl.textContent = "🏁"; labEl.textContent = "event day"; }
   else { numEl.textContent = "✓"; labEl.textContent = "done"; }
 }
 
 // ---- daily habits ----
-function saveHabits() { try { localStorage.setItem(HABITS_KEY, JSON.stringify(habits)); } catch (e) {} }
-function saveDailyW() { try { localStorage.setItem(DAILYW_KEY, JSON.stringify(dailyW)); } catch (e) {} }
-function dateKey(d) {
-  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-}
-function parseKey(k) { const p = k.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); }
-function weekDate(i) { const d = new Date(START_DATE); d.setDate(START_DATE.getDate() + i * 7); return d; }
-// merged weight series by date: daily logs + weekly weigh-ins (weekly wins on its Monday)
-function allWeights() {
-  const map = {};
-  WEEKS.forEach((w, i) => { if (actuals[w.wk] != null) map[dateKey(weekDate(i))] = actuals[w.wk]; });
-  Object.keys(dailyW).forEach(k => { if (dailyW[k] != null) map[k] = dailyW[k]; });   // daily logged weight wins
-  return Object.keys(map)
-    .map(k => ({ k, d: parseKey(k), kg: map[k] }))
-    .filter(p => p.d >= START_DATE)          // ignore anything before the current baseline
-    .sort((a, b) => a.d - b.d);
-}
-function latestWeight() {
-  const arr = allWeights();
-  if (!arr.length) return null;
-  const p = arr[arr.length - 1];
-  let frac = (p.d - START_DATE) / (7 * 86400000);
-  p.weekIdx = Math.max(0, Math.min(WEEKS.length - 1, Math.floor(frac)));
-  return p;
-}
 function weekDays() {
-  const now = new Date(); now.setHours(0, 0, 0, 0);
-  const dow = now.getDay();                 // 0 Sun .. 6 Sat
-  const monOffset = dow === 0 ? -6 : 1 - dow;
-  const mon = new Date(now); mon.setDate(now.getDate() + monOffset);
+  const mon = mondayOf(new Date());
   const days = [];
-  for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); days.push(d); }
+  for (let i = 0; i < 7; i++) days.push(addDays(mon, i));
   return days;
 }
-const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>';
+
+function dayWeightInput(key) {
+  const v = weights[key];
+  if (unit === "kg") {
+    return `<div class="wmeasure"><input class="dayw num" inputmode="decimal" data-key="${key}" value="${v != null ? fmt(v) : ""}" placeholder="—"><span class="uunit">kg</span></div>`;
+  }
+  return `<div class="wmeasure"><span class="dayimp">
+    <input class="dayw st num" inputmode="numeric" data-key="${key}" value="${v != null ? stPart(v) : ""}" placeholder="—"><span class="uunit">st</span>
+    <input class="dayw lb num" inputmode="decimal" data-key="${key}" value="${v != null ? fmt(lbPart(v)) : ""}" placeholder="—"><span class="uunit">lb</span></span></div>`;
+}
+
+function mealsPanelHTML() {
+  const M = settings.meals;
+  const mac = x => x.kcal != null ? `<span class="mac">${x.kcal} kcal · ${x.p ?? 0}g P · ${x.c ?? 0}g C · ${x.f ?? 0}g F</span>` : "";
+  let h = `<div class="sstitle">Meals &amp; timings</div>`;
+  M.items.forEach(it => {
+    if (it.when) h += `<div class="ssdiv">${esc(it.when)}</div>`;
+    h += `<div class="ssitem">${esc(it.text)}${mac(it)}</div>`;
+  });
+  const counted = M.items.filter(x => x.kcal != null);
+  const tot = counted.reduce((a, x) => ({ kcal: a.kcal + x.kcal, p: a.p + (x.p || 0), c: a.c + (x.c || 0), f: a.f + (x.f || 0) }), { kcal: 0, p: 0, c: 0, f: 0 });
+  if (counted.length) {
+    h += `<div class="mactot">${counted.length} meal${counted.length === 1 ? "" : "s"} total<br><b>${tot.kcal} kcal · ${tot.p}g P · ${tot.c}g C · ${tot.f}g F</b></div>`;
+  }
+  const T = M.target;
+  if (T.kcal != null) {
+    h += `<div class="mactot" style="background:#E6F4EC;margin-top:6px">Daily target<br><b>${T.kcal} kcal · ${T.p ?? 0}g P · ${T.c ?? 0}g C · ${T.f ?? 0}g F</b></div>`;
+    const gapK = T.kcal - tot.kcal, gapP = (T.p ?? 0) - tot.p;
+    if (counted.length && (gapK > 0 || gapP > 0)) {
+      const parts = [];
+      if (gapK > 0) parts.push(gapK + " kcal");
+      if (gapP > 0) parts.push(gapP + "g protein");
+      h += `<div class="macgap">Short by <b>${parts.join(" and ")}</b> — a protein-rich snack closes it.</div>`;
+    }
+    h += `<div class="ssnote">These are targets to <b>reach</b>, not limits to stay under. ` +
+         `Protein is the one that matters most — it's what protects muscle.</div>`;
+  }
+  return h;
+}
+function sessionPanelHTML(det) {
+  return `<div class="sstitle">${esc(det.title || "Session")}</div>` +
+    det.items.map(i => /^\s*(—|#)/.test(i)
+      ? `<div class="ssdiv">${esc(i.replace(/—|#/g, "").trim())}</div>`
+      : `<div class="ssitem">${esc(i)}</div>`).join("") +
+    (det.note ? `<div class="ssnote">${esc(det.note)}</div>` : "");
+}
 
 function renderHabits() {
   const days = weekDays();
+  const H = settings.habits;
+  const cols = "1fr" + " 28px".repeat(H.length);
   const todayKey = dateKey(new Date());
+  const today = today0();
+  const hasMeals = settings.meals.items.length > 0;
+  let anySession = false;
   document.getElementById("h-cap").textContent =
     "Week of " + days[0].getDate() + "–" + days[6].getDate() + " " + MON[days[6].getMonth()];
 
+  const head = document.getElementById("hhead");
+  head.style.gridTemplateColumns = cols;
+  head.innerHTML = "<div></div>" + H.map(h => `<div class="ic">${esc(h.icon)}<small>${esc(h.short)}</small></div>`).join("");
+
   const grid = document.getElementById("hgrid");
   grid.innerHTML = "";
-  const today = new Date(); today.setHours(0, 0, 0, 0);
   days.forEach(d => {
     const key = dateKey(d);
-    const h = habits[key] || {};
+    const day = habits[key] || {};
     const isToday = key === todayKey;
-    const future = d > today;
-    const wv = dailyW[key] != null ? fmt(dailyW[key]) : "";
-    const wInput = future
-      ? ''
-      : `<div class="wmeasure"><input class="dayw num" inputmode="decimal" data-key="${key}" value="${wv}" placeholder="—"><span class="uunit">kg</span></div>`;
+    const sess = settings.sessions[d.getDay()];
+    const hasSess = sess.items.length > 0 || !!sess.note;
+    if (sess.title || hasSess) anySession = true;
     const row = document.createElement("div");
     row.className = "hrow" + (isToday ? " today" : "");
+    row.style.gridTemplateColumns = cols;
     row.innerHTML = `
       <div class="hday">
         <div class="d">${DAY_ABBR[d.getDay()]} ${d.getDate()}${isToday ? '<span class="today-tag">TODAY</span>' : ''}</div>
-        <div class="w">${SESSION_OVERRIDES[key] || WORKOUTS[d.getDay()]}</div>
-        <button class="seelink" data-dow="${d.getDay()}" data-key="${key}">see session ›</button>
-        <button class="seelink meals" data-dow="${d.getDay()}" data-key="${key}">see meals ›</button>
-        ${wInput}
-      </div>
-      <div class="cb${h.water ? " on" : ""}" data-key="${key}" data-h="water">${CHECK}</div>
-      <div class="cb${h.steps ? " on" : ""}" data-key="${key}" data-h="steps">${CHECK}</div>
-      <div class="cb wk${h.workout ? " on" : ""}" data-key="${key}" data-h="workout">${CHECK}</div>
-      <div class="cb sx${h.sex ? " on" : ""}" data-key="${key}" data-h="sex">${CHECK}</div>`;
+        ${sess.title ? `<div class="w">${esc(sess.title)}</div>` : ""}
+        ${hasSess ? `<button class="seelink" data-dow="${d.getDay()}">see session ›</button>` : ""}
+        ${hasMeals ? `<button class="seelink meals" data-dow="${d.getDay()}">see meals ›</button>` : ""}
+        ${d > today ? "" : dayWeightInput(key)}
+      </div>` +
+      H.map(h => `<div class="cb${day[h.id] ? " on" : ""}" data-key="${key}" data-h="${esc(h.id)}">${CHECK}</div>`).join("");
     grid.appendChild(row);
   });
+  document.getElementById("h-empty").hidden = anySession || hasMeals;
 
-  // intimacy summary
-  updateSexSummary();
+  updateHabitSummary();
 
-  grid.querySelectorAll("input.dayw").forEach(inp => {
+  grid.querySelectorAll(".wmeasure").forEach(wrap => {
+    const inputs = wrap.querySelectorAll("input.dayw");
+    const key = inputs[0].dataset.key;
     const apply = (full) => {
-      const key = inp.dataset.key, v = parseFloat(inp.value);
-      if (inp.value.trim() === "") { delete dailyW[key]; }
-      else if (!isNaN(v) && v >= 30 && v <= 300) { dailyW[key] = Math.round(v * 100) / 100; }
-      else { return; }                     // ignore implausible/partial values mid-type
-      saveDailyW();
-      if (full) render();                   // on blur: full resync
-      else { renderChart(); renderHero(); } // while typing: update graph only, keep focus
+      let kg;
+      if (unit === "kg") {
+        if (inputs[0].value.trim() === "") kg = null; else kg = parseFloat(inputs[0].value);
+      } else {
+        const st = parseFloat(inputs[0].value), lb = parseFloat(inputs[1].value);
+        kg = isNaN(st) && isNaN(lb) ? null : stLbToKg(isNaN(st) ? 0 : st, isNaN(lb) ? 0 : lb);
+      }
+      if (kg != null && !plausible(kg)) return;   // ignore implausible/partial values mid-type
+      setWeight(key, kg);
+      if (full) render();                          // on blur: full resync
+      else { renderChart(); renderHero(); }        // while typing: update graph only, keep focus
     };
-    inp.addEventListener("input", () => apply(false));
-    inp.addEventListener("change", () => apply(true));
+    inputs.forEach(inp => {
+      inp.addEventListener("input", () => apply(false));
+      inp.addEventListener("change", () => apply(true));
+    });
   });
 
   grid.querySelectorAll(".seelink").forEach(btn => {
@@ -758,7 +958,6 @@ function renderHabits() {
       const row = btn.closest(".hrow");
       const existing = row.nextElementSibling;
       const already = existing && existing.classList.contains("sesspanel") && existing.dataset.kind === (isMeals ? "meals" : "sess");
-      // close any open panel
       grid.querySelectorAll(".sesspanel").forEach(p => p.remove());
       grid.querySelectorAll(".seelink").forEach(b => {
         b.textContent = b.classList.contains("meals") ? "see meals ›" : "see session ›";
@@ -768,113 +967,339 @@ function renderHabits() {
       const panel = document.createElement("div");
       panel.className = "sesspanel";
       panel.dataset.kind = isMeals ? "meals" : "sess";
-
-      if (isMeals) {
-        const m = MEALS[+btn.dataset.dow] || { lunch: "Protein + carb + veg", kcal: 550, p: 40, c: 60, f: 14 };
-        const mac = x => `<span class="mac">${x.kcal} kcal · ${x.p}g P · ${x.c}g C · ${x.f}g F</span>`;
-        const totK = BREAKFAST.kcal + m.kcal + DINNER.kcal;
-        const totP = BREAKFAST.p + m.p + DINNER.p;
-        const totC = BREAKFAST.c + m.c + DINNER.c;
-        const totF = BREAKFAST.f + m.f + DINNER.f;
-        panel.innerHTML =
-          `<div class="sstitle">Meals & timings</div>` +
-          `<div class="ssdiv">~6:00am · pre-train (optional)</div><div class="ssitem">Half a banana or a few dates. Fasted is fine for easy runs.</div>` +
-          `<div class="ssdiv">~8:30am · breakfast (post-workout)</div><div class="ssitem">${BREAKFAST.text}${mac(BREAKFAST)}</div>` +
-          `<div class="ssdiv">1:00pm · lunch</div><div class="ssitem">${m.lunch}${mac(m)}</div>` +
-          `<div class="ssdiv">7:00pm · dinner (eat slowly)</div><div class="ssitem">${DINNER.text}${mac(DINNER)}</div>` +
-          `<div class="mactot">3 meals total<br><b>${totK} kcal · ${totP}g P · ${totC}g C · ${totF}g F</b></div>` +
-          `<div class="mactot" style="background:#E6F4EC;margin-top:6px">Daily target<br><b>${TARGET_KCAL} kcal · ${TARGET_P}g P · ${TARGET_C}g C · ${TARGET_F}g F</b></div>` +
-          `<div class="macgap">Short by <b>${TARGET_KCAL - totK} kcal and ${TARGET_P - totP}g protein</b> — a whey scoop or Greek yoghurt closes it.</div>` +
-          `<div class="ssnote">These are targets to <b>reach</b>, not limits to stay under. ` +
-          `Protein is the one that matters most — it's what protects muscle.</div>`;
-      } else {
-        const det = WORKOUT_DETAILS[+btn.dataset.dow];
-        if (!det) return;
-        panel.innerHTML =
-          `<div class="sstitle">${det.title}</div>` +
-          det.items.map(i => i.startsWith("—")
-            ? `<div class="ssdiv">${i.replace(/—/g, "").trim()}</div>`
-            : `<div class="ssitem">${i}</div>`).join("") +
-          (det.note ? `<div class="ssnote">${det.note}</div>` : "");
-      }
+      panel.innerHTML = isMeals ? mealsPanelHTML() : sessionPanelHTML(settings.sessions[+btn.dataset.dow]);
       row.insertAdjacentElement("afterend", panel);
-      btn.textContent = isMeals ? "hide ˅" : "hide ˅";
+      btn.textContent = "hide ˅";
     });
   });
 
   grid.querySelectorAll(".cb").forEach(cb => {
     cb.addEventListener("click", () => {
-      const key = cb.dataset.key, name = cb.dataset.h;
+      const key = cb.dataset.key, id = cb.dataset.h;
       if (!habits[key]) habits[key] = {};
-      habits[key][name] = !habits[key][name];
-      if (!habits[key].water && !habits[key].steps && !habits[key].workout && !habits[key].sex) delete habits[key];
+      if (habits[key][id]) delete habits[key][id]; else habits[key][id] = true;
+      if (!Object.keys(habits[key]).length) delete habits[key];
       saveHabits();
       cb.classList.toggle("on");
-      if (name === "sex") updateSexSummary();
+      updateHabitSummary();
     });
   });
 }
 
-function updateSexSummary() {
+function updateHabitSummary() {
   const wkKeys = weekDays().map(dateKey);
-  let allTime = 0, thisWeek = 0;
-  Object.keys(habits).forEach(k => { if (habits[k] && habits[k].sex) { allTime++; if (wkKeys.includes(k)) thisWeek++; } });
-  document.getElementById("h-sex").textContent =
-    allTime + (allTime === 1 ? " day" : " days") + " · " + thisWeek + " this week";
+  const el = document.getElementById("h-summary");
+  const H = settings.habits;
+  el.hidden = !H.length;
+  el.innerHTML = H.map(h => {
+    let week = 0, all = 0;
+    Object.keys(habits).forEach(k => { if (habits[k][h.id]) { all++; if (wkKeys.includes(k)) week++; } });
+    return `<span>${esc(h.icon)} <b>${week}/7</b> this week · ${all} total</span>`;
+  }).join("");
 }
+
+// ---- settings & onboarding sheet ----
+const sheet = document.getElementById("sheet");
+const sheetInner = document.getElementById("sheet-inner");
+function showSheet(html) {
+  sheetInner.innerHTML = html;
+  sheet.hidden = false; sheet.scrollTop = 0;
+  document.body.classList.add("sheet-open");
+}
+function hideSheet() { sheet.hidden = true; sheetInner.innerHTML = ""; document.body.classList.remove("sheet-open"); }
+
+function weightField(name, label, kg) {
+  const inner = unit === "kg"
+    ? `<input class="f-in num" data-w="${name}" data-part="kg" inputmode="decimal" value="${kg != null ? fmt(kg) : ""}" placeholder="0.0"><span class="uunit">kg</span>`
+    : `<input class="f-in num w-st" data-w="${name}" data-part="st" inputmode="numeric" value="${kg != null ? stPart(kg) : ""}" placeholder="st"><span class="uunit">st</span>
+       <input class="f-in num w-lb" data-w="${name}" data-part="lb" inputmode="decimal" value="${kg != null ? fmt(lbPart(kg)) : ""}" placeholder="lb"><span class="uunit">lb</span>`;
+  return `<label class="fld"><span>${label}</span><div class="wrow">${inner}</div></label>`;
+}
+function readWeight(root, name) {
+  const q = part => root.querySelector(`[data-w="${name}"][data-part="${part}"]`);
+  if (q("kg")) { const v = parseFloat(q("kg").value); return isNaN(v) ? null : v; }
+  const st = parseFloat(q("st").value), lb = parseFloat(q("lb").value);
+  if (isNaN(st) && isNaN(lb)) return null;
+  return stLbToKg(isNaN(st) ? 0 : st, isNaN(lb) ? 0 : lb);
+}
+function planFieldsHTML(p) {
+  return `<div class="fgrid">
+      ${weightField("startKg", "Starting weight", p.startKg)}
+      ${weightField("goalKg", "Goal weight", p.goalKg)}
+      <label class="fld"><span>Start date</span><input class="f-in" type="date" id="f-start" value="${esc(p.start)}"></label>
+      <label class="fld"><span>Goal date</span><input class="f-in" type="date" id="f-goaldate" value="${esc(p.goalDate)}"></label>
+    </div>
+    <div class="preview" id="plan-preview"></div>`;
+}
+function readPlan(root) {
+  return { startKg: readWeight(root, "startKg"), goalKg: readWeight(root, "goalKg"),
+           start: root.querySelector("#f-start").value, goalDate: root.querySelector("#f-goaldate").value };
+}
+function updatePreview(root) {
+  const el = root.querySelector("#plan-preview");
+  const a = assessPlan(readPlan(root));
+  el.className = "preview" + (a.error ? " err" : a.warn ? " warn" : "");
+  if (a.error) { el.textContent = a.error; return a; }
+  const rate = unit === "kg" ? fmt(a.perWeek, 2) + " kg" : toLbNum(a.perWeek).toFixed(1) + " lb";
+  el.innerHTML = `<b>${a.weeks + 1} weeks</b> · about <b>${rate}</b> a week (${fmt(a.pct, 2)}% of body weight).` +
+    (a.warn ? "<br>That's faster than ~1% a week, which most people find hard to sustain. A later goal date gives you room for bad weeks." : "");
+  return a;
+}
+function wirePlanFields(root) {
+  root.querySelectorAll("[data-w], #f-start, #f-goaldate").forEach(i => i.addEventListener("input", () => updatePreview(root)));
+  updatePreview(root);
+}
+function unitSegHTML() {
+  return `<div class="seg" id="sheet-seg"><button data-unit="kg" class="${unit === "kg" ? "active" : ""}">kg</button><button data-unit="imp" class="${unit === "imp" ? "active" : ""}">st / lb</button></div>`;
+}
+// Re-render the sheet in the other unit without losing what has been typed
+function wireSheetUnit(root, rerender) {
+  root.querySelector("#sheet-seg").addEventListener("click", e => {
+    const btn = e.target.closest("button"); if (!btn || btn.dataset.unit === unit) return;
+    const keep = rerender.capture();
+    unit = btn.dataset.unit; saveUnit(); syncSeg();
+    rerender.draw(keep);
+  });
+}
+
+function openOnboarding(prefill) {
+  const mon = mondayOf(new Date());
+  const p = prefill || { startKg: null, goalKg: null, start: dateKey(mon), goalDate: dateKey(addDays(mon, 16 * 7)) };
+  showSheet(`
+    <div class="welcome">
+      <div class="eyebrow">Welcome</div>
+      <h2 style="font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:-0.02em;margin-top:4px">Set up your plan</h2>
+      <p>Tell us where you're starting and where you want to get to. We'll draw a steady target line between them. Everything stays on this device — no account, no tracking.</p>
+    </div>
+    <div class="fsec">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3>Your plan</h3>${unitSegHTML()}</div>
+      ${planFieldsHTML(p)}
+    </div>
+    <button class="btn coral" id="ob-start" style="width:100%;padding:15px">Start my plan</button>
+    <p class="fhint" style="text-align:center;margin-top:12px">You can add habits, weekly sessions and meals any time from ⚙︎ settings.<br>
+      Moving from another device? <a href="#" id="ob-import" style="color:var(--coral);font-weight:700">Restore a backup</a></p>`);
+  wirePlanFields(sheetInner);
+  wireSheetUnit(sheetInner, { capture: () => readPlan(sheetInner), draw: openOnboarding });
+  sheetInner.querySelector("#ob-import").addEventListener("click", e => { e.preventDefault(); document.getElementById("import-file").click(); });
+  sheetInner.querySelector("#ob-start").addEventListener("click", () => {
+    const p2 = readPlan(sheetInner);
+    if (updatePreview(sheetInner).error) return;
+    p2.targets = buildTargets(p2.startKg, p2.goalKg, p2.start, p2.goalDate);
+    settings = normalizeSettings(defaultSettings(p2));
+    if (parseKey(p2.start) <= today0() && weights[p2.start] == null) setWeight(p2.start, p2.startKg);
+    saveSettings(); hideSheet(); firstDraw = true; render();
+  });
+}
+
+function habitRowHTML(h) {
+  return `<div class="habit-row" data-id="${esc(h.id)}">
+    <input class="f-in" data-f="icon" value="${esc(h.icon)}" maxlength="4" aria-label="Icon">
+    <input class="f-in" data-f="short" value="${esc(h.short)}" maxlength="5" aria-label="Short label" placeholder="Label">
+    <input class="f-in name" data-f="name" value="${esc(h.name)}" aria-label="Name" placeholder="Name">
+    <button class="ed-x" data-del aria-label="Remove">×</button></div>`;
+}
+function mealRowHTML(m) {
+  const n = v => v != null ? v : "";
+  return `<div class="ed-row meal-row">
+    <div class="ed-top"><input class="f-in" data-f="when" value="${esc(m.when)}" placeholder="When, e.g. 1:00pm · lunch"><button class="ed-x" data-del aria-label="Remove">×</button></div>
+    <input class="f-in" data-f="text" value="${esc(m.text)}" placeholder="What you eat" style="margin-top:6px">
+    <div class="macro-grid">
+      <input class="f-in num" data-f="kcal" inputmode="numeric" value="${n(m.kcal)}" placeholder="kcal">
+      <input class="f-in num" data-f="p" inputmode="numeric" value="${n(m.p)}" placeholder="P g">
+      <input class="f-in num" data-f="c" inputmode="numeric" value="${n(m.c)}" placeholder="C g">
+      <input class="f-in num" data-f="f" inputmode="numeric" value="${n(m.f)}" placeholder="F g">
+    </div></div>`;
+}
+
+function openSettings(draft) {
+  const s = draft || JSON.parse(JSON.stringify(settings));
+  const ev = s.event || { name: "", date: "", detail: "" };
+  const T = s.meals.target;
+  const n = v => v != null ? v : "";
+  showSheet(`
+    <div class="sheet-bar"><button class="btn ghost small" id="st-cancel">Cancel</button><h2>Plan &amp; settings</h2><button class="btn coral small" id="st-save">Save</button></div>
+
+    <div class="fsec">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><h3>Plan</h3>${unitSegHTML()}</div>
+      <div class="fhint">Changing any of these rebuilds the target line as a straight line from start to goal. Your logged weights are kept.</div>
+      ${planFieldsHTML(s.plan)}
+    </div>
+
+    <div class="fsec">
+      <h3>Event</h3>
+      <div class="fhint">Optional — a race, holiday or date you're working towards. Shows a countdown. Leave the name blank to hide it.</div>
+      <div class="fgrid">
+        <label class="fld"><span>Name</span><input class="f-in" id="ev-name" value="${esc(ev.name)}" placeholder="e.g. 10K race"></label>
+        <label class="fld"><span>Date</span><input class="f-in" type="date" id="ev-date" value="${esc(ev.date)}"></label>
+      </div>
+      <label class="fld" style="margin-top:10px"><span>Details</span><input class="f-in" id="ev-detail" value="${esc(ev.detail)}" placeholder="Where, distance, anything useful"></label>
+    </div>
+
+    <div class="fsec">
+      <h3>Daily habits</h3>
+      <div class="fhint">Up to ${MAX_HABITS}. Icon, a short label (5 letters max) and a name. Removing a habit hides it; past ticks are kept.</div>
+      <div id="habit-list">${s.habits.map(habitRowHTML).join("")}</div>
+      <button class="btn ghost small" id="habit-add">+ Add habit</button>
+    </div>
+
+    <div class="fsec">
+      <h3>Weekly sessions</h3>
+      <div class="fhint">One exercise per line. Start a line with # to make a heading (e.g. <b># core</b>). Leave a day empty for rest.</div>
+      ${DAY_ORDER.map(d => { const x = s.sessions[d]; return `
+        <details class="day-ed" data-dow="${d}">
+          <summary>${DAY_FULL[d]}<small>${esc(x.title || (x.items.length ? "untitled" : "rest"))}</small></summary>
+          <div class="fgrid one">
+            <label class="fld"><span>Title</span><input class="f-in" data-f="title" value="${esc(x.title)}" placeholder="e.g. Upper body"></label>
+            <label class="fld"><span>Exercises</span><textarea class="f-ta" data-f="items" placeholder="Lat pulldown — 3 × 10">${esc(x.items.join("\n"))}</textarea></label>
+            <label class="fld"><span>Note</span><input class="f-in" data-f="note" value="${esc(x.note)}" placeholder="Optional reminder"></label>
+          </div>
+        </details>`; }).join("")}
+    </div>
+
+    <div class="fsec">
+      <h3>Meals</h3>
+      <div class="fhint">Your usual day of eating. Macros are optional — fill them in to see totals against your daily target.</div>
+      <div id="meal-list">${s.meals.items.map(mealRowHTML).join("")}</div>
+      <button class="btn ghost small" id="meal-add">+ Add meal</button>
+      <div class="fld" style="margin-top:14px"><span>Daily target (optional)</span>
+        <div class="macro-grid" id="meal-target">
+          <input class="f-in num" data-f="kcal" inputmode="numeric" value="${n(T.kcal)}" placeholder="kcal">
+          <input class="f-in num" data-f="p" inputmode="numeric" value="${n(T.p)}" placeholder="P g">
+          <input class="f-in num" data-f="c" inputmode="numeric" value="${n(T.c)}" placeholder="C g">
+          <input class="f-in num" data-f="f" inputmode="numeric" value="${n(T.f)}" placeholder="F g">
+        </div></div>
+    </div>
+
+    <div class="fsec">
+      <h3>Your data</h3>
+      <div class="fhint">Everything lives on this device only. Export regularly — clearing Safari data or losing your phone loses it.</div>
+      <div class="datarow">
+        <button class="btn small" id="st-export">Export backup</button>
+        <button class="btn ghost small" id="st-import">Restore from backup</button>
+      </div>
+    </div>`);
+
+  const root = sheetInner;
+  wirePlanFields(root);
+  wireSheetUnit(root, { capture: () => readSettingsForm(root, s), draw: openSettings });
+
+  root.addEventListener("click", e => {
+    const del = e.target.closest("[data-del]");
+    if (del) { (del.closest(".habit-row") || del.closest(".meal-row")).remove(); syncHabitAdd(); }
+  });
+  const syncHabitAdd = () => { root.querySelector("#habit-add").hidden = root.querySelectorAll(".habit-row").length >= MAX_HABITS; };
+  syncHabitAdd();
+  root.querySelector("#habit-add").addEventListener("click", () => {
+    root.querySelector("#habit-list").insertAdjacentHTML("beforeend", habitRowHTML({ id: "h" + Date.now().toString(36), icon: "✓", short: "", name: "" }));
+    syncHabitAdd();
+  });
+  root.querySelector("#meal-add").addEventListener("click", () => {
+    root.querySelector("#meal-list").insertAdjacentHTML("beforeend", mealRowHTML({ when: "", text: "", kcal: null, p: null, c: null, f: null }));
+  });
+  root.querySelector("#st-cancel").addEventListener("click", hideSheet);
+  root.querySelector("#st-export").addEventListener("click", exportData);
+  root.querySelector("#st-import").addEventListener("click", () => document.getElementById("import-file").click());
+  root.querySelector("#st-save").addEventListener("click", () => {
+    if (updatePreview(root).error) { root.querySelector("#plan-preview").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+    const next = normalizeSettings(readSettingsForm(root, s));
+    if (!next) return;
+    settings = next; saveSettings(); hideSheet(); firstDraw = true; render();
+  });
+}
+
+// Reads the whole settings form into a settings object (draft = what the form was opened with)
+function readSettingsForm(root, draft) {
+  const p = readPlan(root);
+  const old = settings.plan;   // compare with what's saved, not the draft, so a unit switch mid-edit can't hide a change
+  // 0.05 kg tolerance: a kg -> st/lb -> kg round trip mustn't count as an edit and wipe a hand-shaped target line
+  const near = (a, b) => a != null && Math.abs(a - b) < 0.05;
+  const changed = p.start !== old.start || p.goalDate !== old.goalDate || !near(p.startKg, old.startKg) || !near(p.goalKg, old.goalKg);
+  const plan = changed ? { ...p, targets: null } : { ...old };
+  if (changed && !assessPlan(p).error) plan.targets = buildTargets(p.startKg, p.goalKg, p.start, p.goalDate);
+
+  const evName = root.querySelector("#ev-name").value.trim(), evDate = root.querySelector("#ev-date").value;
+  const event = evName && validKey(evDate) ? { name: evName, date: evDate, detail: root.querySelector("#ev-detail").value.trim() } : null;
+
+  const habitsOut = [...root.querySelectorAll(".habit-row")].map(r => ({
+    id: r.dataset.id,
+    icon: r.querySelector('[data-f="icon"]').value.trim() || "✓",
+    short: r.querySelector('[data-f="short"]').value.trim(),
+    name: r.querySelector('[data-f="name"]').value.trim()
+  })).filter(h => h.short || h.name);
+
+  const sessions = {};
+  root.querySelectorAll(".day-ed").forEach(d => {
+    sessions[d.dataset.dow] = {
+      title: d.querySelector('[data-f="title"]').value.trim(),
+      items: d.querySelector('[data-f="items"]').value.split("\n").map(x => x.trim()).filter(Boolean),
+      note: d.querySelector('[data-f="note"]').value.trim()
+    };
+  });
+
+  const num = (el, f) => numOrNull(el.querySelector(`[data-f="${f}"]`).value);
+  const items = [...root.querySelectorAll(".meal-row")].map(r => ({
+    when: r.querySelector('[data-f="when"]').value.trim(), text: r.querySelector('[data-f="text"]').value.trim(),
+    kcal: num(r, "kcal"), p: num(r, "p"), c: num(r, "c"), f: num(r, "f") }));
+  const tEl = root.querySelector("#meal-target");
+  const target = { kcal: num(tEl, "kcal"), p: num(tEl, "p"), c: num(tEl, "c"), f: num(tEl, "f") };
+
+  return { plan, event, habits: habitsOut, sessions, meals: { items, target } };
+}
+
+document.getElementById("open-settings").addEventListener("click", () => { if (settings) openSettings(); });
 
 document.getElementById("seg").addEventListener("click", e => {
   const btn = e.target.closest("button"); if (!btn) return;
-  unit = btn.dataset.unit; saveUnit();
-  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("active", b.dataset.unit === unit));
-  render();
+  unit = btn.dataset.unit; saveUnit(); syncSeg();
+  if (settings) render();
 });
 
 document.getElementById("reset").addEventListener("click", () => {
-  if (confirm("Clear all entries and start from Week 1 baseline?")) { actuals = { 1: 82.0 }; save(); render(); }
+  if (!settings) return;
+  if (!confirm("Clear every weigh-in and habit tick?\n\nYour plan, sessions and meals are kept. Export a backup first if you might want this data back.")) return;
+  weights = {}; habits = {};
+  if (parseKey(settings.plan.start) <= today0()) weights[settings.plan.start] = settings.plan.startKg;  // baseline back at week 1
+  saveWeights(); saveHabits(); render();
 });
 
 // ---- export ----
 function pad(s, n) { s = String(s); return s + " ".repeat(Math.max(0, n - s.length)); }
+function backupObject() { return { app: "tracker", version: 2, settings, weights, habits, unit }; }
 function buildExportText() {
-  const now = new Date();
+  const plan = settings.plan;
   const L = [];
   L.push("TRACKER EXPORT");
-  L.push("Generated: " + now.toLocaleString());
+  L.push("Generated: " + new Date().toLocaleString());
   L.push("");
-  L.push("Goal:  " + fmt(GOAL) + " kg  (" + toStLb(GOAL, 0).replace(/\.0/, "") + ")  by " + GOAL_DATE);
-  L.push("Start: " + fmt(BASELINE) + " kg");
-  const last = lastEntry();
-  if (last) L.push("Latest: " + fmt(actuals[last.wk]) + " kg  (Week " + last.wk + ", " + last.date + ")");
+  L.push("Goal:  " + fmt(plan.goalKg) + " kg  (" + toStLb(plan.goalKg, 0).replace(/\.0/, "") + ")  by " + longDate(plan.goalDate));
+  L.push("Start: " + fmt(plan.startKg) + " kg  on " + longDate(plan.start));
+  const lw = latestWeight();
+  if (lw) L.push("Latest: " + fmt(lw.kg) + " kg  (" + longDate(lw.k) + ")");
   L.push("");
   L.push("WEEKLY WEIGH-INS (kg)");
   L.push(pad("Week", 6) + pad("Date", 9) + pad("Target", 9) + pad("Actual", 9) + "vs");
-  WEEKS.forEach(w => {
-    const a = actuals[w.wk];
-    const actual = a != null ? fmt(a) : "-";
-    const vs = a != null ? ((a - w.target > 0 ? "+" : "") + fmt(a - w.target)) : "";
-    L.push(pad("W" + w.wk, 6) + pad(w.date, 9) + pad(fmt(w.target), 9) + pad(actual, 9) + vs);
+  targets().forEach((t, i) => {
+    const a = weights[dateKey(weekDate(i))];
+    const vs = a != null ? ((a - t > 0 ? "+" : "") + fmt(a - t)) : "";
+    L.push(pad("W" + (i + 1), 6) + pad(shortDate(weekDate(i)), 9) + pad(fmt(t), 9) + pad(a != null ? fmt(a) : "-", 9) + vs);
   });
   L.push("");
-  const dwKeys = Object.keys(dailyW).sort();
-  L.push("DAILY WEIGH-INS (kg) — " + dwKeys.length + " logged");
-  if (dwKeys.length === 0) L.push("(none logged yet)");
-  dwKeys.forEach(k => L.push(pad(k, 13) + fmt(dailyW[k])));
+  const wKeys = Object.keys(weights).sort();
+  L.push("ALL WEIGH-INS (kg) — " + wKeys.length + " logged");
+  if (wKeys.length === 0) L.push("(none logged yet)");
+  wKeys.forEach(k => L.push(pad(k, 13) + fmt(weights[k])));
   L.push("");
-  L.push("DAILY HABITS  (W=water 3L, S=steps 8k, T=workout, X=intimacy)");
+  const H = settings.habits;
+  const letters = H.map((h, i) => String.fromCharCode(65 + i));
+  L.push("DAILY HABITS  (" + H.map((h, i) => letters[i] + "=" + h.name).join(", ") + ")");
   const keys = Object.keys(habits).sort();
   if (keys.length === 0) L.push("(none logged yet)");
-  keys.forEach(k => {
-    const h = habits[k];
-    const row = (h.water ? "W " : "- ") + (h.steps ? "S " : "- ") + (h.workout ? "T " : "- ") + (h.sex ? "X" : "-");
-    L.push(pad(k, 13) + row);
-  });
+  keys.forEach(k => L.push(pad(k, 13) + H.map((h, i) => habits[k][h.id] ? letters[i] : "-").join(" ")));
   L.push("");
-  let sexCount = keys.filter(k => habits[k].sex).length;
-  L.push("INTIMACY — total days logged: " + sexCount);
+  H.forEach(h => L.push(pad(h.name, 16) + "total days: " + keys.filter(k => habits[k][h.id]).length));
   L.push("");
   L.push("--- raw backup (keep this to restore) ---");
-  L.push(JSON.stringify({ actuals, habits, dailyW, unit }));
+  L.push(JSON.stringify(backupObject()));
   return L.join("\n");
 }
 
@@ -902,7 +1327,46 @@ async function exportData() {
   // Last resort: open the text so it can be copied
   try { const w = window.open("", "_blank"); w.document.write("<pre>" + txt.replace(/</g, "&lt;") + "</pre>"); } catch (e) {}
 }
-document.getElementById("export").addEventListener("click", exportData);
+document.getElementById("export").addEventListener("click", () => { if (settings) exportData(); });
+
+// ---- restore ----
+// Accepts a .txt export (reads the JSON after the "raw backup" line) or a bare JSON file.
+// Returns { settings, weights, habits, unit } or throws with a readable message.
+function parseBackup(text) {
+  let raw = null;
+  const marker = text.indexOf("--- raw backup");
+  const candidates = marker >= 0 ? text.slice(marker).split("\n").slice(1) : [text];
+  for (const c of candidates) { const t = c.trim(); if (!t) continue; try { raw = JSON.parse(t); break; } catch (e) {} }
+  if (!raw || typeof raw !== "object") throw new Error("Couldn't find any backup data in that file.");
+
+  if (raw.version === 2) {
+    const s = normalizeSettings(raw.settings);
+    if (!s) throw new Error("The plan in that backup is incomplete.");
+    return { settings: s, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), unit: raw.unit };
+  }
+  if (raw.actuals || raw.dailyW || raw.habits) {
+    // Backup from before plans were configurable: weekly weigh-ins were numbered from the original programme start.
+    const s = settings || normalizeSettings(legacySettings());
+    const w = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), legacySettings().plan.start);
+    return { settings: s, weights: w, habits: cleanHabits(raw.habits), unit: raw.unit };
+  }
+  throw new Error("That file doesn't look like a Tracker backup.");
+}
+document.getElementById("import-btn").addEventListener("click", () => document.getElementById("import-file").click());
+document.getElementById("import-file").addEventListener("change", async e => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  let b;
+  try { b = parseBackup(await file.text()); }
+  catch (err) { alert(err.message || "Couldn't read that file."); return; }
+  const nW = Object.keys(b.weights).length, nH = Object.keys(b.habits).length;
+  if (!confirm(`Restore this backup?\n\n${nW} weigh-in${nW === 1 ? "" : "s"} and ${nH} day${nH === 1 ? "" : "s"} of habits.\n\nThis replaces everything currently on this device.`)) return;
+  settings = b.settings; weights = b.weights; habits = b.habits;
+  if (b.unit === "kg" || b.unit === "imp") unit = b.unit;
+  saveSettings(); saveWeights(); saveHabits(); saveUnit(); syncSeg();
+  hideSheet(); firstDraw = true; render();
+});
 
 load();
 </script>
