@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { buildExportText, parseBackup } from './core/backup';
-import { dateKey, parseKey, startOfDay } from './core/dates';
+import { dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import type { Settings } from './core/types';
 import { UnitToggle } from './components/Fields';
 import { HabitsCard } from './components/HabitsCard';
@@ -15,6 +15,11 @@ import { EntriesList, EventCard, LogSheet } from './components/Entries';
 import { ProgressChart } from './components/ProgressChart';
 import { TrendCard } from './components/TrendCard';
 import { BodyCard } from './components/Body';
+import { CaloriesCard, LiftSheet, MilestoneBanner, PatternsCard } from './components/Extras';
+import { toCsv } from './core/csv';
+import { milestoneQuarter } from './core/insights';
+import { weightSeries } from './core/plan';
+import { trendSeries } from './core/trend';
 import { success } from './feel';
 import { pickBackupText, shareBackup } from './io';
 import { biometricName, canLock, unlock } from './lock';
@@ -44,6 +49,7 @@ function Main() {
   const [lockName, setLockName] = useState('Face ID');
   const [locked, setLocked] = useState(true);            // stays covered until we know whether the lock is on
   const [showSettings, setShowSettings] = useState(false);
+  const [lift, setLift] = useState<{ k: string; dow: number } | null>(null);
   const [log, setLog] = useState<{ key: string | null; n: number } | null>(null);
   const lockRef = useRef(prefs.lock);
   useEffect(() => { lockRef.current = prefs.lock; }, [prefs.lock]);
@@ -82,7 +88,7 @@ function Main() {
     if (on && !(await unlock(`Turn on ${lockName} lock`))) return false;   // prove it works before relying on it
     lockedRef.current = false;
     setLocked(false);
-    t.setPrefs({ lock: on });
+    t.setPrefs({ ...prefs, lock: on });
     return true;
   };
 
@@ -96,11 +102,16 @@ function Main() {
         `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Tracker.`, 'Restore');
       if (!ok) return;
       // Photos aren't in backups, so the ones already on this phone are kept
-      t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, measurements: b.measurements, photos: state.photos, unit: b.unit ?? state.unit });
+      t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, measurements: b.measurements, photos: state.photos,
+        intake: b.intake, lifts: b.lifts, unit: b.unit ?? state.unit });
       setShowSettings(false);
     } catch (e: any) {
       notify("Couldn't restore", e?.message || "That file couldn't be read.");
     }
+  };
+  const exportCsv = async () => {
+    try { await shareBackup('tracker-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
+    catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
   const exportData = async () => {
     if (!state.settings) return;
@@ -132,6 +143,13 @@ function Main() {
     );
   }
   const settings = state.settings;
+  // Milestones follow the trend, so a single light weigh-in can't trigger one
+  const trendNow = trendSeries(weightSeries(settings.plan, state.weights)).at(-1)?.trend;
+  const quarter = trendNow != null ? milestoneQuarter(settings.plan, trendNow) : 0;
+  const replan = async (next: Settings['plan']) => {
+    const ok = await confirm('Start a new line from here?', `Your goal date moves to ${longDate(next.goalDate)}. Past weeks and every weigh-in stay as they are.`, 'Re-plan');
+    if (ok) { t.setSettings({ ...settings, plan: next }); success(); }
+  };
 
   return (
     <View style={s.fill}>
@@ -148,13 +166,18 @@ function Main() {
             </Pressable>
           </View>
         </View>
+        {quarter > prefs.milestone && (
+          <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow!} unit={state.unit} onDismiss={() => t.setPrefs({ ...prefs, milestone: quarter })} />
+        )}
         <Hero settings={settings} weights={state.weights} unit={state.unit} />
         <EventCard settings={settings} />
-        <TrendCard settings={settings} weights={state.weights} unit={state.unit} />
+        <TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={replan} />
         <ProgressChart settings={settings} weights={state.weights} unit={state.unit} />
         <BodyCard settings={settings} weights={state.weights} unit={state.unit} measurements={state.measurements} photos={state.photos}
           onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} />
-        <HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} />
+        {settings.trackCalories && <CaloriesCard settings={settings} weights={state.weights} intake={state.intake} onChange={t.setIntake} />}
+        <HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} onLogSession={(k, dow) => setLift({ k, dow })} />
+        <PatternsCard settings={settings} weights={state.weights} habits={state.habits} unit={state.unit} />
         <EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={k => setLog({ key: k, n: Date.now() })} />
       </ScrollView>
 
@@ -163,6 +186,10 @@ function Main() {
         <Text style={s.fabTxt}>＋  Log weight</Text>
       </Pressable>
 
+      {lift && (
+        <LiftSheet dateK={lift.k} session={settings.sessions[lift.dow]} lifts={state.lifts} unit={state.unit} onClose={() => setLift(null)}
+          onSave={l => { t.setLifts(l); success(); setLift(null); }} />
+      )}
       {log && (
         <LogSheet key={log.n} visible initialKey={log.key} weights={state.weights} unit={state.unit} onClose={() => setLog(null)}
           onSave={(k, kg) => { if (log.key && log.key !== k) t.setWeight(log.key, null); t.setWeight(k, kg); success(); setLog(null); }}
@@ -173,7 +200,7 @@ function Main() {
         <SettingsScreen settings={settings} unit={state.unit} setUnit={t.setUnit}
           lock={prefs.lock} lockAvailable={lockAvailable} lockName={lockName} onLockChange={setLock}
           onSave={next => { t.setSettings(next); setShowSettings(false); }} onClose={() => setShowSettings(false)}
-          onExport={exportData} onRestore={restore} onReset={reset} />
+          onExport={exportData} onExportCsv={exportCsv} onRestore={restore} onReset={reset} />
       </Modal>
 
       {locked && prefs.lock && <LockScreen lockName={lockName} onUnlock={tryUnlock} />}

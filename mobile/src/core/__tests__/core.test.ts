@@ -3,7 +3,7 @@ import path from 'path';
 import { parseBackup, buildExportText } from '../backup';
 import { dateKey, validKey } from '../dates';
 import {
-  assessPlan, buildTargets, chartRange, chartWindow, goalDateForPace, targetAt, cleanHabits, cleanWeights, defaultSettings, habitCounts, latestWeight,
+  assessPlan, buildTargets, chartRange, chartWindow, goalDateForPace, targetAt, cleanHabits, cleanWeights, defaultSettings, latestWeight,
   mealTotals, normalizeSettings, planChanged, toggleHabit, weekDays, weightSeries,
 } from '../plan';
 import { lbPart, parseWeightInput, showWeight, stLbToKg, stPart } from '../units';
@@ -86,10 +86,9 @@ describe('reading the plan', () => {
     expect(days[0].getDate()).toBe(5);
     expect(days[6].getDate()).toBe(11);
   });
-  test('habit toggling and counts', () => {
+  test('habit toggling', () => {
     let log = toggleHabit({}, '2026-10-05', 'water');
     log = toggleHabit(log, '2026-10-06', 'water');
-    expect(habitCounts(log, 'water', ['2026-10-05'])).toEqual({ week: 1, all: 2 });
     log = toggleHabit(log, '2026-10-05', 'water');
     expect(log).toEqual({ '2026-10-06': { water: true } });
   });

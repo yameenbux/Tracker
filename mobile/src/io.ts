@@ -3,10 +3,11 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
-/** Writes the backup to a .txt file and opens the share sheet (Save to Files, Mail, Notes…). */
-export async function shareBackup(filename: string, text: string): Promise<void> {
+/** Writes text to a file and opens the share sheet (Save to Files, Mail, Notes…). Used for the .txt backup and the CSV. */
+export async function shareBackup(filename: string, text: string, kind: 'text' | 'csv' = 'text'): Promise<void> {
+  const mimeType = kind === 'csv' ? 'text/csv' : 'text/plain';
   if (Platform.OS === 'web') {
-    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+    const url = URL.createObjectURL(new Blob([text], { type: mimeType }));
     const a = document.createElement('a');
     a.href = url; a.download = filename; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1500);
@@ -15,7 +16,8 @@ export async function shareBackup(filename: string, text: string): Promise<void>
   const file = new File(Paths.cache, filename);
   file.create({ overwrite: true });
   file.write(text);
-  await Sharing.shareAsync(file.uri, { mimeType: 'text/plain', UTI: 'public.plain-text', dialogTitle: 'Tracker backup' });
+  await Sharing.shareAsync(file.uri, { mimeType, UTI: kind === 'csv' ? 'public.comma-separated-values-text' : 'public.plain-text',
+                                       dialogTitle: kind === 'csv' ? 'Tracker data (CSV)' : 'Tracker backup' });
 }
 
 /** Lets the user pick a backup file; resolves to its text, or null if they cancelled. */

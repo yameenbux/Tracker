@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
-import { weightSeries } from '../core/plan';
+import { behindBy, replanFromHere, weightSeries } from '../core/plan';
 import { latestJump, projectedGoalDate, trendSeries, weeklyRate } from '../core/trend';
 import { showWeight, toLbNum } from '../core/units';
-import type { Settings, Unit, Weights } from '../core/types';
+import type { Plan, Settings, Unit, Weights } from '../core/types';
 import { C, F } from '../theme';
-import { Card } from './ui';
+import { Button, Card } from './ui';
 
 /** Small weight change in the chosen unit, signed: "−0.42 kg" / "+0.9 lb". */
 function change(kg: number, unit: Unit, dp = 2): string {
@@ -18,7 +18,9 @@ function change(kg: number, unit: Unit, dp = 2): string {
  * Trend weight: what the scale is really doing once daily water swings are smoothed out,
  * the honest weekly rate, and why a sudden jump on the scale isn't fat.
  */
-export function TrendCard({ settings, weights, unit }: { settings: Settings; weights: Weights; unit: Unit }) {
+export function TrendCard({ settings, weights, unit, onReplan }: {
+  settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void;
+}) {
   const plan = settings.plan;
   const series = trendSeries(weightSeries(plan, weights));
   if (series.length < 2) {
@@ -33,6 +35,9 @@ export function TrendCard({ settings, weights, unit }: { settings: Settings; wei
   const eta = projectedGoalDate(last.trend, plan.goalKg, rate);
   const jump = latestJump(series);
   const pct = rate ? Math.abs(rate.perWeek) / last.trend * 100 : 0;
+  // Well behind the line (over 1 kg and 1% of body weight): offer a fresh line from here instead of a guilt trip
+  const behind = behindBy(plan, last.trend);
+  const replan = rate && behind > Math.max(1, last.trend * 0.01) ? replanFromHere(plan, last.trend) : null;
 
   return (
     <Card title="Trend">
@@ -75,6 +80,14 @@ export function TrendCard({ settings, weights, unit }: { settings: Settings; wei
           </Text>
         </View>
       )}
+      {replan && onReplan && (
+        <View style={s.replan}>
+          <Text style={s.replanTxt}>
+            Your trend is {showWeight(behind, unit).replace(/^0 st /, '')} behind the line. That’s normal; life happens. A new line from where you are keeps the same weekly pace and moves your goal date to <Text style={{ fontFamily: F.bodyBold }}>{longDate(replan.goalDate)}</Text>.
+          </Text>
+          <Button label="Re-plan from here" kind="primary" small onPress={() => onReplan(replan)} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
+        </View>
+      )}
       <Text style={s.foot}>Trend smooths out water and food weight, so it moves slowly by design.{' '}
         Latest weigh-in: {showWeight(last.kg, unit)}.</Text>
     </Card>
@@ -93,6 +106,8 @@ const s = StyleSheet.create({
   jumpDown: { backgroundColor: C.mintBg, borderColor: '#BFEBD8' },
   jumpTitle: { fontFamily: F.bodyBold, fontSize: 13, color: C.ink, marginBottom: 4 },
   jumpTxt: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 18 },
+  replan: { marginTop: 12, marginHorizontal: 4, backgroundColor: '#F3EEFA', borderWidth: 1, borderColor: '#E4DAF2', borderRadius: 12, padding: 12 },
+  replanTxt: { fontFamily: F.body, fontSize: 12.5, color: C.ink, lineHeight: 18 },
   foot: { fontFamily: F.body, fontSize: 11.5, color: C.inkSoft, lineHeight: 16, paddingHorizontal: 4, marginTop: 10 },
   empty: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 19, paddingHorizontal: 4 },
 });
