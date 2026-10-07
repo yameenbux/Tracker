@@ -13,6 +13,9 @@ import { HabitsCard } from './components/HabitsCard';
 import { Hero } from './components/Hero';
 import { EntriesList, EventCard, LogSheet } from './components/Entries';
 import { ProgressChart } from './components/ProgressChart';
+import { TrendCard } from './components/TrendCard';
+import { BodyCard } from './components/Body';
+import { success } from './feel';
 import { pickBackupText, shareBackup } from './io';
 import { biometricName, canLock, unlock } from './lock';
 import { LockScreen } from './screens/LockScreen';
@@ -92,7 +95,8 @@ function Main() {
       const ok = await confirm('Restore this backup?',
         `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Tracker.`, 'Restore');
       if (!ok) return;
-      t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, unit: b.unit ?? state.unit });
+      // Photos aren't in backups, so the ones already on this phone are kept
+      t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, measurements: b.measurements, photos: state.photos, unit: b.unit ?? state.unit });
       setShowSettings(false);
     } catch (e: any) {
       notify("Couldn't restore", e?.message || "That file couldn't be read.");
@@ -146,7 +150,10 @@ function Main() {
         </View>
         <Hero settings={settings} weights={state.weights} unit={state.unit} />
         <EventCard settings={settings} />
+        <TrendCard settings={settings} weights={state.weights} unit={state.unit} />
         <ProgressChart settings={settings} weights={state.weights} unit={state.unit} />
+        <BodyCard settings={settings} weights={state.weights} unit={state.unit} measurements={state.measurements} photos={state.photos}
+          onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} />
         <HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} />
         <EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={k => setLog({ key: k, n: Date.now() })} />
       </ScrollView>
@@ -158,7 +165,7 @@ function Main() {
 
       {log && (
         <LogSheet key={log.n} visible initialKey={log.key} weights={state.weights} unit={state.unit} onClose={() => setLog(null)}
-          onSave={(k, kg) => { if (log.key && log.key !== k) t.setWeight(log.key, null); t.setWeight(k, kg); setLog(null); }}
+          onSave={(k, kg) => { if (log.key && log.key !== k) t.setWeight(log.key, null); t.setWeight(k, kg); success(); setLog(null); }}
           onDelete={k => { t.setWeight(k, null); setLog(null); }} />
       )}
 

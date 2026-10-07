@@ -25,9 +25,16 @@ export interface Settings {
 export type Weights = Record<string, number>;                     // date -> kg
 export type HabitLog = Record<string, Record<string, true>>;       // date -> habit id -> ticked
 
+export type MeasureKey = 'waist' | 'hips' | 'chest' | 'arm';
+export type Measurements = Record<string, Partial<Record<MeasureKey, number>>>;   // date -> part -> cm
+export type Pose = 'front' | 'side' | 'back';
+export type PhotoLog = Record<string, Partial<Record<Pose, string>>>;             // date -> pose -> file name in app storage
+
 export interface TrackerState {
   settings: Settings | null;
   weights: Weights;
   habits: HabitLog;
   unit: Unit;
+  measurements: Measurements;
+  photos: PhotoLog;
 }

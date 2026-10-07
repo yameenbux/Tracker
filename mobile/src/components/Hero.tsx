@@ -1,9 +1,10 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
 import { latestWeight } from '../core/plan';
 import { fmt, lbPart, showWeight, stPart, toLbNum, toStLb } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
+import { useAnimatedNumber, useAnimatedPercent } from '../motion';
 import { C, F } from '../theme';
 
 export function Hero({ settings, weights, unit }: { settings: Settings; weights: Weights; unit: Unit }) {
@@ -12,6 +13,10 @@ export function Hero({ settings, weights, unit }: { settings: Settings; weights:
   const cur = lw ? lw.kg : plan.startKg;
   const curTarget = lw ? plan.targets[lw.weekIdx] : null;
   const pct = Math.max(0, Math.min(100, (plan.startKg - cur) / (plan.startKg - plan.goalKg) * 100));
+  // The headline number glides to a new weigh-in, and the bar fills in, instead of jumping
+  const shownKg = useAnimatedNumber(cur);
+  const bar = useAnimatedPercent(pct);
+  const barW = bar.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
   const lost = plan.startKg - cur;
   const togo = Math.max(0, cur - plan.goalKg);
   const kgOrLb = (kg: number, primary: boolean) => {
@@ -28,15 +33,17 @@ export function Hero({ settings, weights, unit }: { settings: Settings; weights:
       <Text style={s.label}>Current weight</Text>
       <View style={s.current} accessible accessibilityLabel={'Current weight ' + showWeight(cur, unit)}>
         {unit === 'kg'
-          ? <><Text style={s.big}>{fmt(cur)}</Text><Text style={s.unit}>kg</Text></>
-          : <><Text style={s.big}>{stPart(cur)}</Text><Text style={s.unit}>st</Text><Text style={s.big}>{fmt(lbPart(cur))}</Text><Text style={s.unit}>lb</Text></>}
+          ? <><Text style={s.big}>{fmt(shownKg)}</Text><Text style={s.unit}>kg</Text></>
+          : <><Text style={s.big}>{stPart(shownKg)}</Text><Text style={s.unit}>st</Text><Text style={s.big}>{fmt(lbPart(shownKg))}</Text><Text style={s.unit}>lb</Text></>}
       </View>
       <Text style={s.alt}>{unit === 'kg' ? toStLb(cur) : fmt(cur) + ' kg'}</Text>
       <Text style={s.when}>{lw ? 'Latest · ' + shortDate(lw.d) + (lw.k === dateKey(new Date()) ? ' · today' : '') : 'Not logged yet'}</Text>
 
       <View style={s.track}>
-        <LinearGradient colors={[C.amber, C.coral]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[s.fill, { width: `${pct}%` }]} />
-        <View style={[s.marker, { left: `${pct}%` }]} />
+        <Animated.View style={[s.fill, { width: barW, overflow: 'hidden' }]}>
+          <LinearGradient colors={[C.amber, C.coral]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+        </Animated.View>
+        <Animated.View style={[s.marker, { left: barW }]} />
       </View>
       <View style={s.ends}>
         <Text style={s.endTxt}>Start <Text style={s.endB}>{short(plan.startKg)}</Text></Text>

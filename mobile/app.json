@@ -33,6 +33,14 @@
         {
           "faceIDPermission": "Tracker uses Face ID to keep your weight and habits private."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tracker lets you pick progress photos. They stay private inside the app.",
+          "cameraPermission": "Tracker uses the camera to take progress photos. They stay private inside the app.",
+          "microphonePermission": false
+        }
       ]
     ]
   }
