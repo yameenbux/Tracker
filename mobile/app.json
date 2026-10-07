@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Tracker",
+    "slug": "tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yameenbux.tracker"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#2A1E45",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.yameenbux.tracker"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Tracker"
+    },
+    "plugins": [
+      "expo-sharing",
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Tracker uses Face ID to keep your weight and habits private."
+        }
+      ]
+    ]
+  }
+}
