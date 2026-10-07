@@ -1,6 +1,6 @@
 import { addDays, dateKey, daysBetween, parseKey, startOfDay, validKey, WEEK_MS } from './dates';
 import { numOrNull, plausible, round2 } from './units';
-import type { Habit, HabitLog, Macros, Plan, Session, Settings, Weights } from './types';
+import type { Habit, HabitLog, Macros, Plan, PlanBreak, Session, Settings, Weights } from './types';
 
 export const MAX_HABITS = 6;
 export const DEFAULT_HABITS: Habit[] = [
@@ -25,15 +25,48 @@ function weeksBetween(start: string, goal: string): number {
   return Math.round(daysBetween(parseKey(start), parseKey(goal)) / 7);
 }
 
-/** Straight line from start to goal, one point per week, rounded to 0.1 kg. */
-export function buildTargets(startKg: number, goalKg: number, start: string, goalDate: string): number[] {
+export const MAX_BREAK_WEEKS = 8;
+
+/** True if the week ending at index i (the step from week i-1 to week i) falls inside a planned break. */
+export function isBreakStep(start: string, breaks: PlanBreak[], i: number): boolean {
+  if (i < 1) return false;
+  const stepStart = addDays(parseKey(start), (i - 1) * 7).getTime();
+  return breaks.some(b => {
+    const from = parseKey(b.start).getTime();
+    return stepStart >= from && stepStart < addDays(parseKey(b.start), b.weeks * 7).getTime();
+  });
+}
+/** Weeks in which weight is meant to come down (total weeks minus break weeks). */
+export function lossWeeks(start: string, goalDate: string, breaks: PlanBreak[] = []): number {
+  const weeks = weeksBetween(start, goalDate);
+  let n = 0;
+  for (let i = 1; i <= weeks; i++) if (!isBreakStep(start, breaks, i)) n++;
+  return n;
+}
+
+/**
+ * Target line, one point per week, rounded to 0.1 kg: a straight line from start to goal,
+ * held flat during planned breaks. With `from`, weeks before `from.index` are kept as given
+ * and the line restarts from `from.kg` (used when re-planning part-way through).
+ */
+export function buildTargets(startKg: number, goalKg: number, start: string, goalDate: string,
+                             breaks: PlanBreak[] = [], from?: { index: number; kg: number; prefix: number[] }): number[] {
   const weeks = Math.max(1, weeksBetween(start, goalDate));
-  const t: number[] = [];
-  for (let i = 0; i <= weeks; i++) t.push(Math.round((startKg - (startKg - goalKg) * i / weeks) * 10) / 10);
+  const i0 = from ? Math.min(from.index, weeks) : 0;
+  const t: number[] = from ? from.prefix.slice(0, i0) : [];
+  let v = from ? from.kg : startKg;
+  t.push(Math.round(v * 10) / 10);
+  let steps = 0;
+  for (let i = i0 + 1; i <= weeks; i++) if (!isBreakStep(start, breaks, i)) steps++;
+  const per = steps > 0 ? (v - goalKg) / steps : 0;
+  for (let i = i0 + 1; i <= weeks; i++) {
+    if (!isBreakStep(start, breaks, i)) v -= per;
+    t.push(Math.round(v * 10) / 10);
+  }
   return t;
 }
 
-export interface PlanDraft { startKg: number | null; goalKg: number | null; start: string; goalDate: string }
+export interface PlanDraft { startKg: number | null; goalKg: number | null; start: string; goalDate: string; breaks?: PlanBreak[] }
 export type PlanAssessment =
   | { ok: false; error: string }
   | { ok: true; error?: undefined; weeks: number; perWeek: number; pct: number; warn: boolean };
@@ -47,7 +80,9 @@ export function assessPlan(p: PlanDraft): PlanAssessment {
   const weeks = weeksBetween(p.start, p.goalDate);
   if (weeks < 2) return { ok: false, error: 'The goal date needs to be at least 2 weeks after the start.' };
   if (weeks > 156) return { ok: false, error: 'Keep the plan under 3 years — you can always start a new one after.' };
-  const perWeek = (p.startKg - p.goalKg) / weeks;
+  const losing = lossWeeks(p.start, p.goalDate, p.breaks);
+  if (losing < 2) return { ok: false, error: 'The breaks leave less than 2 weeks of loss. Move the goal date later.' };
+  const perWeek = (p.startKg - p.goalKg) / losing;   // pace in the weeks that aren't breaks
   const pct = perWeek / p.startKg * 100;
   return { ok: true, weeks, perWeek, pct, warn: pct > 1 };
 }
@@ -59,8 +94,9 @@ export function normalizeSettings(s: any): Settings | null {
   const startKg = numOrNull(p.startKg), goalKg = numOrNull(p.goalKg);
   if (!validKey(p.start) || !validKey(p.goalDate) || !plausible(startKg) || !plausible(goalKg)) return null;
   let targets: number[] = Array.isArray(p.targets) ? p.targets : [];
-  if (targets.length < 2 || !targets.every(plausible)) targets = buildTargets(startKg, goalKg, p.start, p.goalDate);
-  const plan: Plan = { start: p.start, startKg, goalKg, goalDate: p.goalDate, targets: [...targets] };
+  const breaks = cleanBreaks(p.breaks);
+  if (targets.length < 2 || !targets.every(plausible)) targets = buildTargets(startKg, goalKg, p.start, p.goalDate, breaks);
+  const plan: Plan = { start: p.start, startKg, goalKg, goalDate: p.goalDate, targets: [...targets], breaks };
 
   const ev = s.event && s.event.name && validKey(s.event.date)
     ? { name: String(s.event.name), date: s.event.date, detail: String(s.event.detail || '') } : null;
@@ -86,7 +122,7 @@ export function normalizeSettings(s: any): Settings | null {
       kcal: numOrNull(x.kcal), p: numOrNull(x.p), c: numOrNull(x.c), f: numOrNull(x.f) })),
     target: { kcal: numOrNull(mt.kcal), p: numOrNull(mt.p), c: numOrNull(mt.c), f: numOrNull(mt.f) },
   };
-  return { plan, event: ev, habits, sessions, meals };
+  return { plan, event: ev, habits, sessions, meals, trackCalories: s.trackCalories === true };
 }
 
 export function cleanWeights(obj: unknown): Weights {
@@ -164,11 +200,6 @@ export function weekDays(now: Date = new Date()): Date[] {
   return Array.from({ length: 7 }, (_, i) => addDays(first, i));
 }
 
-export function habitCounts(log: HabitLog, id: string, weekKeys: string[]): { week: number; all: number } {
-  let week = 0, all = 0;
-  for (const k of Object.keys(log)) if (log[k][id]) { all++; if (weekKeys.includes(k)) week++; }
-  return { week, all };
-}
 
 export function toggleHabit(log: HabitLog, key: string, id: string): HabitLog {
   const next = { ...log, [key]: { ...(log[key] || {}) } };
@@ -188,7 +219,55 @@ export function mealTotals(items: Macros[]): Macros & { count: number } {
 /** True if a settings edit moved the plan enough to rebuild the target line (0.05 kg absorbs unit round-trips). */
 export function planChanged(old: Plan, p: PlanDraft): boolean {
   const near = (a: number | null, b: number) => a != null && Math.abs(a - b) < 0.05;
-  return p.start !== old.start || p.goalDate !== old.goalDate || !near(p.startKg, old.startKg) || !near(p.goalKg, old.goalKg);
+  return p.start !== old.start || p.goalDate !== old.goalDate || !near(p.startKg, old.startKg) || !near(p.goalKg, old.goalKg)
+    || JSON.stringify(cleanBreaks(p.breaks)) !== JSON.stringify(cleanBreaks(old.breaks));
+}
+
+export function cleanBreaks(v: unknown): PlanBreak[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter(b => b && validKey(b.start) && Number.isInteger(b.weeks) && b.weeks >= 1 && b.weeks <= MAX_BREAK_WEEKS)
+          .map(b => ({ start: b.start as string, weeks: b.weeks as number }))
+          .sort((a, b) => a.start.localeCompare(b.start));
+}
+
+/**
+ * New line from where you are now, at the plan's original weekly pace: past weeks keep their targets,
+ * the line restarts at today's trend, and the goal date moves to when that pace gets there.
+ * Returns null if already at (or below) goal.
+ */
+export function replanFromHere(plan: Plan, trendNow: number, today: Date = new Date()): Plan | null {
+  if (trendNow <= plan.goalKg) return null;
+  const breaks = plan.breaks ?? [];
+  const lw = Math.max(1, lossWeeks(plan.start, plan.goalDate, breaks));
+  const pace = (plan.startKg - plan.goalKg) / lw;
+  const i0 = Math.max(0, Math.min(plan.targets.length - 1, Math.floor(weekFraction(plan, today))));
+  const needed = Math.max(2, Math.ceil((trendNow - plan.goalKg) / pace - 1e-9));
+  let total = i0, counted = 0;
+  while (counted < needed && total < i0 + 156) { total++; if (!isBreakStep(plan.start, breaks, total)) counted++; }
+  const goalDate = dateKey(weekDate(plan, total));
+  const targets = buildTargets(plan.startKg, plan.goalKg, plan.start, goalDate, breaks, { index: i0, kg: trendNow, prefix: plan.targets });
+  return { ...plan, goalDate, targets };
+}
+
+/**
+ * Apply new breaks without rewriting history: weeks up to the current one keep their targets
+ * (including any re-plan or hand-shaped holds), and only the future is rebuilt around the breaks.
+ */
+export function withBreaks(plan: Plan, breaks: PlanBreak[], today: Date = new Date()): Plan {
+  const clean = cleanBreaks(breaks);
+  const i0 = Math.max(0, Math.min(plan.targets.length - 1, Math.floor(weekFraction(plan, today))));
+  const targets = buildTargets(plan.startKg, plan.goalKg, plan.start, plan.goalDate, clean, { index: i0, kg: plan.targets[i0], prefix: plan.targets });
+  return { ...plan, breaks: clean, targets };
+}
+
+/** True if a draft differs from the saved plan only in its breaks. */
+export function onlyBreaksChanged(old: Plan, p: PlanDraft): boolean {
+  return planChanged(old, p) && !planChanged({ ...old, breaks: [] }, { ...p, breaks: [] });
+}
+
+/** How far the trend is above the target line today (kg; negative = ahead). */
+export function behindBy(plan: Plan, trendNow: number, today: Date = new Date()): number {
+  return trendNow - targetAt(plan, today);
 }
 
 /** Chart y-range: fits targets and weights, snapped to a tidy step. */

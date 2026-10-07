@@ -1,11 +1,15 @@
 export type Unit = 'kg' | 'imp';
 
+/** A planned maintenance break: the target line holds flat for `weeks` weeks from `start`. */
+export interface PlanBreak { start: string; weeks: number }
+
 export interface Plan {
   start: string;      // YYYY-MM-DD
   startKg: number;
   goalKg: number;
   goalDate: string;   // YYYY-MM-DD
   targets: number[];  // one target per week, week 1 = start date
+  breaks?: PlanBreak[];
 }
 
 export interface TrackerEvent { name: string; date: string; detail: string }
@@ -20,6 +24,7 @@ export interface Settings {
   habits: Habit[];
   sessions: Record<number, Session>;   // keyed by JS day of week, 0 = Sunday
   meals: { items: Meal[]; target: Macros };
+  trackCalories?: boolean;   // optional one-number-a-day calorie logging
 }
 
 export type Weights = Record<string, number>;                     // date -> kg
@@ -37,4 +42,6 @@ export interface TrackerState {
   unit: Unit;
   measurements: Measurements;
   photos: PhotoLog;
+  intake: Record<string, number>;                               // date -> kcal eaten
+  lifts: Record<string, Record<string, { kg: number; done: boolean }>>;   // date -> exercise -> weight used
 }

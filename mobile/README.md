@@ -34,7 +34,17 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
   photos with a then-and-now comparison. Photos stay inside the app (never the camera roll) and are not in backups.
 - **Small touches**: habit ticks spring in with a light haptic, saving gives a success buzz, and the current weight
   and progress bar animate to new values. All motion is skipped when iOS "Reduce Motion" is on.
-- **Settings**: plan, event, habits, weekly sessions, meals, Face ID lock, export / restore / clear.
+- **Consistency, not streaks**: each habit shows the last 7 days and a 30-day percentage, so one missed day doesn't
+  wipe out a good month. After 8 weeks of weigh-ins, **Patterns** compares your trend in weeks you kept a habit with
+  weeks you didn't — worded as what happened alongside it, not proof it caused it.
+- **Milestones**: a calm note each time your *trend* passes another quarter of the way to goal.
+- **Adaptive plan**: planned maintenance breaks (the line holds flat), and "Re-plan from here" when your trend is well
+  behind — same weekly pace, new goal date, history kept.
+- **Calories (optional)**: one number a day. After 14 logged days in 3 weeks, Tracker estimates what you really burn
+  from your intake and trend change, and what to eat for your plan's pace.
+- **Session progression**: log the weight used for each exercise; after a session where you hit every rep it
+  suggests a small increase (+2.5 kg, or +1 kg under 20 kg).
+- **Settings**: plan, event, habits, weekly sessions, meals, Face ID lock, export (backup or CSV) / restore / clear.
 - **Face ID lock** (optional, offered at the end of setup): no account, nothing to remember.
 - **Backups** use the same format as the web app, so a `.txt` exported from the website restores here, and the other way round.
 

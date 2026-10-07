@@ -2,12 +2,15 @@
 import { dateKey, longDate, shortDate } from './dates';
 import { legacySettings, LEGACY_START } from './legacy';
 import { cleanMeasurements, MEASURES } from './body';
+import { cleanIntake } from './calories';
+import { cleanSessionLog } from './progression';
 import { cleanHabits, cleanWeights, latestWeight, mergeLegacyActuals, normalizeSettings, weekDate } from './plan';
 import { fmt, toStLb } from './units';
 import type { HabitLog, Measurements, Settings, TrackerState, Unit, Weights } from './types';
 
 /** What a backup holds. Photos are not included: they stay on the device (they'd make the file huge). */
-export interface Restored { settings: Settings; weights: Weights; habits: HabitLog; measurements: Measurements; unit?: Unit }
+export interface Restored { settings: Settings; weights: Weights; habits: HabitLog; measurements: Measurements;
+  intake: TrackerState['intake']; lifts: TrackerState['lifts']; unit?: Unit }
 
 /**
  * Accepts a .txt export (reads the JSON after the "raw backup" line) or a bare JSON file.
@@ -28,12 +31,13 @@ export function parseBackup(text: string, current: Settings | null): Restored {
   if (raw.version === 2) {
     const settings = normalizeSettings(raw.settings);
     if (!settings) throw new Error('The plan in that backup is incomplete.');
-    return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), measurements: cleanMeasurements(raw.measurements), unit };
+    return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), measurements: cleanMeasurements(raw.measurements),
+             intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit };
   }
   if (raw.actuals || raw.dailyW || raw.habits) {
     const settings = current ?? legacySettings();
     const weights = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
-    return { settings, weights, habits: cleanHabits(raw.habits), measurements: {}, unit };
+    return { settings, weights, habits: cleanHabits(raw.habits), measurements: {}, intake: {}, lifts: {}, unit };
   }
   throw new Error("That file doesn't look like a Tracker backup.");
 }
@@ -41,7 +45,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
 const pad = (s: unknown, n: number) => { const t = String(s); return t + ' '.repeat(Math.max(0, n - t.length)); };
 
 export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings: Settings }, now = new Date()): string {
-  const { settings, weights, habits, unit, measurements } = state;
+  const { settings, weights, habits, unit, measurements, intake, lifts } = state;
   const plan = settings.plan;
   const L: string[] = [];
   L.push('TRACKER EXPORT');
@@ -84,6 +88,6 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   L.push('Progress photos are kept on your phone and are not included in this file.');
   L.push('');
   L.push('--- raw backup (keep this to restore) ---');
-  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, unit }));
+  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, intake, lifts, unit }));
   return L.join('\n');
 }
