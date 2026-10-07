@@ -47,27 +47,40 @@ function Main() {
 
   useEffect(() => { canLock().then(setLockAvailable); biometricName().then(setLockName); }, []);
 
-  const tryUnlock = useCallback(async () => { if (await unlock()) setLocked(false); }, []);
+  // One Face ID request at a time, and only while actually locked. iOS makes the app briefly inactive while the
+  // Face ID sheet is up, so without these guards returning to 'active' would ask again straight after unlocking.
+  const lockedRef = useRef(true);
+  const asking = useRef(false);
+  const tryUnlock = useCallback(async () => {
+    if (asking.current || !lockedRef.current) return;
+    asking.current = true;
+    try {
+      if (await unlock()) { lockedRef.current = false; setLocked(false); }
+    } finally { asking.current = false; }
+  }, []);
   // Once storage has loaded, ask for Face ID if the lock is on. (The cover only shows while the lock is on.)
   const askedOnLaunch = useRef(false);
   useEffect(() => {
     if (!t.ready || askedOnLaunch.current) return;
     askedOnLaunch.current = true;
-    if (prefs.lock) unlock().then(ok => { if (ok) setLocked(false); });
+    if (prefs.lock) tryUnlock().catch(() => {});
+    else lockedRef.current = false;
   }, [t.ready, prefs.lock, tryUnlock]);
   // Re-lock whenever the app goes to the background, so the app switcher never shows your data
   useEffect(() => {
     const sub = AppState.addEventListener('change', st => {
-      if (st === 'background' && lockRef.current) setLocked(true);
+      if (st === 'background' && lockRef.current) { lockedRef.current = true; setLocked(true); }
       if (st === 'active' && lockRef.current) tryUnlock();
     });
     return () => sub.remove();
   }, [tryUnlock]);
 
   const setLock = async (on: boolean) => {
-    if (on && !(await unlock(`Turn on ${lockName} lock`))) return;   // prove it works before relying on it
+    if (on && !(await unlock(`Turn on ${lockName} lock`))) return false;   // prove it works before relying on it
+    lockedRef.current = false;
     setLocked(false);
     t.setPrefs({ lock: on });
+    return true;
   };
 
   const restore = async () => {
@@ -97,10 +110,13 @@ function Main() {
     t.replaceAll({ ...state, weights: parseKey(s.plan.start) <= startOfDay() ? { [s.plan.start]: s.plan.startKg } : {}, habits: {} });
     setShowSettings(false);
   };
-  const finishSetup = (s: Settings, lock: boolean) => {
+  const finishSetup = async (s: Settings, lock: boolean) => {
+    // Ask for Face ID now, as Settings does, so the lock is only switched on once we know it works
+    if (lock && !(await setLock(true))) {
+      notify(`${lockName} wasn't turned on`, `You can switch the lock on any time in Settings.`);
+    }
     t.setSettings(s);
     if (parseKey(s.plan.start) <= startOfDay()) t.setWeight(s.plan.start, s.plan.startKg);   // baseline at week 1
-    if (lock) { setLocked(false); t.setPrefs({ lock: true }); }
   };
 
   if (!t.ready) return <View style={s.fill} />;
