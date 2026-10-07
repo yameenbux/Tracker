@@ -1,0 +1,223 @@
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { addDays, dateKey, longDate, mondayOf, parseKey } from '../core/dates';
+import { assessPlan, buildTargets, defaultSettings, goalDateForPace, PACES, PaceId } from '../core/plan';
+import { fmt, lbPart, parseWeightInput, plausible, showWeight, stPart, toLbNum } from '../core/units';
+import type { Settings, Unit } from '../core/types';
+import { DateInput, UnitToggle } from '../components/Fields';
+import { ProgressChart } from '../components/ProgressChart';
+import { Button } from '../components/ui';
+import { C, F } from '../theme';
+
+type Step = 'welcome' | 'current' | 'goal' | 'pace' | 'plan' | 'lock';
+
+/** Large single-number entry, like the setup screens in Yazio/BitePal. */
+function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onChange: (kg: number | null) => void }) {
+  const init = (): [string, string] => kg == null ? ['', ''] : unit === 'kg' ? [fmt(kg), ''] : [String(stPart(kg)), fmt(lbPart(kg))];
+  const [t, setT] = useState<[string, string]>(init);
+  const [seenUnit, setSeenUnit] = useState(unit);
+  if (unit !== seenUnit) { setSeenUnit(unit); setT(init()); }   // re-express the same weight when the unit flips
+  const set = (i: 0 | 1, v: string) => {
+    const n: [string, string] = i ? [t[0], v] : [v, t[1]];
+    setT(n);
+    const parsed = parseWeightInput(unit, n[0], n[1]);
+    onChange(parsed == null || isNaN(parsed) ? null : parsed);
+  };
+  const box = (i: 0 | 1, w: number, label: string, suffix: string) => (
+    <View style={s.bigBox}>
+      <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { width: w }]} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'}
+        placeholder="0" placeholderTextColor={C.line} autoFocus={i === 0} accessibilityLabel={label} />
+      <Text style={s.bigUnit}>{suffix}</Text>
+    </View>
+  );
+  return unit === 'kg'
+    ? <View style={s.bigRow}>{box(0, 150, 'Weight in kilograms', 'kg')}</View>
+    : <View style={s.bigRow}>{box(0, 70, 'Stone', 'st')}{box(1, 100, 'Pounds', 'lb')}</View>;
+}
+
+export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onRestore }: {
+  unit: Unit; setUnit: (u: Unit) => void; lockAvailable: boolean; lockName: string;
+  onDone: (settings: Settings, lock: boolean) => void; onRestore: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [step, setStep] = useState<Step>('welcome');
+  const [startKg, setStartKg] = useState<number | null>(null);
+  const [goalKg, setGoalKg] = useState<number | null>(null);
+  const [pace, setPace] = useState<PaceId>('steady');
+  const [start, setStart] = useState(dateKey(mondayOf(new Date())));
+  const [editStart, setEditStart] = useState(false);
+
+  const pct = PACES.find(p => p.id === pace)!.pct;
+  const goalDate = startKg && goalKg ? goalDateForPace(startKg, goalKg, start, pct) : dateKey(addDays(parseKey(start), 112));
+  const draft = { startKg, goalKg, start, goalDate };
+  const verdict = assessPlan(draft);
+  const settings: Settings | null = verdict.ok
+    ? defaultSettings({ startKg: startKg!, goalKg: goalKg!, start, goalDate, targets: buildTargets(startKg!, goalKg!, start, goalDate) })
+    : null;
+
+  const order: Step[] = ['welcome', 'current', 'goal', 'pace', 'plan', ...(lockAvailable ? ['lock' as Step] : [])];
+  const idx = order.indexOf(step);
+  const back = () => setStep(order[Math.max(0, idx - 1)]);
+  const next = () => setStep(order[idx + 1]);
+  const finish = (lock: boolean) => settings && onDone(settings, lock);
+
+  const goalErr = step === 'goal' && plausible(goalKg) && plausible(startKg) && goalKg! >= startKg! ? 'This version is for losing weight, so pick a goal below your current weight.' : null;
+  const rate = (p: number) => {
+    const kgw = (startKg ?? 0) * p / 100;
+    return unit === 'kg' ? fmt(kgw, 2) + ' kg' : toLbNum(kgw).toFixed(1) + ' lb';
+  };
+
+  return (
+    <View style={[s.wrap, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 16 }]}>
+      {step !== 'welcome' && (
+        <View style={s.top}>
+          <Pressable onPress={back} hitSlop={12} accessibilityRole="button" accessibilityLabel="Back"><Text style={s.back}>‹</Text></Pressable>
+          <View style={s.progress}><View style={[s.progressFill, { width: `${(idx / (order.length - 1)) * 100}%` }]} /></View>
+        </View>
+      )}
+      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
+        {step === 'welcome' && (
+          <View style={{ paddingTop: 40 }}>
+            <Text style={s.eyebrow}>Tracker</Text>
+            <Text style={s.h1}>A weight tracker that stays yours.</Text>
+            {[
+              ['🔒', 'No account, no sign-up. Your data never leaves this phone.'],
+              ['📉', 'A steady target line, with a pace you can actually keep.'],
+              ['🧭', 'The line is a guide, not a verdict. Bad weeks are part of it.'],
+            ].map(([i, t]) => (
+              <View key={i} style={s.promise}><Text style={s.promiseIcon}>{i}</Text><Text style={s.promiseTxt}>{t}</Text></View>
+            ))}
+          </View>
+        )}
+
+        {step === 'current' && (
+          <>
+            <Text style={s.h2}>What do you weigh now?</Text>
+            <Text style={s.sub}>A rough number is fine. You can change it later.</Text>
+            <BigWeight unit={unit} kg={startKg} onChange={setStartKg} />
+            <View style={{ alignItems: 'center' }}><UnitToggle unit={unit} onChange={setUnit} /></View>
+          </>
+        )}
+
+        {step === 'goal' && (
+          <>
+            <Text style={s.h2}>What’s your goal weight?</Text>
+            <Text style={s.sub}>Starting from {startKg ? showWeight(startKg, unit) : '—'}.</Text>
+            <BigWeight unit={unit} kg={goalKg} onChange={setGoalKg} />
+            {goalErr && <Text style={s.err}>{goalErr}</Text>}
+          </>
+        )}
+
+        {step === 'pace' && (
+          <>
+            <Text style={s.h2}>How fast?</Text>
+            <Text style={s.sub}>Slower plans are easier to stick to — and sticking to it is what matters.</Text>
+            {PACES.map(p => {
+              const on = p.id === pace;
+              const d = startKg && goalKg ? goalDateForPace(startKg, goalKg, start, p.pct) : null;
+              return (
+                <Pressable key={p.id} onPress={() => setPace(p.id)} style={[s.pace, on && s.paceOn]}
+                  accessibilityRole="radio" accessibilityState={{ checked: on }}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={[s.paceName, on && { color: C.plum2 }]}>{p.label}</Text>
+                      {'recommended' in p && <View style={s.rec}><Text style={s.recTxt}>Recommended</Text></View>}
+                    </View>
+                    <Text style={s.paceMeta}>~{rate(p.pct)} a week{d ? ' · goal by ' + longDate(d) : ''}</Text>
+                  </View>
+                  <View style={[s.radio, on && s.radioOn]} />
+                </Pressable>
+              );
+            })}
+            {pace === 'fast' && <Text style={s.warn}>1% of body weight a week is the upper end. Most people can’t hold it for long, and it costs more muscle. Fine for a short push.</Text>}
+            <View style={s.startRow}>
+              <Text style={s.sub}>Starting {longDate(start)}</Text>
+              <Pressable onPress={() => setEditStart(e => !e)} hitSlop={8}><Text style={s.link}>{editStart ? 'Done' : 'Change'}</Text></Pressable>
+            </View>
+            {editStart && <DateInput value={start} onChange={setStart} label="Start date" />}
+          </>
+        )}
+
+        {step === 'plan' && settings && (
+          <>
+            <Text style={s.eyebrow}>Your plan is ready</Text>
+            <Text style={s.h2}>Reach <Text style={{ color: C.coral }}>{showWeight(settings.plan.goalKg, unit)}</Text> by {longDate(settings.plan.goalDate)}</Text>
+            <View style={{ marginTop: 16 }}>
+              <ProgressChart settings={settings} weights={{ [start]: settings.plan.startKg }} unit={unit} />
+            </View>
+            {[
+              `${settings.plan.targets.length} weeks at about ${rate(pct)} a week`,
+              'Weigh in once a week, same day, same conditions',
+              'Add habits, sessions and meals later from ⚙︎ Settings',
+            ].map(t => <Text key={t} style={s.bullet}>✓  {t}</Text>)}
+          </>
+        )}
+
+        {step === 'lock' && (
+          <View style={{ paddingTop: 40 }}>
+            <Text style={{ fontSize: 44 }}>🔒</Text>
+            <Text style={s.h2}>Lock Tracker with {lockName}?</Text>
+            <Text style={s.sub}>Your weight and habits are personal. With the lock on, Tracker asks for {lockName} each time it opens. You can change this in Settings.</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <View style={s.footer}>
+        {step === 'welcome' && <>
+          <Button label="Set up my plan" kind="coral" onPress={next} />
+          <Pressable onPress={onRestore} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Restore from a backup</Text></Pressable>
+        </>}
+        {step === 'current' && <Button label="Next" kind="primary" disabled={!plausible(startKg)} onPress={next} />}
+        {step === 'goal' && <Button label="Next" kind="primary" disabled={!plausible(goalKg) || !!goalErr} onPress={next} />}
+        {step === 'pace' && <>
+          {verdict.error && <Text style={s.err}>{verdict.error}</Text>}
+          <Button label="See my plan" kind="primary" disabled={!!verdict.error} onPress={next} />
+        </>}
+        {step === 'plan' && (lockAvailable
+          ? <Button label="Continue" kind="coral" onPress={next} />
+          : <Button label="Start tracking" kind="coral" onPress={() => finish(false)} />)}
+        {step === 'lock' && <>
+          <Button label={`Yes, use ${lockName}`} kind="coral" onPress={() => finish(true)} />
+          <Pressable onPress={() => finish(false)} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Not now</Text></Pressable>
+        </>}
+      </View>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  wrap: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20 },
+  top: { flexDirection: 'row', alignItems: 'center', gap: 14, height: 36 },
+  back: { fontSize: 34, color: C.ink, lineHeight: 36, paddingRight: 4 },
+  progress: { flex: 1, height: 6, borderRadius: 3, backgroundColor: C.chip, overflow: 'hidden' },
+  progressFill: { height: 6, backgroundColor: C.coral, borderRadius: 3 },
+  body: { paddingTop: 24, paddingBottom: 24 },
+  eyebrow: { fontFamily: F.bodySemi, fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase', color: C.coral },
+  h1: { fontFamily: F.display, fontSize: 34, lineHeight: 40, color: C.ink, marginTop: 8, marginBottom: 26, letterSpacing: -0.5 },
+  h2: { fontFamily: F.display, fontSize: 28, lineHeight: 34, color: C.ink, letterSpacing: -0.5, marginTop: 6 },
+  sub: { fontFamily: F.body, fontSize: 15, color: C.inkSoft, marginTop: 8, lineHeight: 21 },
+  promise: { flexDirection: 'row', gap: 14, alignItems: 'flex-start', backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16, marginBottom: 10 },
+  promiseIcon: { fontSize: 22 },
+  promiseTxt: { flex: 1, fontFamily: F.bodyMed, fontSize: 15, color: C.ink, lineHeight: 21 },
+  bigRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 40, marginBottom: 24 },
+  bigBox: { flexDirection: 'row', alignItems: 'baseline', borderBottomWidth: 2, borderBottomColor: C.line, paddingBottom: 6 },
+  bigIn: { fontFamily: F.display, fontSize: 56, color: C.ink, textAlign: 'center', padding: 0 },
+  bigUnit: { fontFamily: F.bodySemi, fontSize: 18, color: C.inkSoft, marginLeft: 4 },
+  err: { fontFamily: F.bodySemi, fontSize: 13.5, color: '#B2392A', textAlign: 'center', marginBottom: 10, lineHeight: 19 },
+  warn: { fontFamily: F.body, fontSize: 13, color: C.warnInk, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 12, padding: 12, lineHeight: 19, marginTop: 4 },
+  pace: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.line, borderRadius: 16, padding: 16, marginTop: 10 },
+  paceOn: { borderColor: C.plum2, backgroundColor: '#F7F3FB' },
+  paceName: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
+  paceMeta: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 3 },
+  rec: { backgroundColor: C.mintBg, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
+  recTxt: { fontFamily: F.bodyBold, fontSize: 10.5, color: C.mint },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: C.line },
+  radioOn: { borderColor: C.plum2, borderWidth: 7 },
+  startRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14 },
+  link: { fontFamily: F.bodyBold, fontSize: 14, color: C.coral },
+  bullet: { fontFamily: F.bodyMed, fontSize: 14.5, color: C.ink, marginTop: 8 },
+  footer: { paddingTop: 8 },
+  secondary: { paddingVertical: 14, alignItems: 'center' },
+  secondaryTxt: { fontFamily: F.bodyBold, fontSize: 14.5, color: C.ink },
+});
