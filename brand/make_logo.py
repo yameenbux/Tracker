@@ -1,47 +1,62 @@
-# Generates the Plumb brand marks as SVG: the plumb bob is a plum, hanging from the plumb line.
+# Generates the Plumb brand marks as SVG.
+# The mark: daily weigh-ins scatter, the trend eases down and settles on the goal line, and today is marked where it lands.
 # Usage: python3 make_logo.py <out-dir>   (needs `pip install fonttools` and mobile/node_modules for the font)
-import os, sys
+import math, os, sys
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 
 OUT = sys.argv[1]
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT = os.path.join(HERE, '../mobile/node_modules/@expo-google-fonts/space-grotesk/700Bold/SpaceGrotesk_700Bold.ttf')
-PLUM1, PLUM2, PLUM_LIGHT, CORAL, AMBER, PAPER = '#2A1E45', '#4B2E73', '#6A3F9A', '#FF6B5E', '#FFA24B', '#FBF7F3'
+PLUM1, CORAL, AMBER, PAPER = '#2A1E45', '#FF6B5E', '#FFA24B', '#FBF7F3'
 
-FRUIT = 'M512 384 C562 336 752 340 752 622 C752 812 634 904 512 904 C390 904 272 812 272 622 C272 340 462 336 512 384 Z'
-LEAF = 'M522 368 C546 290 640 252 726 274 C702 346 618 394 522 368 Z'
-SUTURE = 'M524 402 C594 484 612 664 560 866'
+# ---- geometry (1024 grid) ----
+P0, C1, C2, P3 = (204, 318), (352, 600), (548, 706), (806, 706)   # trend: steep at first, settles on the goal
+GOAL_Y = 706
+TREND = f'M{P0[0]} {P0[1]} C{C1[0]} {C1[1]} {C2[0]} {C2[1]} {P3[0]} {P3[1]}'
 
-def defs(u, line=PLUM1):
-    return (f'<defs><linearGradient id="line{u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{line}" stop-opacity="0"/>'
-            f'<stop offset="0.45" stop-color="{line}"/></linearGradient>'
-            f'<linearGradient id="fruit{u}" x1="0.2" y1="0.1" x2="0.8" y2="1"><stop offset="0" stop-color="{PLUM_LIGHT}"/>'
-            f'<stop offset="0.55" stop-color="{PLUM2}"/><stop offset="1" stop-color="{PLUM1}"/></linearGradient>'
-            f'<linearGradient id="leaf{u}" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="{CORAL}"/>'
-            f'<stop offset="1" stop-color="{AMBER}"/></linearGradient></defs>')
+def bez(t):
+    return tuple((1 - t) ** 3 * P0[i] + 3 * (1 - t) ** 2 * t * C1[i] + 3 * (1 - t) * t ** 2 * C2[i] + t ** 3 * P3[i] for i in (0, 1))
 
-def mark(u, mono=None, line=None):
-    """Line, plum and leaf on the 1024 grid. mono = one flat colour (Android themed icon)."""
-    if mono:   # crease and leaf gap cut out, so the silhouette reads as a plum, not an apple
-        return (f'<mask id="m{u}" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">'
-                f'<rect width="1024" height="1024" fill="#000"/><path d="{FRUIT}" fill="#fff"/>'
-                f'<path d="{SUTURE}" fill="none" stroke="#000" stroke-width="30" stroke-linecap="round"/>'
-                f'<path d="{LEAF}" fill="#000" stroke="#000" stroke-width="40"/></mask>'
-                f'<rect x="494" y="96" width="36" height="290" rx="18" fill="{mono}"/>'
-                f'<rect width="1024" height="1024" fill="{mono}" mask="url(#m{u})"/><path d="{LEAF}" fill="{mono}"/>')
-    return (f'<rect x="494" y="96" width="36" height="300" rx="18" fill="url(#line{u})"/>'
-            f'<path d="{FRUIT}" fill="url(#fruit{u})"/>'
-            f'<path d="{SUTURE}" fill="none" stroke="{PAPER}" stroke-opacity="0.22" stroke-width="18" stroke-linecap="round"/>'
-            f'<ellipse cx="392" cy="566" rx="42" ry="96" transform="rotate(-18 392 566)" fill="#FFFFFF" opacity="0.16"/>'
-            f'<path d="{LEAF}" fill="url(#leaf{u})"/>')
+def tangent(t):
+    a, b = bez(max(0, t - 0.01)), bez(min(1, t + 0.01))
+    dx, dy = b[0] - a[0], b[1] - a[1]; n = math.hypot(dx, dy)
+    return dx / n, dy / n
 
-def svg(inner, size=1024, vb='0 0 1024 1024'):
-    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="{vb}">{inner}</svg>'
+# four weigh-ins, alternating either side of the trend
+DOTS = []
+for t, side in ((0.16, -1), (0.36, 1), (0.56, -1), (0.76, 1)):
+    (x, y), (tx, ty) = bez(t), tangent(t)
+    DOTS.append((round(x - ty * 92 * side, 1), round(y + tx * 92 * side, 1)))
+
+def defs(u):
+    return (f'<defs><linearGradient id="bg{u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#352657"/>'
+            f'<stop offset="0.55" stop-color="{PLUM1}"/><stop offset="1" stop-color="#1E1533"/></linearGradient>'
+            f'<radialGradient id="warm{u}" cx="0.79" cy="0.69" r="0.5"><stop offset="0" stop-color="{CORAL}" stop-opacity="0.28"/>'
+            f'<stop offset="1" stop-color="{CORAL}" stop-opacity="0"/></radialGradient>'
+            f'<radialGradient id="sheen{u}" cx="0.3" cy="0" r="0.8"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.08"/>'
+            f'<stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>'
+            f'<linearGradient id="tr{u}" gradientUnits="userSpaceOnUse" x1="{P0[0]}" y1="{P0[1]}" x2="{P3[0]}" y2="{P3[1]}">'
+            f'<stop offset="0" stop-color="{AMBER}"/><stop offset="1" stop-color="{CORAL}"/></linearGradient></defs>')
+
+def mark(u, mono=None):
+    ink = mono or PAPER
+    goal = (f'<path d="M196 {GOAL_Y} H828" stroke="{ink}" stroke-opacity="{0.5 if mono else 0.22}" stroke-width="18" '
+            f'stroke-linecap="round" stroke-dasharray="0 46"/>')
+    dots = ''.join(f'<circle cx="{x}" cy="{y}" r="34" fill="{ink}" opacity="{0.55 if mono else 0.42}"/>' for x, y in DOTS)
+    trend = f'<path d="{TREND}" fill="none" stroke="{mono or f"url(#tr{u})"}" stroke-width="84" stroke-linecap="round"/>'
+    today = (f'<circle cx="{P3[0]}" cy="{P3[1]}" r="70" fill="{mono}"/>' if mono else
+             f'<circle cx="{P3[0]}" cy="{P3[1]}" r="70" fill="{PAPER}"/><circle cx="{P3[0]}" cy="{P3[1]}" r="28" fill="{CORAL}"/>')
+    return goal + dots + trend + today
+
+def svg(inner, w=1024, h=1024, vb='0 0 1024 1024'):
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="{vb}">{inner}</svg>'
+
+def bg(u, rx=0):
+    return ''.join(f'<rect width="1024" height="1024" rx="{rx}" fill="url(#{k}{u})"/>' for k in ('bg', 'warm', 'sheen'))
 
 def icon(u, rounded=False):
-    bg = f'<rect width="1024" height="1024" rx="{228 if rounded else 0}" fill="{PAPER}"/>'
-    return svg(defs(u) + bg + mark(u))
+    return svg(defs(u) + bg(u, 228 if rounded else 0) + mark(u))
 
 def mark_only(u, scale=1.0, mono=None):
     t = f'translate({512 - 512 * scale} {512 - 512 * scale}) scale({scale})'
@@ -59,27 +74,21 @@ def word(ink):
         x += g.width
     return ''.join(parts), x
 
-def lockup(u, ink, bg=None, height=240):
-    """Icon tile + wordmark, side by side."""
+def lockup(u, ink, page=None, height=240):
+    """Icon tile beside the wordmark."""
     w_paths, w_width = word(ink)
-    tile = asc + desc                              # tile is as tall as the type's full height
-    gap = tile * 0.06
-    total_w = tile + gap + w_width
-    pad = tile * 0.18
-    vb_w, vb_h = total_w + pad * 2, tile + pad * 2
-    s = tile / 1024
-    inner = (defs(u) + (f'<rect x="{-pad}" y="{-pad}" width="{vb_w}" height="{vb_h}" fill="{bg}"/>' if bg else '')
-             + f'<g transform="scale({s})"><rect width="1024" height="1024" rx="228" fill="{PAPER}"/>{mark(u)}</g>'
+    tile = asc + desc
+    gap, pad = tile * 0.22, tile * 0.18
+    vb_w, vb_h = tile + gap + w_width + pad * 2, tile + pad * 2
+    inner = (defs(u) + (f'<rect x="{-pad}" y="{-pad}" width="{vb_w}" height="{vb_h}" fill="{page}"/>' if page else '')
+             + f'<g transform="scale({tile / 1024})">{bg(u, 228)}{mark(u)}</g>'
              + f'<g transform="translate({tile + gap} 0)">{w_paths}</g>')
-    width = height * vb_w / vb_h
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width:.0f}" height="{height}" '
-            f'viewBox="{-pad} {-pad} {vb_w} {vb_h}">{inner}</svg>')
+    return svg(inner, f'{height * vb_w / vb_h:.0f}', height, f'{-pad} {-pad} {vb_w} {vb_h}')
 
 def wordmark(ink, height=200):
     w_paths, w_width = word(ink)
-    pad = 40
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{height * (w_width + 2 * pad) / (asc + desc + 2 * pad):.0f}" '
-            f'height="{height}" viewBox="{-pad} {-pad} {w_width + 2 * pad} {asc + desc + 2 * pad}">{w_paths}</svg>')
+    pad = 40; vb_w, vb_h = w_width + 2 * pad, asc + desc + 2 * pad
+    return svg(w_paths, f'{height * vb_w / vb_h:.0f}', height, f'{-pad} {-pad} {vb_w} {vb_h}')
 
 files = {
     'plumb-app-icon.svg': icon('a'),
@@ -88,7 +97,7 @@ files = {
     'plumb-mark-mono.svg': mark_only('d', mono='#FFFFFF'),
     'plumb-wordmark.svg': wordmark(PLUM1),
     'plumb-lockup.svg': lockup('e', PLUM1),
-    'plumb-lockup-on-plum.svg': lockup('f', PAPER, bg=PLUM1),
+    'plumb-lockup-on-plum.svg': lockup('f', PAPER, page=PLUM1),
 }
 os.makedirs(OUT, exist_ok=True)
 for name, s in files.items():
@@ -97,13 +106,15 @@ for name, s in files.items():
 # App asset sources, rendered to PNG by render_assets.js
 A = os.path.join(OUT, 'png-src'); os.makedirs(A, exist_ok=True)
 assets = {
-    'icon.svg': icon('g'),                                     # iOS: full-bleed, iOS rounds it; no transparency
+    'icon.svg': icon('g'),                                        # iOS light: full-bleed, iOS rounds it; no transparency
+    'icon-dark.svg': svg(defs('m') + '<rect width="1024" height="1024" fill="#0E0B14"/>' + mark('m')),
+    'icon-tinted.svg': svg('<rect width="1024" height="1024" fill="#000000"/>' + mark('n', mono='#FFFFFF')),  # greyscale; iOS tints it
     'splash-icon.svg': mark_only('h', scale=0.9),
-    'android-icon-foreground.svg': mark_only('i', scale=0.62), # inside the adaptive-icon safe zone
-    'android-icon-monochrome.svg': mark_only('j', scale=0.62, mono='#FFFFFF'),
-    'android-icon-background.svg': svg(f'<rect width="1024" height="1024" fill="{PAPER}"/>'),
+    'android-icon-foreground.svg': mark_only('i', scale=0.6),     # inside the adaptive-icon safe zone
+    'android-icon-monochrome.svg': mark_only('j', scale=0.6, mono='#FFFFFF'),
+    'android-icon-background.svg': svg(defs('k') + bg('k')),
     'favicon.svg': icon('l', rounded=True),
 }
 for name, s in assets.items():
     open(os.path.join(A, name), 'w').write(s)
-print('wrote', len(files), 'brand files and', len(assets), 'asset sources')
+print('wrote', len(files), 'brand files and', len(assets), 'asset sources; dots', DOTS)

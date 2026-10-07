@@ -1,26 +1,27 @@
-import Svg, { Defs, Ellipse, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { C } from '../theme';
 
-// Same geometry as brand/plumb-app-icon.svg (1024 grid): the plumb bob is a plum, hanging from the plumb line.
-const FRUIT = 'M512 384 C562 336 752 340 752 622 C752 812 634 904 512 904 C390 904 272 812 272 622 C272 340 462 336 512 384 Z';
-const LEAF = 'M522 368 C546 290 640 252 726 274 C702 346 618 394 522 368 Z';
-const SUTURE = 'M524 402 C594 484 612 664 560 866';
+// Same geometry as brand/plumb-app-icon.svg (1024 grid, from brand/make_logo.py): weigh-ins scatter,
+// the trend eases down and settles on the goal line, and today is marked where it lands.
+const TREND = 'M204 318 C352 600 548 706 806 706';
+const DOTS: [number, number][] = [[353.5, 386.4], [321.9, 626.1], [542.6, 556.8], [609.3, 776.2]];
 
 /** The Plumb app icon as a rounded tile, for the lock screen and welcome screen. */
 export function PlumbIcon({ size = 64 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 1024 1024" accessibilityLabel="Plumb">
       <Defs>
-        <LinearGradient id="line" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor={C.plum1} stopOpacity={0} /><Stop offset="0.45" stopColor={C.plum1} /></LinearGradient>
-        <LinearGradient id="fruit" x1="0.2" y1="0.1" x2="0.8" y2="1"><Stop offset="0" stopColor="#6A3F9A" /><Stop offset="0.55" stopColor={C.plum2} /><Stop offset="1" stopColor={C.plum1} /></LinearGradient>
-        <LinearGradient id="leaf" x1="0" y1="1" x2="1" y2="0"><Stop offset="0" stopColor={C.coral} /><Stop offset="1" stopColor={C.amber} /></LinearGradient>
+        <LinearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor="#352657" /><Stop offset="0.55" stopColor={C.plum1} /><Stop offset="1" stopColor="#1E1533" /></LinearGradient>
+        <RadialGradient id="warm" cx="0.79" cy="0.69" r="0.5"><Stop offset="0" stopColor={C.coral} stopOpacity={0.28} /><Stop offset="1" stopColor={C.coral} stopOpacity={0} /></RadialGradient>
+        <LinearGradient id="trend" gradientUnits="userSpaceOnUse" x1="204" y1="318" x2="806" y2="706"><Stop offset="0" stopColor={C.amber} /><Stop offset="1" stopColor={C.coral} /></LinearGradient>
       </Defs>
-      <Rect width={1024} height={1024} rx={228} fill={C.bg} stroke={C.line} strokeWidth={8} />
-      <Rect x={494} y={96} width={36} height={300} rx={18} fill="url(#line)" />
-      <Path d={FRUIT} fill="url(#fruit)" />
-      <Path d={SUTURE} fill="none" stroke={C.bg} strokeOpacity={0.22} strokeWidth={18} strokeLinecap="round" />
-      <Ellipse cx={392} cy={566} rx={42} ry={96} transform="rotate(-18 392 566)" fill="#FFFFFF" opacity={0.16} />
-      <Path d={LEAF} fill="url(#leaf)" />
+      <Rect width={1024} height={1024} rx={228} fill="url(#bg)" />
+      <Rect width={1024} height={1024} rx={228} fill="url(#warm)" />
+      <Path d="M196 706 H828" stroke={C.bg} strokeOpacity={0.22} strokeWidth={18} strokeLinecap="round" strokeDasharray="0 46" />
+      {DOTS.map(([x, y]) => <Circle key={x} cx={x} cy={y} r={34} fill={C.bg} opacity={0.42} />)}
+      <Path d={TREND} fill="none" stroke="url(#trend)" strokeWidth={84} strokeLinecap="round" />
+      <Circle cx={806} cy={706} r={70} fill={C.bg} />
+      <Circle cx={806} cy={706} r={28} fill={C.coral} />
     </Svg>
   );
 }

@@ -1,7 +1,7 @@
-const { chromium } = require('/opt/node-tools/node_modules/playwright');
+let chromium; try { ({ chromium } = require('playwright')); } catch { ({ chromium } = require('/opt/node-tools/node_modules/playwright')); }
 const fs = require('fs');
 const src = process.argv[2], out = process.argv[3];
-const jobs = [['icon', 1024, false], ['splash-icon', 1024, true], ['android-icon-foreground', 512, true],
+const jobs = [['icon', 1024, false], ['icon-dark', 1024, false], ['icon-tinted', 1024, false], ['splash-icon', 1024, true], ['android-icon-foreground', 512, true],
   ['android-icon-monochrome', 432, true], ['android-icon-background', 512, false], ['favicon', 48, true]];
 (async () => {
   const b = await chromium.launch();
