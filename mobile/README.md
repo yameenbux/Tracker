@@ -28,6 +28,12 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
 - **Dashboard**: current weight and progress, an event countdown, a chart with 4-week / 12-week / whole-plan views,
   this week's habits with sessions and meals, and a list of weigh-ins (tap one to edit or delete).
 - **+ Log weight**: one tap from anywhere on the dashboard.
+- **Trend weight**: a smoothed trend through your weigh-ins, your real weekly rate, an "at this pace" goal date,
+  and a plain explanation when the scale jumps (an overnight +0.8 kg would need ~6,000 kcal of fat, so it's water).
+- **Body**: waist, hips, chest and arm measurements with change since your first, and Front / Side / Back progress
+  photos with a then-and-now comparison. Photos stay inside the app (never the camera roll) and are not in backups.
+- **Small touches**: habit ticks spring in with a light haptic, saving gives a success buzz, and the current weight
+  and progress bar animate to new values. All motion is skipped when iOS "Reduce Motion" is on.
 - **Settings**: plan, event, habits, weekly sessions, meals, Face ID lock, export / restore / clear.
 - **Face ID lock** (optional, offered at the end of setup): no account, nothing to remember.
 - **Backups** use the same format as the web app, so a `.txt` exported from the website restores here, and the other way round.
