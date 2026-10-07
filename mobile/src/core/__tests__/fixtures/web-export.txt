@@ -1,0 +1,57 @@
+TRACKER EXPORT
+Generated: (fixture, fictional data)
+
+Goal:  87.4 kg  by 10 Aug 2026
+Start: 100.0 kg  on 5 Jan 2026
+Latest: 99.1 kg  (13 Jan 2026)
+
+WEEKLY WEIGH-INS (kg)
+Week  Date     Target   Actual   vs
+W1    5 Jan    100.0    100.0    0.0
+W2    12 Jan   99.5     99.4     -0.1
+W3    19 Jan   99.1     -
+W4    26 Jan   98.7     -
+W5    2 Feb    98.2     -
+W6    9 Feb    97.8     -
+W7    16 Feb   97.3     -
+W8    23 Feb   96.8     -
+W9    2 Mar    96.4     -
+W10   9 Mar    96.0     -
+W11   16 Mar   95.5     -
+W12   23 Mar   95.0     -
+W13   30 Mar   95.0     -
+W14   6 Apr    95.0     -
+W15   13 Apr   95.0     -
+W16   20 Apr   94.6     -
+W17   27 Apr   94.2     -
+W18   4 May    93.7     -
+W19   11 May   93.2     -
+W20   18 May   92.8     -
+W21   25 May   92.3     -
+W22   1 Jun    91.9     -
+W23   8 Jun    91.5     -
+W24   15 Jun   91.0     -
+W25   22 Jun   90.5     -
+W26   29 Jun   90.1     -
+W27   6 Jul    89.7     -
+W28   13 Jul   89.2     -
+W29   20 Jul   88.8     -
+W30   27 Jul   88.3     -
+W31   3 Aug    87.8     -
+W32   10 Aug   87.4     -
+
+ALL WEIGH-INS (kg) — 3 logged
+2026-01-05   100.0
+2026-01-12   99.4
+2026-01-13   99.1
+
+DAILY HABITS  (A=Water 3 L, B=Steps 8k, C=Workout, D=Stretch)
+2026-01-13   A - - D
+
+Water 3 L       total days: 1
+Steps 8k        total days: 0
+Workout         total days: 0
+Stretch         total days: 1
+
+--- raw backup (keep this to restore) ---
+{"app": "tracker", "version": 2, "settings": {"plan": {"start": "2026-01-05", "startKg": 100.0, "goalKg": 87.4, "goalDate": "2026-08-10", "targets": [100.0, 99.5, 99.1, 98.7, 98.2, 97.8, 97.3, 96.8, 96.4, 96.0, 95.5, 95.0, 95.0, 95.0, 95.0, 94.6, 94.2, 93.7, 93.2, 92.8, 92.3, 91.9, 91.5, 91.0, 90.5, 90.1, 89.7, 89.2, 88.8, 88.3, 87.8, 87.4]}, "event": {"name": "Summer 5K", "date": "2026-06-14", "detail": "Park run · flat, 1 lap"}, "habits": [{"id": "water", "icon": "💧", "short": "3 L", "name": "Water 3 L"}, {"id": "steps", "icon": "👟", "short": "8K", "name": "Steps 8k"}, {"id": "workout", "icon": "🏋", "short": "WORK", "name": "Workout"}, {"id": "stretch", "icon": "🧘", "short": "STR", "name": "Stretch"}], "sessions": {"0": {"title": "Rest", "items": ["Optional stretching"], "note": ""}, "1": {"title": "Full body A", "items": ["Squat — 3 × 8", "Row — 3 × 10", "Plank — 3 × 30 sec"], "note": ""}, "2": {"title": "Bike / incline walk", "items": ["30 min easy bike — OR —", "30 min incline walk"], "note": ""}, "3": {"title": "Full body B", "items": ["Deadlift — 3 × 6", "Press — 3 × 8"], "note": ""}, "4": {"title": "Rest", "items": ["Easy walk"], "note": ""}, "5": {"title": "Full body C", "items": ["Lunge — 3 × 10", "Pull-down — 3 × 10"], "note": ""}, "6": {"title": "Long walk", "items": ["60 min walk"], "note": ""}}, "meals": {"items": [{"when": "~7:30am · breakfast", "text": "Porridge, yoghurt and berries", "kcal": 380, "p": 25, "c": 55, "f": 8}, {"when": "~1:00pm · lunch", "text": "Chicken salad wrap", "kcal": 450, "p": 40, "c": 35, "f": 15}, {"when": "~4:00pm · snack", "text": "Apple and a protein bar", "kcal": 250, "p": 20, "c": 30, "f": 6}, {"when": "~7:00pm · dinner", "text": "Salmon, rice and greens", "kcal": 600, "p": 40, "c": 60, "f": 20}], "target": {"kcal": 2100, "p": 150, "c": 220, "f": 70}}}, "weights": {"2026-01-05": 100.0, "2026-01-12": 99.4, "2026-01-13": 99.1}, "habits": {"2026-01-13": {"water": true, "stretch": true}}, "unit": "kg"}
