@@ -13,6 +13,7 @@ import { HabitsCard } from './components/HabitsCard';
 import { Hero } from './components/Hero';
 import { EntriesList, EventCard, LogSheet } from './components/Entries';
 import { ProgressChart } from './components/ProgressChart';
+import { TrendCard } from './components/TrendCard';
 import { pickBackupText, shareBackup } from './io';
 import { biometricName, canLock, unlock } from './lock';
 import { LockScreen } from './screens/LockScreen';
@@ -146,6 +147,7 @@ function Main() {
         </View>
         <Hero settings={settings} weights={state.weights} unit={state.unit} />
         <EventCard settings={settings} />
+        <TrendCard settings={settings} weights={state.weights} unit={state.unit} />
         <ProgressChart settings={settings} weights={state.weights} unit={state.unit} />
         <HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} />
         <EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={k => setLog({ key: k, n: Date.now() })} />
