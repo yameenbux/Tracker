@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { measureSummary, showLength } from '../core/body';
 import { estimateExpenditure } from '../core/calories';
@@ -52,7 +53,10 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   // Milestones follow the trend, so a single light weigh-in can't trigger one
   const quarter = trendNow != null ? milestoneQuarter(settings.plan, trendNow) : 0;
   const planKey = milestonePlanKey(settings.plan);
-  const celebrated = (prefs.milestoneFor ?? planKey) === planKey ? prefs.milestone : 0;   // older saves didn't record the plan
+  const celebrated = (prefs.milestoneFor ?? planKey) === planKey ? prefs.milestone : 0;
+  // Older saves didn't record which plan a milestone belonged to: pin it to the plan in use now, so a later new plan starts fresh
+  const legacy = prefs.milestoneFor == null && prefs.milestone > 0;
+  useEffect(() => { if (legacy) t.setPrefs({ milestoneFor: planKey }); }, [legacy, planKey, t]);
   const eta = trendNow != null ? projectedGoalDate(trendNow, settings.plan.goalKg, rate) : null;
   const H = settings.habits;
   const doneToday = H.filter(h => state.habits[todayKey]?.[h.id]).length;
