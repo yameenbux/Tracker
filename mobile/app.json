@@ -69,7 +69,11 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.yameenbux.tidemark",
-      "versionCode": 1
+      "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",

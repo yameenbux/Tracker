@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npx eslint src --max-warnings 0
+      - name: Tests (with coverage)
+        run: npx jest --coverage --ci
+      - name: Production config keeps its hardening
+        run: |
+          EAS_BUILD_PROFILE=production npx expo config --type introspect --json > /tmp/config.json
+          node -e "
+            const c = require('/tmp/config.json'); const p = c.ios.infoPlist;
+            const fail = m => { console.error(m); process.exit(1); };
+            if (p.NSAppTransportSecurity && p.NSAppTransportSecurity.NSAllowsLocalNetworking) fail('ATS exception in production');
+            if (p.CFBundleURLTypes) fail('URL scheme in production');
+            if (c.ios.entitlements['aps-environment']) fail('push entitlement present');
+            if (c.ios.entitlements['com.apple.developer.default-data-protection'] !== 'NSFileProtectionComplete') fail('data protection missing');
+            console.log('production config OK');"
+      - name: Dependency audit (runtime packages)
+        run: npm audit --omit=dev --audit-level=critical
