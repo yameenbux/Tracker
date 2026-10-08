@@ -6,6 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, parseKey } from '../core/dates';
 import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, HABIT_AMOUNTS, MAX_HABITS, PACES, SUGGESTED_HABITS } from '../core/plan';
 import { HabitAmount } from '../components/HabitAmount';
+import { ShinyButton } from '../components/ShinyButton';
+import { usePlus } from '../plus';
+import { FREE_HABITS } from '../core/plus';
 import { fmt, lbPart, parseWeightInput, plausible, rangeText, showAmount, showRangeError, showWeight, stPart, toLbNum } from '../core/units';
 import type { Habit, Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
@@ -60,6 +63,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const [goalKg, setGoalKg] = useState<number | null>(null);
   const [pace, setPace] = useState<string>('');   // empty = the recommended option for the goal's direction
   const [start, setStart] = useState(dateKey(new Date()));   // today: a plan that began last Monday starts you "behind"
+  const { plus } = usePlus();
   const [picked, setPicked] = useState<string[]>([]);        // habits chosen during setup (none by default)
   const [amounts, setAmounts] = useState<Record<string, Habit>>({});   // a chosen habit with its amount changed (e.g. Steps 10k)
   const [editStart, setEditStart] = useState(false);
@@ -187,10 +191,10 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'habits' && (
           <>
             <Text style={s.h2} accessibilityRole="header">Anything to tick off each day?</Text>
-            <Text style={s.sub}>Optional. Up to {MAX_HABITS} small habits, shown as how consistent you are, never as streaks. You can change them any time in Settings.</Text>
+            <Text style={s.sub}>Optional. Up to {plus ? MAX_HABITS : `${FREE_HABITS} (${MAX_HABITS} with Plus)`} small habits, shown as how consistent you are, never as streaks. You can change them any time in Settings.</Text>
             <View style={s.habitGrid} accessibilityRole="none">
               {SUGGESTED_HABITS.map(h => {
-                const on = picked.includes(h.id), full = !on && picked.length >= MAX_HABITS;
+                const on = picked.includes(h.id), full = !on && picked.length >= (plus ? MAX_HABITS : FREE_HABITS);
                 return (
                   <Tap key={h.id} disabled={full} onPress={() => setPicked(p => on ? p.filter(x => x !== h.id) : [...p, h.id])}
                     style={[s.habitChip, on && s.habitChipOn, full && { opacity: 0.4 }]}
@@ -250,7 +254,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
 
       <View style={s.footer}>
         {step === 'welcome' && <>
-          <Button label="Set up my plan" kind="coral" onPress={next} />
+          <ShinyButton label="Set up my plan" onPress={next} />
           <Pressable onPress={onRestore} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Restore from a backup</Text></Pressable>
         </>}
         {step === 'current' && <Button label="Next" kind="primary" disabled={!plausible(startKg)} onPress={next} />}

@@ -23,6 +23,15 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
 
 ## What's in it
 
+**Free and Plus.** The core is free: weigh-ins, the trend and plan, reminders, Face ID lock, backups, up to 3 habits.
+**Tidemark Plus** (£1.99 a month or £11.99 a year, each with a 7-day free trial, or £19.99 once) adds the medication
+log, all 6 habits, measurements and photos, calories, and password-protected backups. It's sold through Apple with
+StoreKit 2 (`expo-iap`): no account, no server and no third-party purchase SDK, so the privacy answer stays "Data Not
+Collected". Logic in `src/core/plus.ts`; store calls in `src/purchases.ts`; `usePlus()` and the paywall in `src/plus.tsx`.
+Anything entered in a Plus feature is kept if Plus lapses, and shows again when it's back. Product IDs (create these
+in App Store Connect): `com.yameenbux.tidemark.plus.monthly` and `.yearly` (one subscription group, 7-day free trial
+introductory offer) and `com.yameenbux.tidemark.plus.lifetime` (non-consumable).
+
 - **Setup**: one question per screen — current weight, goal, then a pace (Gentle / Steady / Brisk / Fast, as a share of
   body weight per week), with a "How is this worked out?" explainer. Optional Face ID lock at the end.
 - **Today**: current weight and progress, insight tiles (trend with sparkline, weekly pace and goal date, habits,

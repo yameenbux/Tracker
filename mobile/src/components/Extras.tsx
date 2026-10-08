@@ -1,3 +1,5 @@
+import { usePlus } from '../plus';
+import { usableHabits } from '../core/plus';
 import { EmptyState } from './States';
 import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
@@ -44,9 +46,11 @@ export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }
 // Memoised: the habit/trend comparison walks every week for every habit
 export const PatternsCard = memo(function PatternsCard({ settings, weights, habits, unit, trend }: { settings: Settings; weights: Weights; habits: HabitLog; unit: Unit; trend?: TrendPoint[]; today?: string }) {
   useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
+  const { plus } = usePlus();
+  const habitsShown = (x: Settings) => usableHabits(x.habits, plus);   // free: the first few; the rest are kept
   const series = trend ?? trendSeries(weightSeries(settings.plan, weights));
   const have = weeksOfData(settings.plan, series);
-  if (!settings.habits.length) return null;
+  if (!habitsShown(settings).length) return null;
   if (have < INSIGHT_MIN_WEEKS) {
     return (
       <Card title="Patterns">
@@ -54,7 +58,7 @@ export const PatternsCard = memo(function PatternsCard({ settings, weights, habi
       </Card>
     );
   }
-  const found = settings.habits.map(h => ({ h, ins: habitInsight(settings.plan, series, habits, h.id) })).filter(x => x.ins);
+  const found = habitsShown(settings).map(h => ({ h, ins: habitInsight(settings.plan, series, habits, h.id) })).filter(x => x.ins);
   return (
     <Card title="Patterns">
       {found.length === 0 && <EmptyState compact icon="mind" title="No clear pattern yet" body="Each habit needs at least 3 weeks done 5+ days and 3 weeks not." />}

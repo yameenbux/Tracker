@@ -1,3 +1,6 @@
+import { PlusTeaser } from '../components/PlusTeaser';
+import { usableHabits } from '../core/plus';
+import { usePlus } from '../plus';
 import { CardBoundary } from '../components/States';
 import { MedicationToday, MedicationTrend } from '../components/Medication';
 import { isDue, missedDose } from '../core/medication';
@@ -49,6 +52,7 @@ function lengthChange(cm: number, unit: LengthUnit) {
 export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const { t, settings, series, rate, scrollTop, openSettings, go, notices } = props;
   const { state, prefs } = t;
+  const { plus } = usePlus();
   const unit = state.unit, lu = lengthUnitFor(prefs.length, state.unit);
   const now = new Date();
   const todayKey = dateKey(now);
@@ -62,7 +66,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const legacy = prefs.milestoneFor == null && prefs.milestone > 0;
   useEffect(() => { if (legacy) t.setPrefs({ milestoneFor: planKey }); }, [legacy, planKey, t]);
   const eta = trendNow != null ? projectedGoalDate(trendNow, settings.plan.goalKg, rate) : null;
-  const H = settings.habits;
+  const H = usableHabits(settings.habits, plus);   // free: the first few; the rest are kept for Plus
   const doneToday = H.filter(h => state.habits[todayKey]?.[h.id]).length;
   const avg30 = H.length ? Math.round(H.reduce((a, h) => { const c = consistency(state.habits, h.id, 30, now, settings.plan.start); return a + (c.of ? c.done / c.of : 0); }, 0) / H.length * 100) : 0;
   const waist = measureSummary(state.measurements, 'waist');
@@ -72,7 +76,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   // On a dose day the card goes straight under the hero; otherwise it sits with the other daily items
   // On a dose day, or when a dose looks missed, the card goes straight under the hero; otherwise it sits lower.
   // It stays put once taken, so Undo doesn't jump away.
-  const med = FEATURES.medication ? settings.medication : null, doseLog = state.doses ?? {};
+  const med = FEATURES.medication && plus ? settings.medication : null, doseLog = state.doses ?? {};
   const doseToday = !!med && (isDue(med, doseLog, now) || !!doseLog[props.today] || !!missedDose(med, doseLog, now));
   const d = sign(direction(settings.plan));
 
@@ -80,7 +84,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
     <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={() => openSettings()} scrollTop={scrollTop}>
       {notices}
       <CardBoundary name="Your weight"><Hero settings={settings} weights={state.weights} unit={unit} today={props.today} trend={series} /></CardBoundary>
-      {FEATURES.medication && settings.medication && doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
+      {FEATURES.medication && plus && settings.medication && doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
       {quarter > celebrated && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter, milestoneFor: planKey })} />
       )}
@@ -108,12 +112,14 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
           a11y={H.length ? `Habits: ${doneToday} of ${H.length} done today, ${avg30} percent over 30 days` : 'Habits, none set up'}>
           {H.length ? <WeekDots log={state.habits} ids={H.map(h => h.id)} /> : null}
         </Tile>
-        {settings.trackCalories ? (
+        {settings.trackCalories && plus ? (
           <Tile icon="flame" label="Calories" onPress={() => go('body')}
             value={tdee ? `${tdee.tdee.toLocaleString()} kcal` : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log today'}
             sub={tdee ? 'you really burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'One number a day'}
             a11y={tdee ? `Estimated burn ${tdee.tdee} kcal a day` : 'Calories'} />
         ) : (
+          !plus ? <Tile icon="ruler" label="Body" onPress={() => go('body')} value="Plus" sub="Measurements, photos and calories"
+            a11y="Body measurements, part of Tidemark Plus" /> :
           <Tile icon="ruler" label="Body" onPress={() => go('body')}
             value={waist && waist.first.k !== waist.latest.k ? lengthChange(waist.change, lu) : waist ? showLength(waist.latest.cm, lu) : 'Measure'}
             sub={waist && waist.first.k !== waist.latest.k ? `waist since ${shortDate(parseKey(waist.first.k))} · now ${showLength(waist.latest.cm, lu)}`
@@ -121,7 +127,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
             a11y={waist ? `Waist ${showLength(waist.latest.cm, lu)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, lu)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
         )}
       </View>
-      {FEATURES.medication && settings.medication && !doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
+      {FEATURES.medication && plus && settings.medication && !doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
       <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')} /></CardBoundary>
       <CardBoundary name="Your event"><EventCard settings={settings} /></CardBoundary>
       {isValidElement<{ part?: string }>(notices) ? cloneElement(notices, { part: 'nudge' }) : null}
@@ -133,12 +139,13 @@ export function TrendTab({ t, settings, series, today, scrollTop, openSettings, 
   onReplan: (next: Settings['plan']) => void; onEdit: (k: string) => void;
 }) {
   const { state } = t;
+  const { plus } = usePlus();
   return (
     <TabScreen eyebrow={`${settings.plan.targets.length - 1}-week plan`} title="Trend" onSettings={() => openSettings()} scrollTop={scrollTop}>
       <CardBoundary name="Your trend"><TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} today={today} /></CardBoundary>
       {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} d={sign(direction(settings.plan)) as -1 | 0 | 1} />}
       <CardBoundary name="The chart"><ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} /></CardBoundary>
-      {FEATURES.medication && settings.medication && <CardBoundary name="Medication"><MedicationTrend med={settings.medication} doses={t.state.doses ?? {}} series={series} unit={t.state.unit} onHistory={() => openSettings('medication')} /></CardBoundary>}
+      {FEATURES.medication && plus && settings.medication && <CardBoundary name="Medication"><MedicationTrend med={settings.medication} doses={t.state.doses ?? {}} series={series} unit={t.state.unit} onHistory={() => openSettings('medication')} /></CardBoundary>}
       <SectionLabel>History</SectionLabel>
       <CardBoundary name="Weigh-ins"><EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} trend={series} /></CardBoundary>
     </TabScreen>
@@ -159,6 +166,16 @@ export function HabitsTab({ t, settings, series, today, scrollTop, openSettings,
 
 export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: TabProps) {
   const { state, prefs } = t;
+  const { plus } = usePlus();
+  if (!plus) {
+    const kept = Object.keys(state.measurements).length > 0 || Object.keys(state.photos).length > 0 || Object.keys(state.intake).length > 0;
+    return (
+      <TabScreen eyebrow="Beyond the scale" title="Body" onSettings={() => openSettings()} scrollTop={scrollTop}>
+        <PlusTeaser feature="body" icon="body" kept={kept} title="Measurements, photos and calories"
+          body="Your waist often keeps shrinking in weeks the scale stalls. Measurements, private progress photos and a calorie estimate are part of Tidemark Plus." />
+      </TabScreen>
+    );
+  }
   return (
     <TabScreen eyebrow="Beyond the scale" title="Body" onSettings={() => openSettings()} scrollTop={scrollTop}>
       <CardBoundary name="Measurements & photos"><BodyCard settings={settings} weights={state.weights} unit={state.unit} lengthUnit={lengthUnitFor(prefs.length, state.unit)}

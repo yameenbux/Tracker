@@ -14,7 +14,7 @@ import { eraseStorage, latestRescue, Tracker } from './store';
 type Show = (m: { message: string; action?: string; onAction?: () => void }) => void;
 
 /** Backup, restore, export, clear and erase — every action that moves or removes data in bulk. */
-export function useDataActions(t: Tracker, show: Show, done: () => void) {
+export function useDataActions(t: Tracker, show: Show, done: () => void, plus = true) {
   const { state, prefs } = t;
 
   const restore = async () => {
@@ -54,7 +54,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   const exportData = async () => {
     if (!state.settings) return;
     // A backup leaves the phone, so offer to lock it with a password first
-    const how = !FEATURES.protectedBackups ? 'plain' : await choose('Protect this backup?', 'A password keeps the file private wherever it ends up. You’ll need it to restore, and it can’t be recovered if you forget it.',
+    const how = !FEATURES.protectedBackups || !plus ? 'plain' : await choose('Protect this backup?', 'A password keeps the file private wherever it ends up. You’ll need it to restore, and it can’t be recovered if you forget it.',
       [{ id: 'password', label: 'Add a password' }, { id: 'plain', label: 'No password' }]);
     if (!how) return;
     let text = buildExportText({ ...state, settings: state.settings });

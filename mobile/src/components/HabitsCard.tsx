@@ -1,3 +1,5 @@
+import { usableHabits } from '../core/plus';
+import { usePlus } from '../plus';
 import { EmptyState } from './States';
 import { habitIcon } from '../core/habitIcons';
 import { memo, useEffect, useState } from 'react';
@@ -83,7 +85,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   const days = weekDays(addDays(new Date(), -7 * back));
   const canBack = dateKey(days[0]) > settings.plan.start;
   const todayKey = dateKey(new Date());
-  const H = settings.habits;
+  const H = usableHabits(settings.habits, usePlus().plus);
   const hasMeals = settings.meals.items.length > 0;
   const anySession = days.some(d => { const x = settings.sessions[d.getDay()]; return x.title || x.items.length; });
   if (!H.length && !anySession && !hasMeals) {
