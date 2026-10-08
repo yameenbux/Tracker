@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, parseKey } from '../core/dates';
 import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, HABIT_AMOUNTS, MAX_HABITS, PACES, SUGGESTED_HABITS } from '../core/plan';
 import { HabitAmount } from '../components/HabitAmount';
+import { ShinyButton } from '../components/ShinyButton';
 import { usePlus } from '../plus';
 import { FREE_HABITS } from '../core/plus';
 import { fmt, lbPart, parseWeightInput, plausible, rangeText, showAmount, showRangeError, showWeight, stPart, toLbNum } from '../core/units';
@@ -253,7 +254,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
 
       <View style={s.footer}>
         {step === 'welcome' && <>
-          <Button label="Set up my plan" kind="coral" onPress={next} />
+          <ShinyButton label="Set up my plan" onPress={next} />
           <Pressable onPress={onRestore} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Restore from a backup</Text></Pressable>
         </>}
         {step === 'current' && <Button label="Next" kind="primary" disabled={!plausible(startKg)} onPress={next} />}

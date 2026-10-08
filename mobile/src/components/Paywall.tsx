@@ -9,7 +9,7 @@ import { C, F, themed } from '../theme';
 import { Icon, IconName } from './Icons';
 import { Tap } from './Motion';
 import { Sheet } from './Sheet';
-import { Button } from './ui';
+import { ShinyButton } from './ShinyButton';
 
 const PLAN_TEXT: Record<PlusPlan, { name: string; per: string; note?: string }> = {
   yearly: { name: 'Yearly', per: 'a year', note: 'Best value' },
@@ -45,7 +45,7 @@ export function Paywall({ reason, onClose, onRestore }: { reason: PlusFeature | 
 
   return (
     <Sheet title="Tidemark Plus" onClose={onClose} footer={storeAvailable ? <>
-      <Button label={cta} kind="coral" disabled={!chosen || busy} onPress={purchase} />
+      <ShinyButton label={cta} disabled={!chosen || busy} onPress={purchase} />
       <Tap onPress={() => { setBusy(true); onRestore().finally(() => setBusy(false)); }} disabled={busy} style={s.restore} accessibilityRole="button">
         <Text style={s.restoreTxt}>Restore purchases</Text>
       </Tap>
