@@ -31,6 +31,8 @@ describe('theme', () => {
         expect([sch, fg, bg, ratio(C[fg], C[bg]) >= 4.5]).toEqual([sch, fg, bg, true]);
       }
       expect(ratio('#FFFFFF', C.primary)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(C.onDone, C.done)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(C.done, C.card)).toBeGreaterThanOrEqual(3);
     }
   });
 

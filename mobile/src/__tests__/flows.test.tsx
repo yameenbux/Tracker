@@ -1,6 +1,6 @@
 import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import { defaultSettings, buildTargets } from '../core/plan';
+import { defaultSettings, buildTargets, DEFAULT_HABITS } from '../core/plan';
 import { DEFAULT_PREFS } from '../core/storage';
 import { Toast } from '../components/Shell';
 import * as Notifications from 'expo-notifications';
@@ -8,7 +8,7 @@ import { applyReminder, reminderDays, remindersBlocked } from '../reminders';
 import { SettingsScreen, SettingsProps } from '../screens/SettingsScreen';
 import { useLock } from '../useLock';
 
-const settings = defaultSettings({ start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: buildTargets(90, 80, '2026-01-05', '2026-06-01') });
+const settings = defaultSettings({ start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: buildTargets(90, 80, '2026-01-05', '2026-06-01') }, DEFAULT_HABITS);
 const props = (over: Partial<SettingsProps> = {}): SettingsProps => ({
   settings, unit: 'kg', setUnit: jest.fn(), lock: false, lockAvailable: true, lockName: 'Face ID', onLockChange: jest.fn(),
   reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), appearance: 'system', onAppearanceChange: jest.fn(), lastBackup: null, weighIns: 3, weights: {}, onPlanLeftUnsaved: jest.fn(),

@@ -136,9 +136,9 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
           return (
             <Tap key={h.id} onPress={() => { tick(); onChange(toggleHabit(habits, key, h.id)); }} style={[s.chip, on && s.chipOn]}
               accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={h.name}>
-              <Icon name={habitIcon(h.icon, h.name)} size={18} color={on ? C.onCoral : C.plum2} />
-              <Text style={[s.chipTxt, on && { color: C.onCoral }]} numberOfLines={1}>{h.name}</Text>
-              {on && <Icon name="check" size={16} color={C.onCoral} strokeWidth={2.6} />}
+              <Icon name={habitIcon(h.icon, h.name)} size={18} color={on ? C.onDone : C.plum2} />
+              <Text style={[s.chipTxt, on && { color: C.onDone }]} numberOfLines={1}>{h.name}</Text>
+              {on && <Icon name="check" size={16} color={C.onDone} strokeWidth={2.6} />}
             </Tap>
           );
         })}
@@ -163,8 +163,8 @@ const s = themed(() => StyleSheet.create({
   tileValue: { fontFamily: F.display, fontSize: 24, color: C.ink, marginTop: 10, letterSpacing: -0.3 },
   tileSub: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 2, lineHeight: 17 },
   dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.chip },
-  dotOn: { backgroundColor: C.coralInk },
-  dotSome: { backgroundColor: C.raised, borderWidth: 2, borderColor: C.coralInk },
+  dotOn: { backgroundColor: C.done },
+  dotSome: { backgroundColor: C.raised, borderWidth: 2, borderColor: C.done },
   table: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
   cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
   cellK: { fontFamily: F.bodySemi, fontSize: 11, color: C.inkSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
@@ -176,11 +176,11 @@ const s = themed(() => StyleSheet.create({
   gridPct: { fontFamily: F.display, fontSize: 14, color: C.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
   cellDot: { width: '8.4%', aspectRatio: 1, borderRadius: 5, backgroundColor: C.chip },
-  cellOn: { backgroundColor: C.coralInk },
+  cellOn: { backgroundColor: C.done },
   cellOff: { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.line, borderStyle: 'dashed' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.control },
-  chipOn: { backgroundColor: C.coral, borderColor: C.coralInk },
+  chipOn: { backgroundColor: C.done, borderColor: C.done },
   chipTxt: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink, maxWidth: 150 },
   sess: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginHorizontal: 2, padding: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },
   sessK: { fontFamily: F.bodySemi, fontSize: 11, color: C.plum2, textTransform: 'uppercase', letterSpacing: 0.8 },

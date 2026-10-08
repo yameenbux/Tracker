@@ -1,13 +1,13 @@
 import { CardBoundary } from '../components/States';
-import { useCallback, useEffect } from 'react';
+import { cloneElement, isValidElement, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { measureSummary, showLength } from '../core/body';
 import { estimateExpenditure } from '../core/calories';
 import { DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { consistency, milestoneQuarter } from '../core/insights';
-import { behindBy, direction, sign } from '../core/plan';
+import { direction, lineStatus, sign } from '../core/plan';
 import { milestonePlanKey } from '../core/storage';
-import { backupDue, daysSince, recentTrend } from '../core/summary';
+import { backupDue, changeTable, daysSince, recentTrend } from '../core/summary';
 import { projectedGoalDate, Rate, TrendPoint } from '../core/trend';
 import { showChange, showAmount, showWeight } from '../core/units';
 import type { Settings, Unit } from '../core/types';
@@ -64,30 +64,32 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const avg30 = H.length ? Math.round(H.reduce((a, h) => { const c = consistency(state.habits, h.id, 30, now, settings.plan.start); return a + (c.of ? c.done / c.of : 0); }, 0) / H.length * 100) : 0;
   const waist = measureSummary(state.measurements, 'waist');
   const tdee = settings.trackCalories ? estimateExpenditure(state.intake, series) : null;
-  const behind = trendNow != null ? behindBy(settings.plan, trendNow) : 0;
+  const status = trendNow != null ? lineStatus(settings.plan, trendNow) : null;   // same answer as the hero's "vs line"
+  const week = changeTable(series, now, [7])[0].change;
   const d = sign(direction(settings.plan));
 
   return (
     <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={() => openSettings()} scrollTop={scrollTop}>
       {notices}
+      <CardBoundary name="Your weight"><Hero settings={settings} weights={state.weights} unit={unit} today={props.today} trend={series} /></CardBoundary>
       {quarter > celebrated && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter, milestoneFor: planKey })} />
       )}
-      <CardBoundary name="Your weight"><Hero settings={settings} weights={state.weights} unit={unit} today={props.today} /></CardBoundary>
       <View style={s.tiles}>
-        <Tile icon="trend" label="Trend" onPress={() => go('trend')}
-          value={last ? showWeight(last.trend, unit) : '—'}
-          sub={last ? `Scale ${showWeight(last.kg, unit)}` : 'After a couple of weigh-ins'}
+        <Tile icon="trend" label="This week" onPress={() => go('trend')}
+          value={week != null ? showChange(week, unit) : '—'}
+          valueColor={week == null || d === 0 ? C.ink : week * d > 0.05 ? C.mintInk : week * d < -0.05 ? C.coralInk : C.ink}
+          sub={week != null ? 'trend change, 7 days' : 'Needs a week of weigh-ins'}
           spark={recentTrend(series, 30)}
-          a11y={last ? `Trend weight ${showWeight(last.trend, unit)}` : 'Trend weight, not enough data yet'} />
+          a11y={week != null ? `Trend changed ${showChange(week, unit)} in the last 7 days` : 'Weekly change, needs a week of weigh-ins'} />
         <Tile icon="target" label="Pace" onPress={() => go('trend')}
           value={rate ? showChange(rate.perWeek, unit, 2) : '—'}
           valueColor={rate ? (d === 0 ? C.ink : rate.perWeek * d > 0.05 ? C.mintInk : rate.perWeek * d < -0.05 ? C.coralInk : C.ink) : C.inkSoft}
-          sub={rate ? (eta ? `a week · goal around ${shortDate(parseKey(eta))}` : 'a week') : '4 weigh-ins over 10 days'}
-          a11y={(rate ? `Pace ${showChange(rate.perWeek, unit, 2)} a week${eta ? ', goal around ' + longDate(eta) : ''}` : 'Pace, not enough data yet')
-            + (behind > (d === 0 ? 1 : 0.3) ? `, ${showAmount(behind, unit)} ${d === 0 ? 'off your weight' : 'behind the line'}` : rate && last ? ', on the line' : '')}>
-          {behind > (d === 0 ? 1 : 0.3) ? <Text style={s.tileNote}>{showAmount(behind, unit)} {d === 0 ? 'off your weight' : 'behind the line'}</Text>
-            : rate && last ? <Text style={[s.tileNote, { color: C.mintInk }]}>On the line</Text> : null}
+          sub={rate ? (eta ? `a week · goal around ${shortDate(parseKey(eta))}` : 'a week') : 'Needs 4 weigh-ins over 10 days'}
+          a11y={(rate ? `Pace ${showChange(rate.perWeek, unit, 2)} a week${eta ? ', goal around ' + longDate(eta) : ''}` : 'Pace, needs 4 weigh-ins over 10 days')
+            + (status && !status.onLine && !status.ahead ? `, ${showAmount(status.off, unit)} ${d === 0 ? 'off your weight' : 'behind the line'}` : status && rate ? ', on the line' : '')}>
+          {status && !status.onLine && !status.ahead ? <Text style={s.tileNote}>{showAmount(status.off, unit)} {d === 0 ? 'off your weight' : 'behind the line'}</Text>
+            : status && rate ? <Text style={[s.tileNote, { color: C.mintInk }]}>{status.ahead ? 'Ahead of the line' : 'On the line'}</Text> : null}
         </Tile>
       </View>
       <View style={s.tiles}>
@@ -112,6 +114,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
       </View>
       <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')} /></CardBoundary>
       <CardBoundary name="Your event"><EventCard settings={settings} /></CardBoundary>
+      {isValidElement<{ part?: string }>(notices) ? cloneElement(notices, { part: 'nudge' }) : null}
     </TabScreen>
   );
 }
@@ -126,13 +129,13 @@ export function TrendTab({ t, settings, series, today, scrollTop, openSettings, 
       {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} d={sign(direction(settings.plan)) as -1 | 0 | 1} />}
       <CardBoundary name="The chart"><ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} /></CardBoundary>
       <SectionLabel>History</SectionLabel>
-      <CardBoundary name="Weigh-ins"><EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} /></CardBoundary>
+      <CardBoundary name="Weigh-ins"><EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} trend={series} /></CardBoundary>
     </TabScreen>
   );
 }
 
 export function HabitsTab({ t, settings, series, today, scrollTop, openSettings, onLogSession }: TabProps & { onLogSession: (k: string, dow: number) => void }) {
-  const addHabits = useCallback(() => openSettings('habits'), [openSettings]);
+  const addHabits = () => openSettings('habits');
   const { state } = t;
   return (
     <TabScreen eyebrow="Consistency, not streaks" title="Habits" onSettings={() => openSettings()} scrollTop={scrollTop}>
@@ -159,7 +162,8 @@ export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: 
 }
 
 /** Notices shown at the top of Today: unreadable data, failing saves, a lock that switched itself off, backups. */
-export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onBackupHide, onExport, onRestore, onExportRescued, pendingPlan, onSavePending, onDiscardPending }: {
+export function TodayNotices({ part = 'urgent', t, lockLost, onLockLostDismiss, backupHidden, onBackupHide, onExport, onRestore, onExportRescued, pendingPlan, onSavePending, onDiscardPending }: {
+  part?: 'urgent' | 'nudge';   // urgent notices sit above the weight; the backup nudge waits at the bottom of Today
   t: Tracker; lockLost: boolean; onLockLostDismiss: () => void; backupHidden: boolean; onBackupHide: () => void;
   onExport: () => void; onRestore: () => void; onExportRescued: () => void;
   pendingPlan: Settings['plan'] | null; onSavePending: () => void; onDiscardPending: () => void;
@@ -168,7 +172,10 @@ export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onB
   const lastBackupDays = daysSince(prefs.lastBackup);
   // The backup nudge waits while anything more urgent is showing, so Today never opens on a stack of cards
   const urgent = t.recovered || !!pendingPlan || lockLost || t.saveFailed;
-  const showBackup = !urgent && !backupHidden && backupDue(prefs.lastBackup, Object.keys(state.weights).length);
+  const showBackup = part === 'nudge' && !urgent && !backupHidden && backupDue(prefs.lastBackup, Object.keys(state.weights).length);
+  if (part === 'nudge') return showBackup ? <Notice icon="download" title={lastBackupDays == null ? 'Make your first backup' : `Last backup ${lastBackupDays} days ago`}
+    body="Your data lives only on this phone. A backup file in iCloud Drive or Files means a lost phone isn’t lost data."
+    action="Back up now" onAction={onExport} onDismiss={onBackupHide} /> : null;
   return (
     <>
       {t.recovered && (

@@ -9,7 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
-import { showWeight } from './core/units';
+import { changeTable } from './core/summary';
+import { showWeight, showChange } from './core/units';
 import type { Settings } from './core/types';
 import { CoverContext, CoverOverlay } from './components/Cover';
 import { LogSheet } from './components/Entries';
@@ -188,7 +189,12 @@ function Main() {
               if (moved) t.setWeight(moved.k, null);
               t.setWeight(k, kg); success(); setLog(null);
               const undo = () => { t.setWeight(k, replaced ?? null); if (moved) t.setWeight(moved.k, moved.kg); };
-              show({ message: `${showWeight(kg, state.unit)} saved for ${k === today ? 'today' : longDate(k)}`,
+              // Say what the weigh-in did to the trend, the number that matters, not just that it saved
+              const after = { ...state.weights, [k]: kg };
+              if (moved) delete after[moved.k];
+              const wk = changeTable(trendSeries(weightSeries(settings.plan, after)), new Date(), [7])[0].change;
+              show({ message: `${showWeight(kg, state.unit)} saved for ${k === today ? 'today' : longDate(k)}`
+                       + (wk != null ? ` · trend ${showChange(wk, state.unit)} this week` : ''),
                      ...(replaced != null || moved ? { action: 'Undo', onAction: undo } : {}) });
             }}
             onDelete={k => {

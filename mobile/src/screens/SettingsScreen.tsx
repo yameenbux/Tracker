@@ -69,7 +69,7 @@ function SwitchRow({ icon, label, value, onChange, disabled, last }: {
 }) {
   return (
     <Row icon={icon} label={label} last={last} right={
-      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: C.mintInk, false: C.control }} accessibilityLabel={label} />
+      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: C.mintInk }} accessibilityLabel={label} />
     } />
   );
 }
@@ -184,10 +184,10 @@ export function SettingsScreen(p: SettingsProps) {
 
         <Group title="Privacy & data" footer="Everything lives on this phone only. Tidemark has no account and no servers. A backup file saved to iCloud Drive or Files is the only copy if you lose your phone.">
           <SwitchRow icon="lock" label={`Lock with ${p.lockName}`} value={p.lock} onChange={p.onLockChange} disabled={!p.lockAvailable} />
-          <Row icon="download" label="Export backup" value={backupDays == null ? 'Never' : backupDays === 0 ? 'Today' : `${backupDays}d ago`} onPress={p.onExport}
+          <Row icon="share" label="Export backup" value={backupDays == null ? 'Never' : backupDays === 0 ? 'Today' : `${backupDays}d ago`} onPress={p.onExport}
             hint="Saves a backup file you can restore later" />
           <Row icon="share" label="Export spreadsheet (CSV)" onPress={p.onExportCsv} />
-          <Row icon="info" label="Restore from backup" onPress={p.onRestore} last />
+          <Row icon="download" label="Restore from backup" onPress={p.onRestore} last />
         </Group>
         {!p.lockAvailable && <Text style={s.groupFootOut}>Set up {p.lockName} or a passcode on this phone to use the lock.</Text>}
 
