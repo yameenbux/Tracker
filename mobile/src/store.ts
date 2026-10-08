@@ -158,7 +158,7 @@ export function useTracker() {
 }
 export type Tracker = ReturnType<typeof useTracker>;
 
-/** Removes everything Plumb has stored on this phone: data, preferences, rescue copies and snapshots. */
+/** Removes everything Tidemark has stored on this phone: data, preferences, rescue copies and snapshots. */
 export async function eraseStorage(): Promise<boolean> {
   try { await AsyncStorage.clear(); return true; } catch { return false; }
 }

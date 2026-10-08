@@ -198,7 +198,7 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
     const label = POSES.find(p => p.key === pose)!.label;
     const opts: Choice[] = [{ label: 'Take photo', run: () => take('camera', pose) }, { label: 'Choose from library', run: () => take('library', pose) }];
     if (day[pose]) opts.push({ label: 'Remove photo', destructive: true, run: () => confirmDelete(`Remove this ${label.toLowerCase()} photo?`,
-      'It’s deleted from Plumb. Photos aren’t in backups, so this can’t be undone.', () => { deletePhoto(day[pose]!); onChange(setPhotoRef(photos, k, pose, null)); }) });
+      'It’s deleted from Tidemark. Photos aren’t in backups, so this can’t be undone.', () => { deletePhoto(day[pose]!); onChange(setPhotoRef(photos, k, pose, null)); }) });
     choose(label + ' photo', Platform.OS === 'web' ? [opts[1]] : opts);
   };
   return (
@@ -215,7 +215,7 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
           </Pressable>
         ))}
       </View>
-      <Text style={s.tip}>Same spot, same light, same clothes each time, so the only thing that changes is you. Photos stay inside Plumb and aren’t included in backups.</Text>
+      <Text style={s.tip}>Same spot, same light, same clothes each time, so the only thing that changes is you. Photos stay inside Tidemark and aren’t included in backups.</Text>
     </Sheet>
   );
 }

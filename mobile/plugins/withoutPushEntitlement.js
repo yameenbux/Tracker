@@ -1,4 +1,4 @@
-// Plumb only schedules local reminders, so it doesn't need the push-notification entitlement that
+// Tidemark only schedules local reminders, so it doesn't need the push-notification entitlement that
 // expo-notifications adds. Removing it keeps the App Store capabilities honest (no push, no APNs setup).
 const { withEntitlementsPlist } = require('expo/config-plugins');
 

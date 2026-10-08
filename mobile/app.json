@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Plumb",
-    "slug": "plumb",
+    "name": "Tidemark",
+    "slug": "tidemark",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yameenbux.plumb",
+      "bundleIdentifier": "com.yameenbux.tidemark",
       "icon": {
         "light": "./assets/icon.png",
         "dark": "./assets/icon-dark.png",
@@ -68,12 +68,12 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.yameenbux.plumb",
+      "package": "com.yameenbux.tidemark",
       "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Plumb"
+      "name": "Tidemark"
     },
     "plugins": [
       "./plugins/withoutPushEntitlement.js",
@@ -84,14 +84,14 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Plumb uses Face ID to keep your weight and habits private."
+          "faceIDPermission": "Tidemark uses Face ID to keep your weight and habits private."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Plumb lets you pick progress photos. They stay private inside the app.",
-          "cameraPermission": "Plumb uses the camera to take progress photos. They stay private inside the app.",
+          "photosPermission": "Tidemark lets you pick progress photos. They stay private inside the app.",
+          "cameraPermission": "Tidemark uses the camera to take progress photos. They stay private inside the app.",
           "microphonePermission": false
         }
       ],

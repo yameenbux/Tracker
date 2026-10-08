@@ -100,7 +100,7 @@ function Main() {
 
   const setReminder = async (r: Reminder) => {
     if (r.on && !(await allowReminders())) {
-      notify('Notifications are off for Plumb', 'To get a weigh-in reminder, allow notifications for Plumb in the iPhone Settings app.');
+      notify('Notifications are off for Tidemark', 'To get a weigh-in reminder, allow notifications for Tidemark in the iPhone Settings app.');
       return;
     }
     t.setPrefs({ reminder: r });
@@ -137,7 +137,7 @@ function Main() {
       <CoverContext.Provider value={lock.covered}>
       <Onboarding unit={state.unit} setUnit={t.setUnit} lockAvailable={lock.lockAvailable} lockName={lock.lockName}
         onDone={finishSetup} onRestore={data.restore}
-        notice={t.recovered ? `Your saved plan couldn’t be read, so Plumb kept a copy on this phone${kept ? ` and kept your ${kept} weigh-in${kept === 1 ? '' : 's'}` : ''}. Set your plan up again, or restore a backup.` : undefined} />
+        notice={t.recovered ? `Your saved plan couldn’t be read, so Tidemark kept a copy on this phone${kept ? ` and kept your ${kept} weigh-in${kept === 1 ? '' : 's'}` : ''}. Set your plan up again, or restore a backup.` : undefined} />
       <CoverOverlay />
       </CoverContext.Provider>
     );

@@ -152,7 +152,7 @@ export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: 
       {settings.trackCalories
         ? <CardBoundary name="Calories"><CaloriesCard settings={settings} weights={state.weights} intake={state.intake} onChange={t.setIntake} trend={series} /></CardBoundary>
         : <Notice icon="flame" title="Calorie estimate (optional)"
-            body="Log one number a day and after two weeks Plumb works out what you really burn, from your own trend rather than a formula."
+            body="Log one number a day and after two weeks Tidemark works out what you really burn, from your own trend rather than a formula."
             action="Turn on" onAction={() => { t.setSettings({ ...settings, trackCalories: true }); show({ message: 'Calorie logging on' }); }} />}
     </TabScreen>
   );
@@ -173,7 +173,7 @@ export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onB
     <>
       {t.recovered && (
         <Notice tone="warn" icon="shield" title="Some saved data couldn’t be read"
-          body="Plumb kept an untouched copy on this phone. Restore a backup if you have one, or export the copy to keep it safe."
+          body="Tidemark kept an untouched copy on this phone. Restore a backup if you have one, or export the copy to keep it safe."
           action="Restore a backup" onAction={onRestore} onDismiss={t.dismissRecovered} />
       )}
       {t.recovered && (
@@ -187,7 +187,7 @@ export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onB
       )}
       {lockLost && (
         <Notice tone="warn" icon="lock" title="The lock has been turned off"
-          body="This iPhone no longer has a passcode or Face ID, so Plumb couldn’t keep asking for it. Turn the lock back on in Settings once a passcode is set."
+          body="This iPhone no longer has a passcode or Face ID, so Tidemark couldn’t keep asking for it. Turn the lock back on in Settings once a passcode is set."
           onDismiss={onLockLostDismiss} />
       )}
       {t.saveFailed && (

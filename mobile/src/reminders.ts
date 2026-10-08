@@ -40,7 +40,7 @@ export function reminderDays(r: Reminder, loggedToday: boolean, now: Date = new 
   return out;
 }
 
-/** True when reminders are on in Plumb but notifications are switched off for it in iOS Settings. */
+/** True when reminders are on in Tidemark but notifications are switched off for it in iOS Settings. */
 export async function remindersBlocked(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
   try { return !(await Notifications.getPermissionsAsync()).granted; } catch { return false; }
@@ -49,7 +49,7 @@ export async function remindersBlocked(): Promise<boolean> {
 // Calls run one after another, so quick changes (spinning the time picker) can't leave duplicate reminders
 let queue: Promise<void> = Promise.resolve();
 
-/** Replaces Plumb's scheduled reminders with the ones this setting calls for. */
+/** Replaces Tidemark's scheduled reminders with the ones this setting calls for. */
 export function applyReminder(r: Reminder, loggedToday = false): Promise<void> {
   if (Platform.OS === 'web') return Promise.resolve();
   queue = queue.then(async () => {

@@ -1,19 +1,19 @@
 # Compliance checklist
 
-Checked against what Plumb actually does on 8 October 2026: local-only, no account, no payments, no network calls,
+Checked against what Tidemark actually does on 8 October 2026: local-only, no account, no payments, no network calls,
 no analytics, no ads. Re-check this list if any of those change (an account, a subscription, a server, an SDK).
 
 | Item | Needed? | Why | What exists |
 |---|---|---|---|
-| Delete account | **No account exists** | App Store guideline 5.1.1(v) applies to apps that let people create an account. Plumb has none. | Settings → **Delete all my data** erases everything (plan, weigh-ins, habits, measurements, photos, preferences, reminders, cached files) after two confirmations. The privacy policy explains there's nothing held elsewhere. |
-| Restore purchases | **No** | Only required for apps that sell non-consumable in-app purchases or subscriptions (guideline 3.1.1). Plumb sells nothing. | Not added. **Add it the day a purchase is added.** |
+| Delete account | **No account exists** | App Store guideline 5.1.1(v) applies to apps that let people create an account. Tidemark has none. | Settings → **Delete all my data** erases everything (plan, weigh-ins, habits, measurements, photos, preferences, reminders, cached files) after two confirmations. The privacy policy explains there's nothing held elsewhere. |
+| Restore purchases | **No** | Only required for apps that sell non-consumable in-app purchases or subscriptions (guideline 3.1.1). Tidemark sells nothing. | Not added. **Add it the day a purchase is added.** |
 | Privacy policy | **Yes** (required for every app) | | `privacy.html` at the repo root, served at `https://yameenbux.github.io/Tracker/privacy.html` and linked from Settings → About. Includes support email, data protection, deletion, children and a not-medical-advice note. |
 | Terms of service | **No** | Apple's Standard EULA applies to every App Store app that doesn't supply its own. There are no accounts, payments or user content to govern. The not-medical-advice wording sits in the app and the privacy policy. | Not added. In App Store Connect, leave the licence agreement as Apple's standard EULA. |
-| Refund policy | **No** | Plumb is free. App Store refunds are handled by Apple, never by the developer. | Not added. |
+| Refund policy | **No** | Tidemark is free. App Store refunds are handled by Apple, never by the developer. | Not added. |
 | Cookie policy | **No** | The app has no web views and sets no cookies. The privacy page sets none and loads nothing from third parties (no Google Fonts, no analytics; GitHub Pages sets no cookies). | Not added. |
 | Cookie consent banner | **No** | There are no cookies or trackers to consent to (UK PECR / ePrivacy only apply when something is stored on or read from the visitor's device beyond what's strictly necessary). | Not added. Adding one with nothing behind it would be misleading. |
 | Form consents | **No consent boxes needed** | Nothing a person types leaves their phone, so there's no processing by us that would need consent. Each iOS permission is asked for only at the moment it's used, with a plain reason. | Camera (progress photos), Photos (pick a progress photo), Face ID (optional lock) and Notifications (optional reminder): each with a usage string, each optional. No microphone, location, contacts, tracking or advertising ID. |
-| Don't collect unnecessary data | **Done** | Plumb stores only what the person enters, on their phone. Optional features (photos, measurements, calories, sessions, meals) stay empty unless used. No device identifiers, no logs, no analytics. | App Privacy answer in App Store Connect: **Data Not Collected**. |
+| Don't collect unnecessary data | **Done** | Tidemark stores only what the person enters, on their phone. Optional features (photos, measurements, calories, sessions, meals) stay empty unless used. No device identifiers, no logs, no analytics. | App Privacy answer in App Store Connect: **Data Not Collected**. |
 | Audit third-party SDKs | **Done** (below) | | |
 
 ## Third-party SDK audit

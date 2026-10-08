@@ -41,7 +41,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     if (!Object.keys(weights).length && !Object.keys(habits).length) throw new Error('That backup has no weigh-ins or habits in it.');
     return { settings: current ?? legacySettings(), weights, habits, measurements: {}, intake: {}, lifts: {}, unit };
   }
-  throw new Error("That file doesn't look like a Plumb backup.");
+  throw new Error("That file doesn't look like a Tidemark backup.");
 }
 
 const pad = (s: unknown, n: number) => { const t = String(s); return t + ' '.repeat(Math.max(0, n - t.length)); };
@@ -50,7 +50,7 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   const { settings, weights, habits, unit, measurements, intake, lifts } = state;
   const plan = settings.plan;
   const L: string[] = [];
-  L.push('PLUMB EXPORT');
+  L.push('TIDEMARK EXPORT');
   L.push('Generated: ' + now.toLocaleString());
   L.push('');
   // kg first (the tables below are in kg), then the same weight in the unit you use

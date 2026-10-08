@@ -1,7 +1,7 @@
 // Production-only hardening of Info.plist (development builds keep what Metro and the dev client need).
-// - No App Transport Security exceptions: Plumb talks to no server at all. NSAllowsLocalNetworking stays in
+// - No App Transport Security exceptions: Tidemark talks to no server at all. NSAllowsLocalNetworking stays in
 //   development builds only, where the app loads its code from Metro on the local network.
-// - No URL scheme: Plumb handles no links, so nothing outside the app should be able to open it with arguments.
+// - No URL scheme: Tidemark handles no links, so nothing outside the app should be able to open it with arguments.
 const { withInfoPlist } = require('expo/config-plugins');
 
 module.exports = function withProductionHardening(config) {

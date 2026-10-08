@@ -26,7 +26,7 @@ export async function addPhoto(source: 'camera' | 'library', dateKey: string, po
                                                   base64: Platform.OS === 'web' };
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) throw new Error('Plumb needs camera access to take progress photos. You can allow it in the iPhone Settings app.');
+    if (!perm.granted) throw new Error('Tidemark needs camera access to take progress photos. You can allow it in the iPhone Settings app.');
   }
   const res = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
   if (res.canceled || !res.assets.length) return null;

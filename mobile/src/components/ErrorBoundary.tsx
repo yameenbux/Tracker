@@ -25,14 +25,14 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
   /** The crash screen sits outside the lock screen, so its data actions ask for Face ID when the lock is on. */
   allowed = async (why: string) => !(await lockIsOn()) || unlock(why);
   exportRaw = async () => {
-    if (!(await this.allowed('Export your Plumb data'))) return;
+    if (!(await this.allowed('Export your Tidemark data'))) return;
     const raw = await rawSaved();
     if (!raw) { notify('Nothing to export', 'There’s no saved data on this phone.'); return; }
-    try { await shareBackup('plumb-raw-data.txt', raw); } catch { notify('Export failed', 'Nothing was shared. Try again.'); }
+    try { await shareBackup('tidemark-raw-data.txt', raw); } catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
   setAside = async () => {
-    if (!(await this.allowed('Set your Plumb data aside'))) return;
-    if (!(await confirm('Set this data aside?', 'Plumb keeps an exact copy on this phone (export it at any time) and starts fresh. You can then restore a backup.', 'Set aside'))) return;
+    if (!(await this.allowed('Set your Tidemark data aside'))) return;
+    if (!(await confirm('Set this data aside?', 'Tidemark keeps an exact copy on this phone (export it at any time) and starts fresh. You can then restore a backup.', 'Set aside'))) return;
     if (await setAsideSaved()) this.retry();
     else notify('Couldn’t set it aside', 'Nothing was changed. Restart your iPhone and try again.');
   };
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
       <View style={s.wrap} accessibilityRole="alert">
         <Text style={s.title} accessibilityRole="header">Something went wrong</Text>
         <Text style={s.body}>{stuck
-          ? 'Plumb keeps stopping at the same place, so something in the saved data is probably the cause. Nothing has been deleted.'
+          ? 'Tidemark keeps stopping at the same place, so something in the saved data is probably the cause. Nothing has been deleted.'
           : 'Your data is safe. It’s saved on this phone and nothing was deleted.'}</Text>
         <Text style={s.detail} numberOfLines={3}>{this.state.error.message}</Text>
         <Button label="Try again" kind="coral" onPress={this.retry} style={{ alignSelf: 'stretch', marginTop: 24 }} />

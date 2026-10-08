@@ -1,6 +1,6 @@
-# Plumb — iPhone app
+# Tidemark — iPhone app
 
-The native version of Tracker, now called **Plumb**, built with Expo (React Native) so it can be developed without a Mac.
+The native version of Tracker, now called **Tidemark**, built with Expo (React Native) so it can be developed without a Mac.
 Same idea as the web app: no account, nothing leaves the phone, and the target line is a guide, not a verdict.
 
 ## Try it on your iPhone (free, no Apple developer account)
@@ -43,7 +43,7 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
 
 ## Security
 
-- **No network surface.** Plumb has no server, account, analytics or third-party SDKs; production builds have no App Transport
+- **No network surface.** Tidemark has no server, account, analytics or third-party SDKs; production builds have no App Transport
   Security exceptions at all (`plugins/withProductionHardening.js` strips local networking outside development builds).
 - **Encrypted at rest.** `NSFileProtectionComplete` (data protection entitlement): the app's files can't be read while the phone is locked.
 - **Lock and privacy cover.** Optional Face ID / passcode lock on every return; the app switcher always shows a blank cover.
