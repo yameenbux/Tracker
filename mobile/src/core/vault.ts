@@ -66,9 +66,13 @@ export function open(text: string, password: string): string {
   }
   // Refuse absurd work factors a crafted file could use to hang the app
   if (b.N !== KDF.N || b.r !== KDF.r || b.p !== KDF.p) throw new Error('That protected backup uses settings Tidemark doesn’t recognise.');
-  const key = scrypt(utf8ToBytes(password), hexToBytes(b.salt), KDF);
+  let salt: Uint8Array, nonce: Uint8Array, data: Uint8Array;
+  try { salt = hexToBytes(b.salt); nonce = hexToBytes(b.nonce); data = hexToBytes(b.data); }
+  catch { throw new Error('That protected backup is damaged.'); }
+  if (salt.length !== 16 || nonce.length !== 24) throw new Error('That protected backup is damaged.');
+  const key = scrypt(utf8ToBytes(password), salt, KDF);
   try {
-    return bytesToUtf8(xchacha20poly1305(key, hexToBytes(b.nonce)).decrypt(hexToBytes(b.data)));
+    return bytesToUtf8(xchacha20poly1305(key, nonce).decrypt(data));
   } catch {
     throw new Error('Wrong password, or the file has been changed.');
   }

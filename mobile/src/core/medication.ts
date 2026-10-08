@@ -33,11 +33,32 @@ export function isDoseDay(med: Medication, d: Date): boolean {
   return med.every === 'day' || d.getDay() === med.weekday;
 }
 
-/** The next scheduled dose not yet marked as taken, from today on (today if it's due and not taken). */
+// A weekly dose day counts as covered when a dose was logged in the 3 days before it (taken late, or the dose day was
+// moved), so Tidemark never prompts a second weekly dose within a few days of the last one. Not dosing advice: the
+// card always says when the last dose was, and the person follows their prescriber.
+export const COVER_DAYS = 3;
+
+/** The most recent logged dose on or before `day`, or null. */
+export function lastDose(doses: DoseLog, day: Date = new Date()): string | null {
+  const k = dateKey(day);
+  let best: string | null = null;
+  for (const d of Object.keys(doses)) if (d <= k && (!best || d > best)) best = d;
+  return best;
+}
+
+/** Is a dose still to take on this day: scheduled, not marked, and (weekly) not covered by a recent dose. */
+export function isDue(med: Medication, doses: DoseLog, d: Date): boolean {
+  if (!isDoseDay(med, d) || doses[dateKey(d)]) return false;
+  if (med.every === 'day') return true;
+  for (let i = 1; i <= COVER_DAYS; i++) if (doses[dateKey(addDays(d, -i))]) return false;
+  return true;
+}
+
+/** The next dose still to take, from today on (today if it's due). */
 export function nextDose(med: Medication, doses: DoseLog, today: Date = new Date()): Date {
   for (let i = 0; i < 8; i++) {
     const d = addDays(startOfDay(today), i);
-    if (isDoseDay(med, d) && !doses[dateKey(d)]) return d;
+    if (isDue(med, doses, d)) return d;
   }
   return addDays(startOfDay(today), 7);
 }
@@ -48,7 +69,7 @@ export function doseReminderDays(med: Medication | null | undefined, doses: Dose
   const out: Date[] = [];
   for (let i = 0; i < days; i++) {
     const d = addDays(startOfDay(today), i);
-    if (isDoseDay(med, d) && !(i === 0 && doses[dateKey(d)])) out.push(d);
+    if (isDue(med, doses, d)) out.push(d);
   }
   return out;
 }

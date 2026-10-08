@@ -21,8 +21,17 @@ async function rescue(raw: string) {
 /** The most recent rescued copy (or pre-restore snapshot), so it can be exported and looked at. */
 export async function latestRescue(): Promise<string | null> {
   const keys = (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]))
-    .filter(k => k.startsWith(RESCUE_KEY) || k.startsWith('tracker_snapshot_')).sort();
-  return keys.length ? AsyncStorage.getItem(keys[keys.length - 1]).catch(() => null) : null;
+    .filter(k => k.startsWith(RESCUE_KEY) || k.startsWith('tracker_snapshot_'));
+  // Newest by when it was saved, not by key name: rescued copies carry the time in their key, snapshots inside them
+  let best: { raw: string; at: number } | null = null;
+  for (const k of keys) {
+    const raw = await AsyncStorage.getItem(k).catch(() => null);
+    if (raw == null) continue;
+    let at = Number(k.slice(k.lastIndexOf('_') + 1)) || 0;
+    if (k.startsWith('tracker_snapshot_')) { try { at = Date.parse(JSON.parse(raw).at) || 0; } catch { /* keep 0 */ } }
+    if (!best || at >= best.at) best = { raw, at };
+  }
+  return best?.raw ?? null;
 }
 const SET_ASIDE_FLAG = 'tracker_set_aside';
 const SNAPSHOT_DAYS = 30;

@@ -82,7 +82,7 @@ function Main() {
   }, [t.ready]);
   // Leftovers in the cache (an export interrupted by a crash, picker copies) are cleared on every launch
   useEffect(() => { if (t.ready) clearCache(); }, [t.ready]);
-  // Reminders: skip today once it's logged, and keep the two-week window rolling (re-run each day and on changes)
+  // Reminders: skip today once it's logged, and keep the window rolling (re-run each day and on changes)
   const loggedToday = state.weights[today] != null;
   useEffect(() => { if (t.ready) applyReminder(prefs.reminder, loggedToday); }, [t.ready, prefs.reminder, loggedToday, today]);
   const med = state.settings?.medication, doses = state.doses;

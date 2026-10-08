@@ -22,6 +22,11 @@ describe('password-protected backups', () => {
     const sealed = seal(text, 'correct horse battery', rnd).replace('"N":32768', '"N":1073741824');
     expect(() => open(sealed, 'correct horse battery')).toThrow('doesn’t recognise');
   }, 20000);
+  test('a damaged file gives a plain message, not a library error', () => {
+    const body = (salt: string) => `TIDEMARK ENCRYPTED BACKUP\n${JSON.stringify({ v: 1, kdf: 'scrypt', N: 32768, r: 8, p: 1, salt, nonce: '00'.repeat(24), data: 'ab' })}`;
+    expect(() => open(body('zz'), 'correct horse battery')).toThrow('That protected backup is damaged.');
+    expect(() => open(body('00'), 'correct horse battery')).toThrow('That protected backup is damaged.');
+  });
   test('utf-8 helpers match the standard encoder', () => {
     const s = 'Weigh-in ✓ café 日本 🏃🏽‍♂️';
     expect(Array.from(utf8ToBytes(s))).toEqual(Array.from(new TextEncoder().encode(s)));

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { dateKey, longDate, parseKey, shortDate, DAY_FULL } from '../core/dates';
-import { dosePeriods, isDoseDay, nextDose } from '../core/medication';
+import { addDays, dateKey, daysBetween, longDate, parseKey, shortDate, DAY_FULL } from '../core/dates';
+import { dosePeriods, isDue, lastDose, nextDose } from '../core/medication';
 import type { TrendPoint } from '../core/trend';
 import type { DoseLog, Medication, Unit } from '../core/types';
 import { showChange } from '../core/units';
@@ -11,26 +11,36 @@ import { Button, Card } from './ui';
 
 const doseText = (mg: number | null) => (mg != null ? `${mg} mg` : '');
 
-/** Today: is a dose due, taken, or when is the next one. One tap marks it taken (and can be undone). */
+const ago = (k: string, today: Date) => {
+  const n = daysBetween(parseKey(k), today);
+  return n === 0 ? 'today' : n === 1 ? 'yesterday' : n < 7 ? DAY_FULL[parseKey(k).getDay()] : shortDate(parseKey(k));
+};
+
+/**
+ * Today: is a dose due, taken, or when is the next one. A dose can be marked on any day (taken late, or the day
+ * moved), and undone the same day.
+ */
 export function MedicationToday({ med, doses, onChange }: { med: Medication; doses: DoseLog; onChange: (d: DoseLog) => void }) {
   const today = new Date(), key = dateKey(today);
   const taken = doses[key];
-  const due = isDoseDay(med, today) && !taken;
-  const next = nextDose(med, doses, today);
+  const due = isDue(med, doses, today);
+  const next = nextDose(med, doses, addDays(today, taken || !due ? 1 : 0));
+  const last = lastDose(doses, addDays(today, -1));
   const take = () => { onChange({ ...doses, [key]: { mg: med.doseMg } }); success(); };
   const undo = () => { const d = { ...doses }; delete d[key]; onChange(d); };
+  const nextTxt = `next ${DAY_FULL[next.getDay()]}${med.every === 'week' ? ' ' + shortDate(next) : ''}`;
+  const title = taken ? `${med.name} taken today` : due ? `${med.name} due today` : `${med.name} · ${nextTxt}`;
+  const sub = taken ? [doseText(taken.mg), nextTxt].filter(Boolean).join(' · ')
+    : [doseText(med.doseMg), last ? `last dose ${ago(last, today)}` : due ? 'mark it once you’ve taken it' : ''].filter(Boolean).join(' · ');
   return (
-    <View style={[s.card, due && s.cardDue]} accessible={!due}
-      accessibilityLabel={taken ? `${med.name} taken today` : due ? undefined : `${med.name}, next dose ${DAY_FULL[next.getDay()]} ${longDate(dateKey(next))}`}>
+    <View style={[s.card, due && s.cardDue]}>
       <View style={s.icon}><Icon name="pill" size={20} color={C.plum2} /></View>
-      <View style={{ flex: 1 }}>
-        <Text style={s.title}>{taken ? `${med.name} taken today` : due ? `${med.name} due today` : `${med.name} · next ${DAY_FULL[next.getDay()]}`}</Text>
-        <Text style={s.sub}>{taken ? doseText(taken.mg) || 'Marked as taken'
-          : due ? [doseText(med.doseMg), 'mark it once you’ve taken it'].filter(Boolean).join(' · ')
-          : `${shortDate(next)}${med.doseMg ? ' · ' + doseText(med.doseMg) : ''}`}</Text>
+      <View style={{ flex: 1 }} accessible accessibilityLabel={`${title}. ${sub}`}>
+        <Text style={s.title}>{title}</Text>
+        {!!sub && <Text style={s.sub}>{sub}</Text>}
       </View>
-      {due && <Button label="Mark taken" kind="primary" small onPress={take} />}
-      {taken && <Button label="Undo" kind="ghost" small onPress={undo} />}
+      {taken ? <Button label="Undo" kind="ghost" small onPress={undo} />
+        : <Button label={due ? 'Mark taken' : 'Took it today'} kind={due ? 'primary' : 'ghost'} small onPress={take} />}
     </View>
   );
 }

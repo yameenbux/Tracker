@@ -44,7 +44,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     const weights = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
     const habits = cleanHabits(raw.habits);
     if (!Object.keys(weights).length && !Object.keys(habits).length) throw new Error('That backup has no weigh-ins or habits in it.');
-    return { settings: current ?? legacySettings(), weights, habits, measurements: {}, intake: {}, lifts: {}, unit };
+    return { settings: current ?? legacySettings(weights), weights, habits, measurements: {}, intake: {}, lifts: {}, unit };
   }
   throw new Error("That file doesn't look like a Tidemark backup.");
 }

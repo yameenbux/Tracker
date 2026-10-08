@@ -19,11 +19,18 @@ describe('medication cards', () => {
     fireEvent.press(screen.getByText('Undo'));
     expect(onChange.mock.calls[1][0]).toEqual({});
   });
-  test('not a dose day: shows when the next one is', () => {
-    const other = (today.getDay() + 3) % 7;
-    render(<MedicationToday med={{ ...med, every: 'week', weekday: other }} doses={{}} onChange={jest.fn()} />);
+  test('not a dose day: shows when the next one is, and a late dose can still be logged today', () => {
+    const other = (today.getDay() + 3) % 7, onChange = jest.fn();
+    render(<MedicationToday med={{ ...med, every: 'week', weekday: other }} doses={{}} onChange={onChange} />);
     expect(screen.getByText(/Wegovy · next /)).toBeTruthy();
     expect(screen.queryByText('Mark taken')).toBeNull();
+    fireEvent.press(screen.getByText('Took it today'));
+    expect(onChange.mock.calls[0][0]).toEqual({ [dateKey(today)]: { mg: 2.4 } });
+  });
+  test('says when the last dose was', () => {
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    render(<MedicationToday med={med} doses={{ [dateKey(y)]: { mg: 2.4 } }} onChange={jest.fn()} />);
+    expect(screen.getByText(/last dose yesterday/)).toBeTruthy();
   });
   test('trend card: an explanation before any doses, then one row per strength, and never advice', () => {
     const { rerender } = render(<MedicationTrend med={med} doses={{}} series={[]} unit="kg" />);

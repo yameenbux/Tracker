@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import { useTracker } from '../store';
+import { latestRescue, useTracker } from '../store';
 
 const goodState = {
   settings: { plan: { start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: [90, 89.5, 89] },
@@ -44,6 +44,14 @@ describe('saved data', () => {
     const rescue = keys.find(k => k.startsWith('tracker_state_unreadable'));
     expect(rescue).toBeTruthy();
     expect(await AsyncStorage.getItem(rescue!)).toBe('{broken');
+  });
+
+  test('“export rescued copy” picks the newest copy, whichever kind it is', async () => {
+    await AsyncStorage.setItem('tracker_state_unreadable_1000', 'old rescue');
+    await AsyncStorage.setItem('tracker_snapshot_before_restore', JSON.stringify({ at: new Date(5000).toISOString(), tag: 'snap' }));
+    expect(JSON.parse((await latestRescue())!).tag).toBe('snap');
+    await AsyncStorage.setItem('tracker_state_unreadable_9000', 'new rescue');
+    expect(await latestRescue()).toBe('new rescue');
   });
 
   test('broken preferences do not cost you your data', async () => {
