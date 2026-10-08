@@ -1,0 +1,30 @@
+name: Website check
+
+# Checks every few hours that the public pages are up. The privacy policy matters most: App Store review needs it
+# reachable. A failed run is the alert: GitHub emails it (Settings > Notifications > Actions, "only failed workflows").
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pages respond and show the right content
+        env:
+          SITE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: |
+          fail=0
+          check() {   # url, text the page must contain
+            body=$(curl -fsSL --retry 3 --retry-delay 20 --max-time 30 "$1") || { echo "::error::$1 is down"; fail=1; return; }
+            grep -q "$2" <<<"$body" || { echo "::error::$1 is up but doesn't contain \"$2\""; fail=1; return; }
+            echo "ok  $1"
+          }
+          check "$SITE/privacy.html" "Privacy"
+          check "$SITE/" "Tidemark"
+          check "$SITE/manifest.webmanifest" "Tidemark"
+          exit $fail

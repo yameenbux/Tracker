@@ -16,12 +16,18 @@ export const CM_PER_IN = 2.54;
 const MIN_CM = 10, MAX_CM = 300;
 
 export function plausibleCm(v: unknown): v is number { return typeof v === 'number' && isFinite(v) && v >= MIN_CM && v <= MAX_CM; }
-/** Length in the user's unit: centimetres with kg, inches with st/lb. */
-export function showLength(cm: number, unit: Unit, dp = 1): string {
-  return unit === 'kg' ? cm.toFixed(dp) + ' cm' : (cm / CM_PER_IN).toFixed(dp) + ' in';
+/** Measurements are stored in cm and shown in the person's choice of cm or inches. */
+export type LengthUnit = 'cm' | 'in';
+/** The chosen measurement unit; with no choice made, it follows the weight unit (kg → cm, stone or pounds → inches). */
+export function lengthUnitFor(choice: LengthUnit | null | undefined, unit: Unit): LengthUnit {
+  return choice ?? (unit === 'kg' ? 'cm' : 'in');
 }
-export function lengthToCm(value: number, unit: Unit): number { return unit === 'kg' ? value : value * CM_PER_IN; }
-export function cmToUnit(cm: number, unit: Unit): number { return unit === 'kg' ? cm : cm / CM_PER_IN; }
+const inCm = (u: Unit | LengthUnit) => u === 'cm' || u === 'kg';
+export function showLength(cm: number, u: Unit | LengthUnit, dp = 1): string {
+  return inCm(u) ? cm.toFixed(dp) + ' cm' : (cm / CM_PER_IN).toFixed(dp) + ' in';
+}
+export function lengthToCm(value: number, u: Unit | LengthUnit): number { return inCm(u) ? value : value * CM_PER_IN; }
+export function cmToUnit(cm: number, u: Unit | LengthUnit): number { return inCm(u) ? cm : cm / CM_PER_IN; }
 
 export function cleanMeasurements(obj: unknown): Measurements {
   const out: Measurements = {};

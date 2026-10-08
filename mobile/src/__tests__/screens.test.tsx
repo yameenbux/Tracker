@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { useState } from 'react';
 import { Alert } from 'react-native';
 import { BodyCard } from '../components/Body';
 import { CaloriesCard, LiftSheet, MilestoneBanner } from '../components/Extras';
@@ -14,7 +15,7 @@ const med: Medication = { name: 'Wegovy', doseMg: 2.4, every: 'week', weekday: t
 const props = (over: Partial<SettingsProps> = {}): SettingsProps => ({
   settings: { ...settings, medication: med }, unit: 'kg', setUnit: jest.fn(), lock: false, lockAvailable: true, lockName: 'Face ID', onLockChange: jest.fn(),
   reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), appearance: 'system', onAppearanceChange: jest.fn(), lastBackup: null, weighIns: 3,
-  weights: {}, onPlanLeftUnsaved: jest.fn(), doses: {}, onDoses: jest.fn(), onSave: jest.fn(), onClose: jest.fn(), onExport: jest.fn(),
+  weights: {}, onPlanLeftUnsaved: jest.fn(), doses: {}, onDoses: jest.fn(), lengthUnit: 'cm', onLengthUnit: jest.fn(), onSave: jest.fn(), onClose: jest.fn(), onExport: jest.fn(),
   onExportCsv: jest.fn(), onRestore: jest.fn(), onReset: jest.fn(), onEraseAll: jest.fn(), ...over,
 });
 afterEach(() => jest.restoreAllMocks());
@@ -54,13 +55,30 @@ describe('medication settings', () => {
 describe('body and extras', () => {
   test('measurements: shows the latest, and adding one saves it for today', async () => {
     const onMeasurements = jest.fn();
-    render(<BodyCard settings={settings} weights={{}} unit="kg" measurements={{ '2026-01-05': { waist: 96 } }} photos={{}} onMeasurements={onMeasurements} onPhotos={jest.fn()} />);
+    render(<BodyCard settings={settings} weights={{}} unit="kg" lengthUnit="cm" onLengthUnit={jest.fn()} measurements={{ '2026-01-05': { waist: 96 } }} photos={{}} onMeasurements={onMeasurements} onPhotos={jest.fn()} />);
     expect(screen.getByLabelText(/^Waist 96/)).toBeTruthy();
     fireEvent.press(screen.getByText('Measure'));
     fireEvent.changeText(screen.getByLabelText('Waist'), '94.5');
     fireEvent.press(screen.getByText('Save'));
     await waitFor(() => expect(onMeasurements).toHaveBeenCalled());
     expect(onMeasurements.mock.calls[0][0][dateKey(today)]).toEqual({ waist: 94.5 });
+  });
+  test('measurements in inches with a kg weight: switching converts what is typed, and it is stored in cm', async () => {
+    const onMeasurements = jest.fn(), onLengthUnit = jest.fn();
+    function Holder() {   // keeps the chosen unit, as the app's preferences do
+      const [lu, setLu] = useState<'cm' | 'in'>('cm');
+      return <BodyCard settings={settings} weights={{}} unit="kg" lengthUnit={lu} onLengthUnit={u => { onLengthUnit(u); setLu(u); }}
+        measurements={{}} photos={{}} onMeasurements={onMeasurements} onPhotos={jest.fn()} />;
+    }
+    render(<Holder />);
+    fireEvent.press(screen.getByText('Measure'));
+    fireEvent.changeText(screen.getByLabelText('Waist'), '91.4');
+    fireEvent.press(screen.getByText('inches'));
+    expect(onLengthUnit).toHaveBeenCalledWith('in');
+    expect(screen.getByLabelText('Waist').props.value).toBe('36.0');
+    fireEvent.press(screen.getByText('Save'));
+    await waitFor(() => expect(onMeasurements).toHaveBeenCalled());
+    expect(onMeasurements.mock.calls[0][0][dateKey(today)].waist).toBeCloseTo(91.4, 0);
   });
   test('a milestone can be dismissed', () => {
     const onDismiss = jest.fn();

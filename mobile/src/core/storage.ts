@@ -17,8 +17,9 @@ export interface Prefs {
   reminder: Reminder;
   lastBackup: string | null;    // ISO time of the last export, for the "back up now and then" nudge
   appearance: 'system' | 'light' | 'dark';   // follow iOS, or always light / dark
+  length: 'cm' | 'in' | null;   // measurement unit; null follows the weight unit
 }
-export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system' };
+export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system', length: null };
 
 /** Milestones are quarters of the way from the start weight to the goal, so they belong to those numbers. */
 export const milestonePlanKey = (p: { start: string; startKg: number; goalKg: number }) => `${p.start}|${p.startKg}|${p.goalKg}`;
@@ -35,6 +36,7 @@ export function cleanPrefs(p: any): Prefs {
     reminder: { on: r.on === true, hour, minute },
     lastBackup: typeof p.lastBackup === 'string' && !isNaN(Date.parse(p.lastBackup)) ? p.lastBackup : null,
     appearance: p.appearance === 'light' || p.appearance === 'dark' ? p.appearance : 'system',
+    length: p.length === 'cm' || p.length === 'in' ? p.length : null,
   };
 }
 

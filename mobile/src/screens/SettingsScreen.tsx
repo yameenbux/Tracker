@@ -13,7 +13,7 @@ import type { DoseLog, Habit, Meal, Medication, PlanBreak, Session, Settings, Un
 import type { Reminder } from '../core/storage';
 import { HABIT_ICONS, habitIcon } from '../core/habitIcons';
 import { FONTS, LIBRARIES, MIT, OFL } from '../core/licences';
-import { AppearanceToggle, DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
+import { AppearanceToggle, DateInput, Field, fieldStyles, LengthToggle, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { Button, Tabs } from '../components/ui';
@@ -21,11 +21,12 @@ import { Tap } from '../components/Motion';
 import { HabitAmount } from '../components/HabitAmount';
 import { choose, confirm, notify } from '../dialogs';
 import { success, tap } from '../feel';
+import { FEATURES } from '../features';
+import { SUPPORT_EMAIL } from '../support';
 import { useReducedMotion } from '../motion';
 import { allowReminders, DOSE_HOUR, timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
-export const SUPPORT_EMAIL = 'yameen@ysbdesigns.uk';
 export const PRIVACY_URL = 'https://yameenbux.github.io/Tracker/privacy.html';
 
 // ---------- building blocks: iOS grouped list ----------
@@ -111,6 +112,7 @@ export interface SettingsProps {
   appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void; reminderBlocked?: boolean;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   doses: DoseLog; onDoses: (d: DoseLog) => void;
+  lengthUnit: 'cm' | 'in'; onLengthUnit: (u: 'cm' | 'in') => void;
   onPlanLeftUnsaved: (plan: Settings['plan']) => void;
   initialPage?: Page;   // open straight onto a sub-page (e.g. Habits from an empty Habits tab)
   onSave: (s: Settings) => void; onClose: () => void;
@@ -170,11 +172,12 @@ export function SettingsScreen(p: SettingsProps) {
 
         <Group title="Tracking">
           <Row icon="ruler" label="Units" wide right={<UnitToggle unit={unit} onChange={p.setUnit} />} />
+          <Row icon="body" label="Measurements" wide right={<LengthToggle unit={p.lengthUnit} onChange={p.onLengthUnit} />} />
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
-          <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
-            onPress={() => setPage('medication')} />
+{FEATURES.medication &&           <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
+            onPress={() => setPage('medication')} />}
           <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>

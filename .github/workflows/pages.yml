@@ -37,7 +37,7 @@ jobs:
         env:
           WEB_BASE_URL: /${{ github.event.repository.name }}
       - name: Assemble the site
-        run: node scripts/pages-site.js dist ../_site /${{ github.event.repository.name }}
+        run: node scripts/pages-site.js dist ../_site /${{ github.event.repository.name }} https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

@@ -6,6 +6,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { lengthUnitFor } from './core/body';
+import { FEATURES } from './features';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
@@ -85,7 +87,7 @@ function Main() {
   // Reminders: skip today once it's logged, and keep the window rolling (re-run each day and on changes)
   const loggedToday = state.weights[today] != null;
   useEffect(() => { if (t.ready) applyReminder(prefs.reminder, loggedToday); }, [t.ready, prefs.reminder, loggedToday, today]);
-  const med = state.settings?.medication, doses = state.doses;
+  const med = FEATURES.medication ? state.settings?.medication : null, doses = state.doses;
   useEffect(() => { if (t.ready) applyDoseReminders(med, doses ?? {}); }, [t.ready, med, doses, today]);
   // Tapping a reminder opens the log sheet. It waits for Face ID when the lock is on, then opens straight after unlock.
   const [pendingLog, setPendingLog] = useState<number | null>(null);
@@ -215,6 +217,7 @@ function Main() {
               appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               doses={state.doses ?? {}} onDoses={t.setDoses}
+              lengthUnit={lengthUnitFor(prefs.length, state.unit)} onLengthUnit={length => t.setPrefs({ length })}
               onSave={t.setSettings} onClose={closeSettings}
               onExport={data.exportData} onExportCsv={data.exportCsv} onRestore={data.restore} onReset={data.reset}
               onEraseAll={async () => { await data.eraseAll(); setTab('today'); }} />

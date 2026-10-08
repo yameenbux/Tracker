@@ -8,6 +8,7 @@ import { askPassword, choose, confirm, notify } from './dialogs';
 import { clearCache, pickBackupText, shareBackup } from './io';
 import { deleteAllPhotos, deletePhoto } from './photos';
 import { applyDoseReminders, applyReminder } from './reminders';
+import { FEATURES } from './features';
 import { eraseStorage, latestRescue, Tracker } from './store';
 
 type Show = (m: { message: string; action?: string; onAction?: () => void }) => void;
@@ -21,6 +22,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
       let text = await pickBackupText();
       if (text == null) return;
       if (isVault(text)) {
+        if (!FEATURES.protectedBackups) { notify('Can’t open this backup', 'This version of Tidemark can’t open password-protected backups. Export a backup without a password and restore that.'); return; }
         const pw = await askPassword('Backup password', 'This backup is protected. Enter the password it was saved with.');
         if (pw == null) return;
         show({ message: 'Unlocking backup…' });
@@ -52,7 +54,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   const exportData = async () => {
     if (!state.settings) return;
     // A backup leaves the phone, so offer to lock it with a password first
-    const how = await choose('Protect this backup?', 'A password keeps the file private wherever it ends up. You’ll need it to restore, and it can’t be recovered if you forget it.',
+    const how = !FEATURES.protectedBackups ? 'plain' : await choose('Protect this backup?', 'A password keeps the file private wherever it ends up. You’ll need it to restore, and it can’t be recovered if you forget it.',
       [{ id: 'password', label: 'Add a password' }, { id: 'plain', label: 'No password' }]);
     if (!how) return;
     let text = buildExportText({ ...state, settings: state.settings });
