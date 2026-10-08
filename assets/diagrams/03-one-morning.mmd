@@ -1,0 +1,22 @@
+flowchart LR
+    P["<b>You wake up</b><br/>toilet, then the scale,<br/>before food or drink"]
+    R["<b>Your reminder</b><br/>if you turned it on;<br/>never shows a number"]
+    L["<b>Log weight</b><br/>opens on your last weight<br/>tap − or +, then Save"]
+    T["<b>The trend moves</b><br/>worked out on the phone<br/>in a few milliseconds"]
+    TD["<b>Today</b><br/>trend, weekly pace,<br/>goal date, habits"]
+    DOSE["<b>Dose day</b><br/>'Dose due' card,<br/>one tap: taken"]
+    TR["<b>Trend tab</b><br/>how the trend moved<br/>at each dose strength"]
+    NONE["<b>Anything sent<br/>to a server</b><br/>nothing: there isn't one"]
+
+    P --> R --> L --> T --> TD
+    TD -->|"on a weekly<br/>dose day"| DOSE --> TR
+    T -.-> NONE
+
+    classDef core fill:#2A1E45,stroke:#FF6B5E,stroke-width:3px,color:#FBF7F3
+    classDef live fill:#E4F7EF,stroke:#12B886,stroke-width:2px,color:#241B33
+    classDef dev fill:#FFF3D8,stroke:#D9701F,stroke-width:2px,stroke-dasharray:6 4,color:#241B33
+    classDef ext fill:#F0E8E0,stroke:#8F8276,stroke-width:1.5px,color:#241B33
+    class P ext
+    class R,L,T,TD core
+    class DOSE,TR live
+    class NONE ext
