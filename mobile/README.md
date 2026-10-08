@@ -35,6 +35,9 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
   estimate of what you really burn.
 - **Log weight** (the + in the tab bar): opens on your last weight with −/+ steppers, so most weigh-ins are two taps.
   Deleting shows an Undo.
+- **Medication** (optional, e.g. a weekly GLP-1 injection): name, dose and schedule; Today shows when the next dose is due
+  with one tap to mark it taken; the Trend tab shows how the trend moved at each dose strength; an optional dose-day
+  reminder that doesn't name the medication. A record only: it never suggests doses.
 - **Settings**: an iOS grouped list — plan and breaks, event, units, habits, sessions, meals, calories, a daily weigh-in
   reminder, Face ID lock, export (backup or CSV), restore, clear, erase everything, privacy policy.
 - **Safety**: saved data that can't be read is copied aside rather than overwritten; a snapshot is taken before restore;

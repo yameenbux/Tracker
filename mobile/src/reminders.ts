@@ -1,14 +1,19 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { addDays, dateKey, startOfDay } from './core/dates';
+import { doseReminderDays } from './core/medication';
 import type { Reminder } from './core/storage';
+import type { DoseLog, Medication } from './core/types';
 
 // Daily weigh-in reminder, scheduled on the device (local notifications only: nothing is sent to a server).
 // Instead of one repeating notification, the next two months are scheduled one day at a time, so a day you've
 // already logged gets no reminder. It's rescheduled whenever the app opens or a weigh-in is saved.
 
 const PREFIX = 'weigh-in-';
-const DAYS_AHEAD = 60;   // iOS allows 64 pending local notifications; this covers two months away from the app
+const DOSE_PREFIX = 'dose-';
+// iOS allows 64 pending local notifications in all: 56 days of weigh-ins plus up to 8 dose reminders
+const DAYS_AHEAD = 56;
+export const DOSE_HOUR = 9;
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
@@ -49,28 +54,48 @@ export async function remindersBlocked(): Promise<boolean> {
 // Calls run one after another, so quick changes (spinning the time picker) can't leave duplicate reminders
 let queue: Promise<void> = Promise.resolve();
 
-/** Replaces Tidemark's scheduled reminders with the ones this setting calls for. */
-export function applyReminder(r: Reminder, loggedToday = false): Promise<void> {
+interface Planned { at: Date; title: string; body: string; action: string }
+
+/** Makes the scheduled notifications under `prefix` exactly `want` (nothing is touched if they already match). */
+function sync(prefix: string, want: Planned[]): Promise<void> {
   if (Platform.OS === 'web') return Promise.resolve();
   queue = queue.then(async () => {
     try {
-      const ours = (await Notifications.getAllScheduledNotificationsAsync()).filter(n => n.identifier.startsWith(PREFIX));
-      const want = reminderDays(r, loggedToday);
+      const ours = (await Notifications.getAllScheduledNotificationsAsync()).filter(n => n.identifier.startsWith(prefix));
       // Nothing to do if exactly these reminders are already scheduled (the usual case on every launch)
-      const key = (at: Date) => PREFIX + dateKey(at) + '@' + at.getHours() + ':' + at.getMinutes();
+      const key = (at: Date) => prefix + dateKey(at) + '@' + at.getHours() + ':' + at.getMinutes();
       const have = new Set(ours.map(n => n.identifier + '@' + (n.content.data?.at ?? '')));
-      if (ours.length === want.length && want.every(at => have.has(key(at)))) return;
+      if (ours.length === want.length && want.every(w => have.has(key(w.at)))) return;
       await Promise.all(ours.map(n => Notifications.cancelScheduledNotificationAsync(n.identifier)));
-      for (const at of want) {
+      for (const w of want) {
         await Notifications.scheduleNotificationAsync({
-          identifier: PREFIX + dateKey(at),
-          content: { title: 'Weigh-in', body: 'Step on the scale before breakfast. One number, ten seconds.', data: { action: 'log', at: at.getHours() + ':' + at.getMinutes() } },
-          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
+          identifier: prefix + dateKey(w.at),
+          content: { title: w.title, body: w.body, data: { action: w.action, at: w.at.getHours() + ':' + w.at.getMinutes() } },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: w.at },
         });
       }
     } catch { /* scheduling can fail on simulators; the setting simply has no effect */ }
   });
   return queue;
+}
+
+/** Replaces Tidemark's scheduled weigh-in reminders with the ones this setting calls for. */
+export function applyReminder(r: Reminder, loggedToday = false): Promise<void> {
+  return sync(PREFIX, reminderDays(r, loggedToday).map(at => ({
+    at, title: 'Weigh-in', body: 'Step on the scale before breakfast. One number, ten seconds.', action: 'log' })));
+}
+
+/** The dose reminders this medication calls for: 9am on each dose day, skipping today once it's marked or past 9am. */
+export function doseReminderTimes(med: Medication | null | undefined, doses: DoseLog, now: Date = new Date()): Date[] {
+  if (!med?.remind) return [];
+  return doseReminderDays(med, doses, now).map(d => { const at = new Date(d); at.setHours(DOSE_HOUR, 0, 0, 0); return at; })
+    .filter(at => at > now);
+}
+
+/** Replaces the scheduled dose reminders. The text never names the medication (it shows on the lock screen). */
+export function applyDoseReminders(med: Medication | null | undefined, doses: DoseLog): Promise<void> {
+  return sync(DOSE_PREFIX, doseReminderTimes(med, doses).map(at => ({
+    at, title: 'Dose day', body: 'Today is a dose day. Mark it in Tidemark once it’s done.', action: 'dose' })));
 }
 
 /** Calls `onOpen` when the person taps a reminder (including the one that launched the app). Returns an unsubscribe. */

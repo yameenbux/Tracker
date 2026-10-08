@@ -4,10 +4,10 @@ import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { addDays, dateKey, DAY_FULL, DAY_ORDER, longDate, mondayOf, validKey } from '../core/dates';
+import { addDays, dateKey, DAY_ABBR, DAY_FULL, DAY_ORDER, longDate, mondayOf, validKey } from '../core/dates';
 import { assessPlan, buildTargets, cleanBreaks, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
 import { daysSince } from '../core/summary';
-import { fmt, numOrNull, showWeight, toLbNum } from '../core/units';
+import { fmt, num, numOrNull, showWeight, toLbNum } from '../core/units';
 import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/types';
 import type { Reminder } from '../core/storage';
 import { HABIT_ICONS, habitIcon } from '../core/habitIcons';
@@ -15,11 +15,12 @@ import { FONTS, LIBRARIES, MIT, OFL } from '../core/licences';
 import { AppearanceToggle, DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
-import { Button } from '../components/ui';
+import { Button, Tabs } from '../components/ui';
+import { Tap } from '../components/Motion';
 import { confirm, notify } from '../dialogs';
 import { success } from '../feel';
 import { useReducedMotion } from '../motion';
-import { timeLabel } from '../reminders';
+import { allowReminders, DOSE_HOUR, timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
 export const SUPPORT_EMAIL = 'yameen@ysbdesigns.uk';
@@ -99,7 +100,7 @@ const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
 // ---------- screen ----------
 
-export type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals' | 'credits';
+export type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals' | 'credits' | 'medication';
 
 export interface SettingsProps {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
@@ -133,6 +134,7 @@ export function SettingsScreen(p: SettingsProps) {
   if (page === 'habits') return <HabitsPage settings={settings} onSave={keep<Habit[]>('habits')} onBack={back} />;
   if (page === 'sessions') return <SessionsPage settings={settings} onSave={keep<Settings['sessions']>('sessions')} onBack={back} />;
   if (page === 'credits') return <CreditsPage onBack={back} />;
+  if (page === 'medication') return <MedicationPage settings={settings} onSave={keep<Settings['medication']>('medication')} onBack={back} />;
   return <MealsPage settings={settings} onSave={keep<Settings['meals']>('meals')} onBack={back} />;
   }
 
@@ -168,6 +170,8 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
+          <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
+            onPress={() => setPage('medication')} />
           <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
@@ -485,6 +489,61 @@ function CreditsPage({ onBack }: { onBack: () => void }) {
   );
 }
 
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+/** Optional medication companion (e.g. a weekly GLP-1 injection). Records only: Tidemark never suggests doses. */
+function MedicationPage({ settings, onSave, onBack }: { settings: Settings; onSave: (m: Settings['medication']) => void; onBack: () => void }) {
+  const cur = settings.medication;
+  const [name, setName] = useState(cur?.name ?? '');
+  const [dose, setDose] = useState(cur?.doseMg != null ? String(cur.doseMg) : '');
+  const [every, setEvery] = useState<'week' | 'day'>(cur?.every ?? 'week');
+  const [weekday, setWeekday] = useState(cur?.weekday ?? new Date().getDay());
+  const [remind, setRemind] = useState(cur?.remind ?? false);
+  const mg = num(dose);
+  const result: Settings['medication'] = name.trim() ? { name: name.trim(), doseMg: mg > 0 && mg <= 1000 ? mg : null, every, weekday, remind } : null;
+  const toggleRemind = async (on: boolean) => {
+    if (on && !(await allowReminders())) { notify('Notifications are off', 'Turn on notifications for Tidemark in iOS Settings to get dose reminders.'); return; }
+    setRemind(on);
+  };
+  const skip = useSaveOnLeave(result, onSave);
+  return (
+    <View style={s.wrap}>
+      <PageHeader title="Medication" onBack={onBack} />
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+        <Text style={s.lead}>For a weight-loss medication such as a weekly GLP-1 injection. Today shows when the next dose is due and lets you mark it
+          as taken; the Trend tab shows how your trend moved at each dose. Tidemark only keeps a record: follow your prescriber for anything about dosing.</Text>
+        <View style={s.form}>
+          <Field label="Name"><Input value={name} onChangeText={setName} placeholder="e.g. Wegovy, Mounjaro" accessibilityLabel="Medication name" maxLength={40} /></Field>
+          <View style={{ marginTop: 14 }}><Field label="Current dose (mg, optional)">
+            <Input value={dose} onChangeText={setDose} keyboardType="decimal-pad" placeholder="e.g. 2.4" accessibilityLabel="Current dose in milligrams" />
+          </Field></View>
+          <View style={{ marginTop: 14 }}><Field label="How often">
+            <Tabs value={every} onChange={setEvery} label="How often" options={[{ id: 'week', label: 'Once a week' }, { id: 'day', label: 'Every day' }]} />
+          </Field></View>
+          {every === 'week' && <View style={{ marginTop: 14 }}><Field label="Dose day">
+            <View style={s.dayRow} accessibilityRole="radiogroup" accessibilityLabel="Dose day">
+              {WEEK_ORDER.map(d => (
+                <Tap key={d} onPress={() => setWeekday(d)} style={[s.dayChip, weekday === d && s.dayChipOn]}
+                  accessibilityRole="radio" accessibilityState={{ checked: weekday === d }} accessibilityLabel={DAY_FULL[d]}>
+                  <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.4} style={[s.dayChipTxt, weekday === d && { color: C.onFill }]}>{DAY_ABBR[d]}</Text>
+                </Tap>
+              ))}
+            </View>
+          </Field></View>}
+        </View>
+        <View style={[s.form, s.remindRow]}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.remindTitle}>Remind me on dose days</Text>
+            <Text style={s.hint}>At {timeLabel(DOSE_HOUR, 0)}. The reminder doesn’t name the medication.</Text>
+          </View>
+          <Switch value={remind} onValueChange={toggleRemind} trackColor={{ true: C.mintInk }} accessibilityLabel="Remind me on dose days" />
+        </View>
+        <Text style={s.hint}>If you change dose, update it here; earlier doses keep the strength they were logged at.</Text>
+        {cur && <Button label="Stop tracking medication" kind="danger" small style={{ alignSelf: 'flex-start', marginTop: 12 }} onPress={() => { skip(); onSave(null); onBack(); }} />}
+      </ScrollView>
+    </View>
+  );
+}
+
 function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (m: Settings['meals']) => void; onBack: () => void }) {
   const [meals, setMeals] = useState<(Meal & { id: string })[]>(settings.meals.items.map((m, i) => ({ ...m, id: 'm' + i })));
   const [target, setTarget] = useState({ ...settings.meals.target });
@@ -550,6 +609,12 @@ const s = themed(() => StyleSheet.create({
   rowStacked: { width: '100%', alignItems: 'flex-end', paddingBottom: 4 },
   rowLabel: { flex: 1, fontFamily: F.bodyMed, fontSize: 16, color: C.ink },
   rowValue: { fontFamily: F.body, fontSize: 15, color: C.inkSoft, maxWidth: '55%', textAlign: 'right' },
+  dayRow: { flexDirection: 'row', gap: 4 },
+  dayChip: { flex: 1, minWidth: 0, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.chip, paddingHorizontal: 2 },
+  dayChipOn: { backgroundColor: C.fill },
+  dayChipTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.ink },
+  remindRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14 },
+  remindTitle: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   creditName: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   creditTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 18, marginTop: 2 },
   lead: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 20, marginBottom: 14, marginHorizontal: 4 },

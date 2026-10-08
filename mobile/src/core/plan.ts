@@ -1,4 +1,5 @@
 import { habitIcon } from './habitIcons';
+import { cleanMedication } from './medication';
 import { addDays, dateKey, daysBetween, parseKey, startOfDay, validKey, WEEK_MS } from './dates';
 import { numOrNull, plausible, round2 } from './units';
 import type { Habit, HabitLog, Macros, Plan, PlanBreak, Session, Settings, Weights } from './types';
@@ -165,7 +166,7 @@ export function normalizeSettings(s: any): Settings | null {
       kcal: numOrNull(x.kcal), p: numOrNull(x.p), c: numOrNull(x.c), f: numOrNull(x.f) })),
     target: { kcal: numOrNull(mt.kcal), p: numOrNull(mt.p), c: numOrNull(mt.c), f: numOrNull(mt.f) },
   };
-  return { plan, event: ev, habits, sessions, meals, trackCalories: s.trackCalories === true };
+  return { plan, event: ev, habits, sessions, meals, trackCalories: s.trackCalories === true, medication: cleanMedication(s.medication) };
 }
 
 export function cleanWeights(obj: unknown): Weights {
