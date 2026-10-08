@@ -1,0 +1,28 @@
+flowchart LR
+    DATA[("<b>Your data</b><br/>weights, habits, doses,<br/>measurements, photos")]
+
+    EXP["<b>You export a backup<br/>or a CSV</b>"]
+    ERR["<b>You email an error<br/>to support</b><br/>you see it before sending"]
+    BUY["<b>You buy Plus</b><br/>nothing of yours<br/>goes with it"]
+    DEV["<b>Your iPhone backs<br/>itself up</b>"]
+
+    F["<b>A file you share</b><br/>plain, or locked<br/>with your password"]
+    S["<b>The support inbox</b><br/>the error and app version,<br/>no weights"]
+    A["<b>Apple</b><br/>the purchase only"]
+    I["<b>iCloud or your computer</b><br/>as for every app"]
+    NEVER["<b>Analytics, ads,<br/>crash SDKs, accounts</b><br/>none in the app"]
+
+    DATA --> EXP --> F
+    DATA --> ERR --> S
+    BUY --> A
+    DATA --> DEV --> I
+    DATA ~~~ BUY
+    DATA ~~~ NEVER
+
+    classDef core fill:#2A1E45,stroke:#FF6B5E,stroke-width:3px,color:#FBF7F3
+    classDef live fill:#E4F7EF,stroke:#12B886,stroke-width:2px,color:#241B33
+    classDef dev fill:#FFF3D8,stroke:#D9701F,stroke-width:2px,stroke-dasharray:6 4,color:#241B33
+    classDef ext fill:#F0E8E0,stroke:#8F8276,stroke-width:1.5px,color:#241B33
+    class DATA core
+    class EXP,ERR,BUY,DEV live
+    class F,S,A,I,NEVER ext

@@ -1,0 +1,24 @@
+flowchart LR
+    C["<b>Something<br/>goes wrong</b><br/>a crash, a wrong<br/>number, a lost entry"]
+    Q{{"Is it the app,<br/>or the data?"}}
+    BACK["<b>You restore it</b><br/>from a backup, or the copy<br/>kept before any restore<br/><i>no email needed</i>"]
+    MAIL["<b>Email the error<br/>to support</b><br/>a button on the<br/>error screen"]
+    US["<b>We reproduce it</b><br/>from the error and<br/>the app version"]
+    FIX["<b>Fixed, tested</b><br/>and in CI"]
+    REL["<b>A new build</b><br/>TestFlight, then<br/>the App Store"]
+    ALL["<b>Everyone gets it</b><br/>not only the person<br/>who reported it"]
+
+    C --> Q
+    Q -->|"data"| BACK
+    Q -->|"app"| MAIL
+    MAIL --> US --> FIX --> REL --> ALL
+    ALL -.->|"we reply and<br/>say so"| C
+
+    classDef core fill:#2A1E45,stroke:#FF6B5E,stroke-width:3px,color:#FBF7F3
+    classDef live fill:#E4F7EF,stroke:#12B886,stroke-width:2px,color:#241B33
+    classDef dev fill:#FFF3D8,stroke:#D9701F,stroke-width:2px,stroke-dasharray:6 4,color:#241B33
+    classDef ext fill:#F0E8E0,stroke:#8F8276,stroke-width:1.5px,color:#241B33
+    class C ext
+    class Q,US core
+    class BACK,FIX live
+    class MAIL,REL,ALL core

@@ -1,0 +1,43 @@
+flowchart LR
+    subgraph WRITE["① What gets written"]
+        direction TB
+        TS["<b>TypeScript 6</b>"]
+        RN["<b>React 19</b><br/>React Native 0.86"]
+        SVG["<b>react-native-svg</b><br/>charts drawn by hand"]
+        NOBLE["<b>@noble</b><br/>scrypt · XChaCha20"]
+    end
+
+    subgraph BUILD["② What it becomes"]
+        direction TB
+        EAS["<b>An iOS build</b><br/>Expo SDK 57 · EAS"]
+        WEBX["<b>A web export</b><br/>plain HTML, CSS, JS"]
+    end
+
+    subgraph RUN["③ Where it runs"]
+        direction TB
+        IPHONE["<b>The iPhone</b><br/>TestFlight, then the App Store"]
+        PAGES["<b>GitHub Pages</b><br/>nothing to patch"]
+    end
+
+    subgraph OUT["④ What it talks to"]
+        direction TB
+        SK["<b>StoreKit 2</b><br/>Apple's purchases"]
+        NOTHING["<b>Nothing else</b>"]
+    end
+
+    TS --> RN --> EAS
+    SVG --> EAS
+    NOBLE --> EAS
+    RN --> WEBX
+    EAS --> IPHONE
+    WEBX --> PAGES
+    IPHONE -.-> SK
+
+    classDef core fill:#2A1E45,stroke:#FF6B5E,stroke-width:3px,color:#FBF7F3
+    classDef live fill:#E4F7EF,stroke:#12B886,stroke-width:2px,color:#241B33
+    classDef dev fill:#FFF3D8,stroke:#D9701F,stroke-width:2px,stroke-dasharray:6 4,color:#241B33
+    classDef ext fill:#F0E8E0,stroke:#8F8276,stroke-width:1.5px,color:#241B33
+    class TS,RN,SVG,NOBLE ext
+    class EAS,WEBX core
+    class IPHONE,PAGES live
+    class SK,NOTHING ext

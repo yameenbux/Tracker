@@ -1,0 +1,37 @@
+flowchart TB
+    subgraph PHONE["The iPhone: where everything lives"]
+        direction TB
+        UI["<b>Tidemark app</b><br/>mobile/ in this repo<br/>Expo · React Native"]
+        CORE["<b>src/core</b><br/>plain TypeScript: trend, plan,<br/>medication, backups, Plus"]
+        STORE[("<b>On-device storage</b><br/>AsyncStorage and files<br/>encrypted while locked")]
+        NOTE["<b>Local notifications</b><br/>weigh-in and dose reminders"]
+        LOCK["<b>Face ID lock</b><br/>and app-switcher cover"]
+    end
+
+    UI --> CORE --> STORE
+    UI --> NOTE
+    UI --- LOCK
+
+    APPLE["<b>App Store · StoreKit 2</b><br/>Apple knows a purchase,<br/>not your weight"]
+    UI -.->|"buy · restore"| APPLE
+
+    FILE["<b>A backup file</b><br/>.txt, optionally encrypted<br/>you choose where it goes"]
+    STORE -.->|"share sheet"| FILE
+
+    GHA["<b>GitHub Actions</b><br/>tests every push · deploys main<br/>checks the site every 6 hours"]
+    subgraph WEB["GitHub Pages: static files only"]
+        direction LR
+        WAPP["<b>Web app</b><br/>the same code,<br/>exported for the web"]
+        PRIV["<b>Privacy policy</b>"]
+        CLASSIC["<b>/classic</b><br/>the original tracker"]
+    end
+    GHA --> WEB
+    FILE -.->|"restores in either"| WAPP
+
+    classDef core fill:#2A1E45,stroke:#FF6B5E,stroke-width:3px,color:#FBF7F3
+    classDef live fill:#E4F7EF,stroke:#12B886,stroke-width:2px,color:#241B33
+    classDef dev fill:#FFF3D8,stroke:#D9701F,stroke-width:2px,stroke-dasharray:6 4,color:#241B33
+    classDef ext fill:#F0E8E0,stroke:#8F8276,stroke-width:1.5px,color:#241B33
+    class UI,CORE,STORE,GHA core
+    class NOTE,LOCK,WAPP,PRIV,CLASSIC live
+    class APPLE,FILE ext
