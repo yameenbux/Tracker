@@ -47,7 +47,7 @@ export function toLbNum(kg: number): number { return kg / KG_PER_LB; }
 export function stLbToKg(st: number, lb: number): number { return (st * 14 + lb) * KG_PER_LB; }
 export function round2(kg: number): number { return Math.round(kg * 100) / 100; }
 
-/** "83.0 kg" or "13 st 1 lb" */
+/** "90.0 kg" or "14 st 2 lb" */
 export function showWeight(kg: number, unit: Unit): string {
   return unit === 'kg' ? fmt(kg) + ' kg' : unit === 'lb' ? fmt(toLbNum(kg)) + ' lb' : toStLb(kg, 0);
 }

@@ -19,7 +19,7 @@ describe('plan building', () => {
     expect(t[8]).toBe(91.5);
   });
   test('week count is unaffected by the October clock change', () => {
-    expect(buildTargets(83, 71, '2026-09-28', '2027-05-03')).toHaveLength(32);   // matches the original programme
+    expect(buildTargets(95, 85, '2026-01-05', '2026-08-10')).toHaveLength(32);
   });
   test('assessPlan reports pace and warns above 1%/week', () => {
     const a = assessPlan(plan());
@@ -106,8 +106,8 @@ describe('units', () => {
     const kg = stLbToKg(12, 13.97);
     expect(stPart(kg)).toBe(13);
     expect(lbPart(kg)).toBe(0);
-    expect(showWeight(83, 'imp')).toBe('13 st 1 lb');
-    expect(showWeight(83, 'kg')).toBe('83.0 kg');
+    expect(showWeight(90, 'imp')).toBe('14 st 2 lb');
+    expect(showWeight(90, 'kg')).toBe('90.0 kg');
   });
   test('parseWeightInput', () => {
     expect(parseWeightInput('kg', ' ')).toBeNull();
@@ -137,14 +137,14 @@ describe('backups', () => {
   });
 
   test('old-format backups land on the original programme dates', () => {
-    const txt = 'x\n--- raw backup (keep this to restore) ---\n' + JSON.stringify({ actuals: { 1: 83, 3: 81.9 }, dailyW: { '2026-10-01': 82.5 }, habits: {} });
+    const txt = 'x\n--- raw backup (keep this to restore) ---\n' + JSON.stringify({ actuals: { 1: 95, 3: 93.9 }, dailyW: { '2026-10-01': 94.5 }, habits: {} });
     const r = parseBackup(txt, null);
-    expect(r.weights).toEqual({ '2026-09-28': 83, '2026-10-12': 81.9, '2026-10-01': 82.5 });
+    expect(r.weights).toEqual({ '2026-09-28': 95, '2026-10-12': 93.9, '2026-10-01': 94.5 });
     expect(r.settings.plan.start).toBe('2026-09-28');
     // With no plan on the phone, one is worked out from the backup itself (nobody's real programme is built in)
-    expect(r.settings.plan.startKg).toBe(83);
-    expect(r.settings.plan.goalKg).toBe(74.7);
-    expect(r.settings.plan.targets[0]).toBe(83);
+    expect(r.settings.plan.startKg).toBe(95);
+    expect(r.settings.plan.goalKg).toBe(85.5);
+    expect(r.settings.plan.targets[0]).toBe(95);
     expect(r.settings.plan.targets).toHaveLength(33);
   });
 

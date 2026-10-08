@@ -99,7 +99,7 @@ describe('stone and pounds rounding', () => {
   test('never shows 14 lb at whole-pound precision', () => {
     expect(showWeight(82.4, 'imp')).toBe('13 st 0 lb');
     expect(showWeight(76.0, 'imp')).toBe('12 st 0 lb');
-    expect(showWeight(83, 'imp')).toBe('13 st 1 lb');
+    expect(showWeight(90, 'imp')).toBe('14 st 2 lb');
   });
   test('one-decimal precision rolls over only when it would show 14.0', () => {
     expect(toStLb(82.4)).toBe('12 st 13.7 lb');
