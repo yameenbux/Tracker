@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tap } from '../feel';
@@ -8,6 +8,8 @@ import { Icon, IconName } from './Icons';
 
 export type Tab = 'today' | 'trend' | 'habits' | 'body';
 export const TAB_BAR_H = 56;
+/** True inside the tab that is showing. Only that tab's list may answer a tap on the status bar (iOS scrolls one view to the top). */
+export const ActivePane = createContext(true);
 
 /**
  * A tab's page: iOS-style large title with an eyebrow and a settings button. As you scroll, a compact title bar
@@ -17,6 +19,7 @@ export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
   eyebrow?: string; title: string; onSettings: () => void; scrollTop?: number; children: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const active = useContext(ActivePane);
   const [y] = useState(() => new Animated.Value(0));
   const ref = useRef<ScrollView>(null);
   useEffect(() => { if (scrollTop) ref.current?.scrollTo({ y: 0, animated: true }); }, [scrollTop]);
@@ -24,7 +27,7 @@ export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
   return (
     <View style={{ flex: 1 }}>
     <Animated.ScrollView ref={ref} contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16 }}
-      keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets scrollEventThrottle={16}
+      keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets scrollEventThrottle={16} scrollsToTop={active}
       onScroll={Animated.event([{ nativeEvent: { contentOffset: { y } } }], { useNativeDriver: true })}>
       <View style={s.header}>
         <View style={{ flex: 1 }}>

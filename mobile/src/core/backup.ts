@@ -5,7 +5,7 @@ import { cleanMeasurements, MEASURES } from './body';
 import { cleanIntake } from './calories';
 import { cleanSessionLog } from './progression';
 import { cleanHabits, cleanWeights, latestWeight, mergeLegacyActuals, normalizeSettings, weekDate } from './plan';
-import { fmt, toStLb } from './units';
+import { fmt, showWeight, toStLb } from './units';
 import type { HabitLog, Measurements, Settings, TrackerState, Unit, Weights } from './types';
 
 /** What a backup holds. Photos are not included: they stay on the device (they'd make the file huge). */
@@ -53,10 +53,12 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   L.push('PLUMB EXPORT');
   L.push('Generated: ' + now.toLocaleString());
   L.push('');
-  L.push('Goal:  ' + fmt(plan.goalKg) + ' kg  (' + toStLb(plan.goalKg, 0) + ')  by ' + longDate(plan.goalDate));
-  L.push('Start: ' + fmt(plan.startKg) + ' kg  on ' + longDate(plan.start));
+  // kg first (the tables below are in kg), then the same weight in the unit you use
+  const both = (kg: number) => fmt(kg) + ' kg  (' + (unit === 'lb' ? showWeight(kg, 'lb') : toStLb(kg, 0)) + ')';
+  L.push('Goal:  ' + both(plan.goalKg) + '  by ' + longDate(plan.goalDate));
+  L.push('Start: ' + both(plan.startKg) + '  on ' + longDate(plan.start));
   const lw = latestWeight(plan, weights);
-  if (lw) L.push('Latest: ' + fmt(lw.kg) + ' kg  (' + longDate(lw.k) + ')');
+  if (lw) L.push('Latest: ' + both(lw.kg) + '  on ' + longDate(lw.k));
   L.push('');
   L.push('WEEKLY WEIGH-INS (kg)');
   L.push(pad('Week', 6) + pad('Date', 9) + pad('Target', 9) + pad('Actual', 9) + 'vs');

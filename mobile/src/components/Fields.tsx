@@ -10,7 +10,7 @@ import { C, F } from '../theme';
 /** kg / st-lb toggle */
 export function UnitToggle({ unit, onChange }: { unit: Unit; onChange: (u: Unit) => void }) {
   return (
-    <View style={s.seg} accessibilityRole="radiogroup">
+    <View style={s.seg} accessibilityRole="radiogroup" accessibilityLabel="Weight unit">
       {(['kg', 'imp', 'lb'] as Unit[]).map(u => (
         <Pressable key={u} onPress={() => onChange(u)} style={[s.segBtn, unit === u && s.segOn]}
           accessibilityRole="radio" accessibilityState={{ checked: unit === u }}

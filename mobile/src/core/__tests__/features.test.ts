@@ -56,6 +56,15 @@ describe('re-plan from here', () => {
     expect(r.targets.length - 1 - 8).toBe(Math.ceil(6 / pace));       // 15 weeks of loss at the old pace
     expect(r.goalDate > plan.goalDate).toBe(true);
   });
+  test('after the plan has ended, the new line starts this week and the goal date is in the future', () => {
+    const late = new Date(2027, 2, 1);   // 8 weeks after the old goal date (week 25)
+    const r = replanFromHere(plan, 92, late)!;
+    expect(r.targets.slice(0, 18)).toEqual(plan.targets);
+    expect(r.targets.slice(18, 25).every(v => v === 88)).toBe(true);   // the gap is held at the old goal
+    expect(r.targets[25]).toBe(92);
+    expect(r.targets[r.targets.length - 1]).toBe(88);
+    expect(r.goalDate > '2027-03-01').toBe(true);
+  });
   test('nothing to re-plan once at goal; behindBy compares the trend to today\'s target', () => {
     expect(replanFromHere(plan, 88, today)).toBeNull();
     expect(behindBy(plan, 94, today)).toBeCloseTo(94 - (95 - 8 * 7 / 17), 1);

@@ -219,6 +219,6 @@ const s = StyleSheet.create({
   liftName: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   liftHint: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 2 },
   liftIn: { width: 72, textAlign: 'right', fontFamily: F.displaySemi },
-  liftDone: { width: 44, height: 44, borderRadius: 9, borderWidth: 1.5, borderColor: C.line, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
+  liftDone: { width: 44, height: 44, borderRadius: 9, borderWidth: 1.5, borderColor: C.control, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
   liftDoneOn: { backgroundColor: C.mintInk, borderColor: C.mintInk },
 });

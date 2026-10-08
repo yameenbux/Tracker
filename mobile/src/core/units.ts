@@ -8,6 +8,21 @@ export function fmt(n: number, d = 1): string { return Number(n).toFixed(d); }
 export function plausible(kg: unknown): kg is number {
   return typeof kg === 'number' && isFinite(kg) && kg >= MIN_KG && kg <= MAX_KG;
 }
+/** One stepper tap: 0.1 kg, or half a pound on the half-pound grid (so pounds never drift to 150.4 after a few taps). */
+export function stepWeight(kg: number, unit: Unit, dir: 1 | -1): number {
+  if (unit === 'kg') return Math.round((kg + dir * 0.1) * 10) / 10;
+  const half = kg / KG_PER_LB * 2, near = Math.round(half);
+  // Saved weights are kept to 0.01 kg, so "on the grid" allows a little slack
+  const next = (Math.abs(half - near) < 0.05 ? near + dir : dir > 0 ? Math.ceil(half) : Math.floor(half)) / 2;
+  return Math.round(next * KG_PER_LB * 1e4) / 1e4;
+}
+/** "Enter a weight between …" in the unit being typed. */
+export function rangeText(unit: Unit): string {
+  return 'Enter a weight between ' + (unit === 'kg' ? `${MIN_KG} and ${MAX_KG} kg` : unit === 'lb' ? 'about 55 and 770 lb' : 'about 4 and 55 stone') + '.';
+}
+/** Only complain once a typed number is clearly finished but out of range (not while "1" is on the way to "150"). */
+export const showRangeError = (kg: number | null) => kg != null && !plausible(kg) && (kg > MAX_KG || kg >= 10);
+
 /** parseFloat that accepts a decimal comma ("82,4"), which the iOS decimal pad types in many regions. */
 export function num(t: string): number {
   return parseFloat(String(t).trim().replace(',', '.'));

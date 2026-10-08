@@ -10,11 +10,15 @@ export const SCHEMA_VERSION = 2;
 export interface Reminder { on: boolean; hour: number; minute: number }
 export interface Prefs {
   lock: boolean;
-  milestone: number;            // highest quarter already celebrated
+  milestone: number;            // highest quarter already celebrated…
+  milestoneFor: string | null;  // …for this plan (milestonePlanKey); a new or restored plan starts again
   reminder: Reminder;
   lastBackup: string | null;    // ISO time of the last export, for the "back up now and then" nudge
 }
-export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null };
+export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null };
+
+/** Milestones are quarters of the way from the start weight to the goal, so they belong to those numbers. */
+export const milestonePlanKey = (p: { start: string; startKg: number; goalKg: number }) => `${p.start}|${p.startKg}|${p.goalKg}`;
 
 export function cleanPrefs(p: any): Prefs {
   if (!p || typeof p !== 'object') return DEFAULT_PREFS;
@@ -24,6 +28,7 @@ export function cleanPrefs(p: any): Prefs {
   return {
     lock: p.lock === true,
     milestone: Number.isInteger(p.milestone) ? p.milestone : 0,
+    milestoneFor: typeof p.milestoneFor === 'string' ? p.milestoneFor : null,
     reminder: { on: r.on === true, hour, minute },
     lastBackup: typeof p.lastBackup === 'string' && !isNaN(Date.parse(p.lastBackup)) ? p.lastBackup : null,
   };

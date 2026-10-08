@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, mondayOf, parseKey } from '../core/dates';
 import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, PACES } from '../core/plan';
-import { fmt, lbPart, parseWeightInput, plausible, showAmount, showWeight, stPart, toLbNum } from '../core/units';
+import { fmt, lbPart, parseWeightInput, plausible, rangeText, showAmount, showRangeError, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
 import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
@@ -80,7 +80,6 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const next = () => setStep(order[idx + 1]);
   const finish = (lock: boolean) => settings && onDone(settings, lock);
 
-  const goalErr = null;
   const goalNote = step === 'goal' && plausible(goalKg) && plausible(startKg)
     ? dir === 'gain' ? 'A gain plan: the line rises slowly, so most of it is muscle rather than fat.'
       : dir === 'maintain' ? 'A maintenance plan: the line holds steady and Plumb shows how close you stay to it.'
@@ -107,7 +106,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           <View style={{ paddingTop: 40 }}>
             <PlumbIcon size={64} />
             <Text style={[s.eyebrow, { marginTop: 22 }]}>Plumb</Text>
-            <Text style={s.h1}>A weight tracker that stays yours.</Text>
+            <Text style={s.h1} accessibilityRole="header">A weight tracker that stays yours.</Text>
             {notice && (
               <View style={s.notice} accessibilityRole="alert"><Icon name="shield" size={20} color={C.warnInk} /><Text style={s.noticeTxt}>{notice}</Text></View>
             )}
@@ -126,26 +125,27 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
 
         {step === 'current' && (
           <>
-            <Text style={s.h2}>What do you weigh now?</Text>
+            <Text style={s.h2} accessibilityRole="header">What do you weigh now?</Text>
             <Text style={s.sub}>A rough number is fine. You can change it later.</Text>
             <BigWeight unit={unit} kg={startKg} onChange={setStartKg} />
+            {showRangeError(startKg) && <Text style={s.err} accessibilityLiveRegion="polite">{rangeText(unit)}</Text>}
             <View style={{ alignItems: 'center' }}><UnitToggle unit={unit} onChange={setUnit} /></View>
           </>
         )}
 
         {step === 'goal' && (
           <>
-            <Text style={s.h2}>What’s your goal weight?</Text>
+            <Text style={s.h2} accessibilityRole="header">What’s your goal weight?</Text>
             <Text style={s.sub}>Starting from {startKg ? showWeight(startKg, unit) : '—'}.</Text>
             <BigWeight unit={unit} kg={goalKg} onChange={setGoalKg} />
-            {goalErr && <Text style={s.err}>{goalErr}</Text>}
+            {showRangeError(goalKg) && <Text style={s.err} accessibilityLiveRegion="polite">{rangeText(unit)}</Text>}
             {goalNote && <Text style={s.note}>{goalNote}</Text>}
           </>
         )}
 
         {step === 'pace' && (
           <>
-            <Text style={s.h2}>{dir === 'maintain' ? 'For how long?' : 'How fast?'}</Text>
+            <Text style={s.h2} accessibilityRole="header">{dir === 'maintain' ? 'For how long?' : 'How fast?'}</Text>
             <Text style={s.sub}>{dir === 'maintain' ? 'Pick a stretch to hold for. You can always extend it.'
               : dir === 'gain' ? 'Slow gains are mostly muscle; fast gains are mostly fat.'
               : 'Slower plans are easier to stick to — and sticking to it is what matters.'}</Text>
@@ -180,7 +180,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'plan' && settings && (
           <>
             <Text style={s.eyebrow}>Your plan is ready</Text>
-            <Text style={s.h2}>{dir === 'maintain' ? 'Hold ' : 'Reach '}<Text style={{ color: C.coralInk }}>{showWeight(settings.plan.goalKg, unit)}</Text> {dir === 'maintain' ? 'until' : 'by'} {longDate(settings.plan.goalDate)}</Text>
+            <Text style={s.h2} accessibilityRole="header">{dir === 'maintain' ? 'Hold ' : 'Reach '}<Text style={{ color: C.coralInk }}>{showWeight(settings.plan.goalKg, unit)}</Text> {dir === 'maintain' ? 'until' : 'by'} {longDate(settings.plan.goalDate)}</Text>
             <View style={{ marginTop: 16 }}>
               <ProgressChart settings={settings} weights={{ [start]: settings.plan.startKg }} unit={unit} fixedRange />
             </View>
@@ -199,7 +199,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
               <View style={s.whyBox}>
                 <Text style={s.whyBody}>
                   {dir === 'maintain'
-                    ? <>The dashed line stays at {showWeight(settings.plan.goalKg, unit)} until {longDate(settings.plan.goalDate)}. Plumb shows how far your trend drifts from it; within about a kilo either way is normal day-to-day life.</>
+                    ? <>The dashed line stays at {showWeight(settings.plan.goalKg, unit)} until {longDate(settings.plan.goalDate)}. Plumb shows how far your trend drifts from it; within {unit === 'kg' ? 'about a kilo' : 'about 2 lb'} either way is normal day-to-day life.</>
                     : <>Your pace is a share of body weight per week: {chosen.label} is {pct}%, so from {showWeight(settings.plan.startKg, unit)} that’s about {rate(pct)} a week.
                       {'\n\n'}Dividing the {showAmount(Math.abs(settings.plan.startKg - settings.plan.goalKg), unit)} you want to {dir === 'gain' ? 'gain' : 'lose'} by that pace gives {settings.plan.targets.length - 1} weeks, so the goal date is {longDate(settings.plan.goalDate)}.</>}
                   {'\n\n'}Your own weigh-ins are smoothed into a trend, so a salty dinner or a hard workout won’t knock you off the line.
@@ -212,7 +212,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'lock' && (
           <View style={{ paddingTop: 40 }}>
             <View style={s.lockBadge}><Icon name="lock" size={34} color={C.plum2} strokeWidth={2.2} /></View>
-            <Text style={s.h2}>Lock Plumb with {lockName}?</Text>
+            <Text style={s.h2} accessibilityRole="header">Lock Plumb with {lockName}?</Text>
             <Text style={s.sub}>Your weight and habits are personal. With the lock on, Plumb asks for {lockName} each time it opens. You can change this in Settings.</Text>
           </View>
         )}
@@ -224,7 +224,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           <Pressable onPress={onRestore} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Restore from a backup</Text></Pressable>
         </>}
         {step === 'current' && <Button label="Next" kind="primary" disabled={!plausible(startKg)} onPress={next} />}
-        {step === 'goal' && <Button label="Next" kind="primary" disabled={!plausible(goalKg) || !!goalErr} onPress={next} />}
+        {step === 'goal' && <Button label="Next" kind="primary" disabled={!plausible(goalKg)} onPress={next} />}
         {step === 'pace' && <>
           {verdict.error && <Text style={s.err}>{verdict.error}</Text>}
           <Button label="See my plan" kind="primary" disabled={!!verdict.error} onPress={next} />

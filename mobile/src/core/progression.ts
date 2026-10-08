@@ -1,6 +1,6 @@
 // Session progression: log the weight used per exercise, and get a nudge when it's time to add some.
 import { validKey } from './dates';
-import { numOrNull } from './units';
+import { KG_PER_LB, numOrNull } from './units';
 
 export interface SetLog { kg: number; done: boolean }
 export type SessionLog = Record<string, Record<string, SetLog>>;   // date -> exercise name -> what was lifted
@@ -38,7 +38,6 @@ export function lastLift(log: SessionLog, name: string, before: string): (SetLog
   return { k, ...log[k][name] };
 }
 
-const KG_PER_LB = 0.45359237;
 /**
  * Next time: add a small step after a completed session, otherwise repeat the weight.
  * Steps match real plates in the unit the person lifts in: +1 / +2.5 kg, or +2.5 / +5 lb.

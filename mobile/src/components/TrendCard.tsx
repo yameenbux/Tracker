@@ -59,7 +59,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
           ? <>The weekly rate shows once you have 4 weigh-ins spread over 10 days or more.</>
           : dir === 'maintain'
             ? atGoal
-              ? <>You’re holding within a kilo of {showWeight(plan.goalKg, unit)}. That’s what maintenance looks like.</>
+              ? <>You’re holding within {unit === 'kg' ? 'a kilo' : 'about 2 lb'} of {showWeight(plan.goalKg, unit)}. That’s what maintenance looks like.</>
               : <>Your trend has drifted {showAmount(Math.abs(last.trend - plan.goalKg), unit)} {last.trend > plan.goalKg ? 'above' : 'below'} where you’re holding. Small, steady corrections work better than a crash week.</>
             : atGoal
               ? <>You’re at your goal. Holding it for a few weeks is the next win.</>

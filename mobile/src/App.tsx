@@ -16,7 +16,7 @@ import { LogSheet } from './components/Entries';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { KeyboardDone } from './components/KeyboardDone';
 import { LiftSheet } from './components/Extras';
-import { Tab, TabBar, Toast } from './components/Shell';
+import { ActivePane, Tab, TabBar, Toast } from './components/Shell';
 import { confirm, notify } from './dialogs';
 import { success } from './feel';
 import { allowReminders, applyReminder, onReminderTap } from './reminders';
@@ -109,6 +109,7 @@ function Main() {
   }
 
   // While locked, render nothing but the lock: no data underneath for VoiceOver, and any open sheets close
+  if (lock.locked && (showSettings || log || lift)) { setShowSettings(false); setLog(null); setLift(null); }   // don't reopen them on unlock
   if (lock.locked) return <LockScreen lockName={lock.lockName} onUnlock={lock.tryUnlock} />;
 
   const replan = async (next: Settings['plan']) => {
@@ -121,7 +122,9 @@ function Main() {
   // All four tabs stay mounted (only the active one is shown), so scroll position and open panels survive switching
   const pane = (id: Tab, el: React.ReactNode) => (
     <View key={id} style={[s.fill, tab !== id && s.hidden]} pointerEvents={tab === id ? 'auto' : 'none'}
-      accessibilityElementsHidden={tab !== id} importantForAccessibility={tab === id ? 'auto' : 'no-hide-descendants'}>{el}</View>
+      accessibilityElementsHidden={tab !== id} importantForAccessibility={tab === id ? 'auto' : 'no-hide-descendants'}>
+      <ActivePane.Provider value={tab === id}>{el}</ActivePane.Provider>
+    </View>
   );
 
   return (

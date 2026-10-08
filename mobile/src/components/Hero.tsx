@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
-import { direction, latestWeight, sign } from '../core/plan';
+import { direction, latestWeight, sign, targetAt } from '../core/plan';
 import { fmt, lbPart, showWeight, stPart, toLbNum, toStLb } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
 import { useAnimatedNumber, useAnimatedPercent } from '../motion';
@@ -12,8 +12,9 @@ export const Hero = memo(function Hero({ settings, weights, unit }: { settings: 
   const plan = settings.plan;
   const lw = latestWeight(plan, weights);
   const cur = lw ? lw.kg : plan.startKg;
-  const curTarget = lw ? plan.targets[lw.weekIdx] : null;
-  const pct = Math.max(0, Math.min(100, (plan.startKg - cur) / (plan.startKg - plan.goalKg) * 100));
+  const curTarget = lw ? targetAt(plan, lw.d) : null;              // the line on the day it was weighed, not the start of that week
+  const span = plan.startKg - plan.goalKg;
+  const pct = span === 0 ? 0 : Math.max(0, Math.min(100, (plan.startKg - cur) / span * 100));   // 0 for a maintenance goal (no bar)
   // The headline number glides to a new weigh-in, and the bar fills in, instead of jumping
   const shownKg = useAnimatedNumber(cur);
   const bar = useAnimatedPercent(pct);

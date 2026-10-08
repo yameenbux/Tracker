@@ -30,7 +30,8 @@ export function useAnimatedNumber(target: number, ms = 700): number {
     if (reduced) { anim.setValue(target); return; }
     Animated.timing(anim, { toValue: target, duration: ms, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
   }, [target, ms, reduced, anim]);
-  return shown;
+  // Once it has arrived, show the exact value: rounding to 0.1 kg would put a pounds reading off by a fraction
+  return shown === Math.round(target * 10) / 10 ? target : shown;
 }
 
 /** 0–100 progress as an Animated value, eased towards each new target. Starts from 0 on first show. */

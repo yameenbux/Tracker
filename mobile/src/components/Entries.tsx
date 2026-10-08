@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAY_ABBR, dateKey, daysBetween, longDate, parseKey } from '../core/dates';
 import { direction, sign, targetAt, weekFraction, weightSeries } from '../core/plan';
-import { KG_PER_LB, MAX_KG, MIN_KG, plausible, showDiff, showAmount, showWeight } from '../core/units';
+import { plausible, rangeText, showRangeError, stepWeight, showDiff, showAmount, showWeight } from '../core/units';
 import { tick } from '../feel';
 import { Icon } from './Icons';
 import { Sheet } from './Sheet';
@@ -81,8 +81,12 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
   const [key, setKey] = useState(initialKey ?? today);
   const [kg, setKg] = useState<number | null>(initialKey != null ? weights[initialKey] ?? null : lastKey ? weights[lastKey] : null);
   const [nudges, setNudges] = useState(0);
-  const step = unit === 'kg' ? 0.1 : 0.5 * KG_PER_LB;
-  const nudge = (dir: 1 | -1) => { if (kg == null) return; tick(); setKg(Math.round((kg + dir * step) * 100) / 100); setNudges(n => n + 1); };
+  const nudge = (dir: 1 | -1) => {
+    if (kg == null) return;
+    tick();
+    setKg(stepWeight(kg, unit, dir));
+    setNudges(n => n + 1);
+  };
   const future = key > today;
   const early = key < minKey;
   const ok = plausible(kg);
@@ -114,7 +118,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
         <Text style={s.dateLabel}>Date</Text>
         <DateInput value={key} onChange={setKey} label="Weigh-in date" min={minKey} max={today} />
       </View>
-      {kg != null && !ok && (kg > MAX_KG || kg >= 10) && <Text style={s.err}>Enter a weight between {unit === 'kg' ? `${MIN_KG} and ${MAX_KG} kg` : unit === 'lb' ? 'about 55 and 770 lb' : 'about 4 and 55 stone'}.</Text>}
+      {!ok && showRangeError(kg) && <Text style={s.err}>{rangeText(unit)}</Text>}
       {future && <Text style={s.err}>That date is in the future.</Text>}
       {early && <Text style={s.err}>That’s before your plan started ({longDate(minKey)}). Change the start date in Settings to log earlier days.</Text>}
       {clash && <Text style={s.hint}>You already logged {showWeight(weights[key], unit)} on {longDate(key)}. Saving replaces it.</Text>}

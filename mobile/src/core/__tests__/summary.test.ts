@@ -176,3 +176,25 @@ describe('pounds-only unit', () => {
     expect(U.parseWeightInput('lb', '200')).toBeCloseTo(90.718474, 5);
   });
 });
+
+describe('stepWeight', () => {
+  const U = jest.requireActual('../units');
+  const lb = (kg: number) => U.toLbNum(kg);
+  test('kg steps by 0.1', () => {
+    expect(U.stepWeight(80.0, 'kg', 1)).toBe(80.1);
+    expect(U.stepWeight(80.0, 'kg', -1)).toBe(79.9);
+  });
+  test('pounds stay on the half-pound grid, even after saving rounds to 0.01 kg', () => {
+    let kg = 150.3 * U.KG_PER_LB;                        // off the grid: first tap snaps
+    kg = U.stepWeight(kg, 'lb', 1); expect(lb(kg)).toBeCloseTo(150.5, 3);
+    for (let i = 0; i < 5; i++) kg = U.stepWeight(Math.round(kg * 100) / 100, 'lb', -1);
+    expect(lb(kg)).toBeCloseTo(148.0, 3);
+    expect(U.fmt(lb(U.stepWeight(Math.round(kg * 100) / 100, 'imp', 1)))).toBe('148.5');
+  });
+  test('out-of-range message only once the number is clearly wrong', () => {
+    expect(U.showRangeError(6.8)).toBe(false);          // "15" lb on the way to 150
+    expect(U.showRangeError(22)).toBe(true);
+    expect(U.showRangeError(80)).toBe(false);
+    expect(U.rangeText('lb')).toContain('lb');
+  });
+});

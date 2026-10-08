@@ -226,7 +226,7 @@ function Pushed({ onBack, leaving, onGone, children }: { onBack: () => void; lea
     },
   }));
   return <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: C.bg, transform: [{ translateX: x }], shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12 }]}
-    {...pan.panHandlers} accessibilityViewIsModal>{children}</Animated.View>;
+    {...pan.panHandlers} accessibilityViewIsModal onAccessibilityEscape={onBack}>{children}</Animated.View>;
 }
 
 /**
@@ -271,7 +271,7 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
   const hiddenBefore = Object.keys(weights).filter(k => k < settings.plan.start).length;
   const rate = verdict.ok ? (unit === 'kg' ? fmt(verdict.perWeek, 2) + ' kg' : toLbNum(verdict.perWeek).toFixed(1) + ' lb') : '';
   // VoiceOver doesn't read changes on its own: announce the plan check when it changes (after typing settles)
-  const verdictText = !verdict.ok ? verdict.error : `${verdict.weeks + 1} weeks, about ${rate} a week`;
+  const verdictText = !verdict.ok ? verdict.error : `${verdict.weeks} weeks, about ${rate} a week`;
   useEffect(() => {
     if (!changed) return;
     const id = setTimeout(() => AccessibilityInfo.announceForAccessibility(verdictText), 900);
@@ -292,7 +292,7 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
           </View>
           <View style={[s.preview, !verdict.ok ? s.prevErr : verdict.warn ? s.prevWarn : null]}>
             <Text style={[s.prevTxt, !verdict.ok ? { color: C.danger } : verdict.warn ? { color: C.warnInk } : null]}>
-              {!verdict.ok ? verdict.error : verdict.perWeek === 0 ? `Holding steady for ${verdict.weeks} weeks.` : `${verdict.weeks + 1} weeks · about ${rate} a week (${fmt(verdict.pct, 2)}% of body weight).` +
+              {!verdict.ok ? verdict.error : verdict.perWeek === 0 ? `Holding steady for ${verdict.weeks} weeks.` : `${verdict.weeks} weeks · about ${rate} a week (${fmt(verdict.pct, 2)}% of body weight).` +
                 (verdict.warn ? (plan.goalKg! > plan.startKg! ? '\nGaining faster than ~0.5% a week is mostly fat rather than muscle.' : "\nThat's faster than ~1% a week, which most people find hard to sustain.") : '')}
             </Text>
           </View>

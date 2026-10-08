@@ -255,12 +255,15 @@ export function replanFromHere(plan: Plan, trendNow: number, today: Date = new D
   const breaks = plan.breaks ?? [];
   const lw = Math.max(1, lossWeeks(plan.start, plan.goalDate, breaks));
   const pace = Math.abs(plan.startKg - plan.goalKg) / lw;
-  const i0 = Math.max(0, Math.min(plan.targets.length - 1, Math.floor(weekFraction(plan, today))));
+  // This week, even if the old plan has already ended: the line restarts today, never in the past
+  const i0 = Math.max(0, Math.floor(weekFraction(plan, today)));
+  const last = plan.targets[plan.targets.length - 1];
+  const prefix = plan.targets.concat(Array(Math.max(0, i0 - plan.targets.length + 1)).fill(last));   // weeks after the old end held at its goal
   const needed = Math.max(2, Math.ceil(Math.abs(plan.goalKg - trendNow) / pace - 1e-9));
   let total = i0, counted = 0;
   while (counted < needed && total < i0 + 156) { total++; if (!isBreakStep(plan.start, breaks, total)) counted++; }
   const goalDate = dateKey(weekDate(plan, total));
-  const targets = buildTargets(plan.startKg, plan.goalKg, plan.start, goalDate, breaks, { index: i0, kg: trendNow, prefix: plan.targets });
+  const targets = buildTargets(plan.startKg, plan.goalKg, plan.start, goalDate, breaks, { index: i0, kg: trendNow, prefix });
   return { ...plan, goalDate, targets };
 }
 
