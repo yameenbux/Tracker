@@ -69,8 +69,22 @@ describe('saved data', () => {
     act(() => result.current.setWeight('2026-02-01', 88.25));
     await waitFor(async () => {
       const saved = JSON.parse((await AsyncStorage.getItem('tracker_state_v1'))!);
-      expect(saved.v).toBe(2);
+      expect(saved.v).toBe(3);
       expect(saved.weights['2026-02-01']).toBe(88.25);
     });
+  });
+
+  test('weigh-ins are kept as timestamped records in step with the day view; a burst of changes is saved once', async () => {
+    await AsyncStorage.setItem('tracker_state_v1', JSON.stringify(goodState));
+    const set = AsyncStorage.setItem as jest.Mock;
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    set.mockClear();
+    act(() => { result.current.setWeight('2026-01-13', 89.1); result.current.setWeight('2026-01-14', 88.9); result.current.setUnit('lb'); });
+    expect(result.current.state.entries!.map(e => e.day)).toEqual(['2026-01-05', '2026-01-12', '2026-01-13', '2026-01-14']);
+    await waitFor(() => expect(set.mock.calls.filter(c => c[0] === 'tracker_state_v1')).toHaveLength(1));
+    const saved = JSON.parse(set.mock.calls.find(c => c[0] === 'tracker_state_v1')[1]);
+    expect(saved.unit).toBe('lb');
+    expect(saved.entries).toHaveLength(4);
   });
 });

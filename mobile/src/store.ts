@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { cleanPrefs, DEFAULT_PREFS, hydrate, Prefs, SCHEMA_VERSION } from './core/storage';
+import { reconcile } from './core/entries';
 import { round2 } from './core/units';
 import type { HabitLog, Measurements, PhotoLog, Settings, TrackerState, Unit } from './core/types';
 export type { Prefs, Reminder } from './core/storage';
@@ -113,20 +115,41 @@ export function useTracker() {
   }, [attempt]);
   const retryLoad = useCallback(() => { setReady(false); setAttempt(a => a + 1); }, []);
 
-  // Writes go one after another, so a slow earlier write can never land after a newer one
+  // Writes go one after another, so a slow earlier write can never land after a newer one. A burst of changes
+  // (ticking three habits) is saved once, 250 ms after the last; leaving the app saves at once.
   const writes = useRef<Promise<void>>(Promise.resolve());
-  useEffect(() => {
-    if (!loaded.current) return;   // never overwrite saved data with the empty initial state
-    const json = JSON.stringify({ v: SCHEMA_VERSION, ...state });
+  const latest = useRef<TrackerState | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flush = useCallback(() => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    const st = latest.current;
+    if (!st) return;
+    latest.current = null;
+    const json = JSON.stringify({ v: SCHEMA_VERSION, ...st });
     writes.current = writes.current
       .then(() => AsyncStorage.setItem(STORAGE_KEY, json))
       .then(() => setSaveFailed(false), () => setSaveFailed(true));
-  }, [state]);
+  }, []);
+  /** Drops a write that hasn't happened yet (used before erasing everything, so old data can't be re-saved). */
+  const discardPending = useCallback(() => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    latest.current = null;
+  }, []);
+  useEffect(() => {
+    if (!loaded.current) return;   // never overwrite saved data with the empty initial state
+    latest.current = state;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(flush, 250);
+  }, [state, flush]);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', st => { if (st !== 'active') flush(); });
+    return () => { sub.remove(); flush(); };
+  }, [flush]);
 
   const setWeight = useCallback((k: string, kg: number | null) => setState(s => {
     const weights = { ...s.weights };
     if (kg == null) delete weights[k]; else weights[k] = round2(kg);
-    return { ...s, weights };
+    return { ...s, weights, entries: reconcile(s.entries ?? [], weights) };
   }), []);
   const setUnit = useCallback((unit: Unit) => setState(s => ({ ...s, unit })), []);
   const setSettings = useCallback((settings: Settings) => setState(s => ({ ...s, settings })), []);
@@ -139,7 +162,9 @@ export function useTracker() {
     return { ...s, intake };
   }), []);
   const setLifts = useCallback((lifts: TrackerState['lifts']) => setState(s => ({ ...s, lifts })), []);
-  const replaceAll = useCallback((next: TrackerState) => setState(next), []);
+  // Restores, resets and undos hand over a whole state: keep the weigh-in records in step with its day map
+  // (unchanged days keep their records and times; edited days are re-recorded)
+  const replaceAll = useCallback((next: TrackerState) => setState({ ...next, entries: reconcile(next.entries ?? [], next.weights) }), []);
   /** Keeps a copy of the current data on the phone before something replaces it (restore, erase). */
   const snapshot = useCallback(async (label: string) => {
     await AsyncStorage.setItem('tracker_snapshot_' + label, JSON.stringify({ v: SCHEMA_VERSION, at: new Date().toISOString(), ...state })).catch(() => {});
@@ -154,7 +179,8 @@ export function useTracker() {
   const dismissRecovered = useCallback(() => setRecovered(false), []);
 
   return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
-           setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs };
+           setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs,
+           discardPending };
 }
 export type Tracker = ReturnType<typeof useTracker>;
 

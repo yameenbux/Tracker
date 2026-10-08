@@ -37,7 +37,8 @@ export type PhotoLog = Record<string, Partial<Record<Pose, string>>>;           
 
 export interface TrackerState {
   settings: Settings | null;
-  weights: Weights;
+  weights: Weights;                                             // one number a day, derived from `entries`
+  entries?: import('./entries').WeighIn[];                     // timestamped weigh-ins: the source of truth
   habits: HabitLog;
   unit: Unit;
   measurements: Measurements;

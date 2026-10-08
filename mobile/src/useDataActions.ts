@@ -26,7 +26,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
       await t.snapshot('before_restore');
       const before = state;
       // Photos aren't in backups, so the ones already on this phone are kept
-      t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, measurements: b.measurements, photos: state.photos,
+      t.replaceAll({ settings: b.settings, weights: b.weights, entries: b.entries, habits: b.habits, measurements: b.measurements, photos: state.photos,
         intake: b.intake, lifts: b.lifts, unit: b.unit ?? state.unit });
       done();
       show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo', onAction: () => t.replaceAll(before) });
@@ -73,6 +73,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   const eraseAll = async () => {
     if (!(await confirm('Delete all your data?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
     if (!(await confirm('Are you sure?', 'Tidemark will start again from setup.', 'Delete everything'))) return;
+    t.discardPending();   // a save still waiting must not bring the old data back after erasing
     if (!(await eraseStorage())) { notify('Couldn’t erase', 'Nothing was deleted. Try again.'); return; }
     for (const day of Object.values(state.photos)) for (const ref of Object.values(day)) if (ref) deletePhoto(ref);
     deleteAllPhotos();
