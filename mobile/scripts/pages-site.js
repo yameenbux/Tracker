@@ -26,14 +26,23 @@ const head = [
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-title" content="Tidemark">',
-  '<meta name="apple-mobile-web-app-status-bar-style" content="default">',
+  // The app draws under the status bar (it already pads for it); iOS then shows white status text on top of it
+  '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">',
   '<meta name="theme-color" content="#FBF7F3" media="(prefers-color-scheme: light)">',
   '<meta name="theme-color" content="#121019" media="(prefers-color-scheme: dark)">',
+  // White status text needs a dark backing: dark mode already has the app's dark background, light mode gets a plum band
+  '<style>@media (prefers-color-scheme: light){body::after{content:"";position:fixed;top:0;left:0;right:0;' +
+    'height:env(safe-area-inset-top);background:#2A1E45;z-index:2147483647;pointer-events:none}}</style>',
 ].join('');
 const indexPath = path.join(out, 'index.html');
 const html = fs.readFileSync(indexPath, 'utf8');
 if (!html.includes('</head>')) throw new Error('web export index.html has no </head>');
-fs.writeFileSync(indexPath, html.replace('</head>', head + '</head>'));
+// viewport-fit=cover makes iOS report the notch and home-bar sizes, so the app's own safe-area padding applies
+const viewport = /<meta name="viewport"[^>]*>/;
+if (!viewport.test(html)) throw new Error('web export index.html has no viewport meta');
+fs.writeFileSync(indexPath, html
+  .replace(viewport, '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />')
+  .replace('</head>', head + '</head>'));
 
 // The privacy policy keeps its address; the original web tracker moves to /classic (it loads its own fonts)
 fs.copyFileSync(path.join(repo, 'privacy.html'), path.join(out, 'privacy.html'));
