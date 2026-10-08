@@ -32,7 +32,7 @@ the Expo CLI) aren't in the app binary and aren't listed.
 | `@react-native-community/datetimepicker` | Native date and time pickers | No | No | |
 | `expo-local-authentication` | Face ID / passcode lock | No | No | iOS does the check. The app only learns "passed" or "failed". |
 | `expo-notifications` | Local daily reminder | **No** | No | Local notifications only. The push entitlement is removed (`plugins/withoutPushEntitlement.js`), and no push token is ever requested. |
-| `expo-image-picker` | Progress photos | No | No | The photo is copied into the app's private folder. The picker's temp copy is deleted. |
+| `expo-image-picker` | Progress photos | No | No | The photo is copied into the app's private folder. The picker's temp copy is deleted right after, and the cache is swept on every launch as a backstop. |
 | `expo-document-picker`, `expo-file-system`, `expo-sharing` | Restore and export backups | No | No | The person chooses where an export goes. Temp files are deleted. |
 | `expo-haptics` | Taps and success feedback | No | No | |
 | `expo-web-browser` | Opens the privacy policy | Only when tapped | No | Opens one fixed https URL in Safari View Controller. |

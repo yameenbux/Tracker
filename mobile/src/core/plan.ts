@@ -104,6 +104,7 @@ export function assessPlan(p: PlanDraft): PlanAssessment {
 
 export const MAX_PLAN_WEEKS = 520;   // the editor allows 156; re-plans can extend that, but never past ten years
 /** A string from untrusted data, trimmed to a sane length (a 200,000-character habit name would freeze layout). */
+const RESERVED = new Set(['__proto__', 'constructor', 'prototype']);   // never usable as object keys for ticks
 const str = (v: unknown, max: number): string => (v == null ? '' : String(v)).slice(0, max);
 /** Smallest and largest without spreading (`Math.min(...a)` overflows the stack on very long arrays). */
 export function extent(a: number[]): [number, number] {
@@ -132,7 +133,8 @@ export function normalizeSettings(s: any): Settings | null {
 
   const seen: Record<string, boolean> = {};
   const habits: Habit[] = (Array.isArray(s.habits) ? s.habits : DEFAULT_HABITS)
-    .filter((h: any) => h && h.id && !Object.prototype.hasOwnProperty.call(seen, String(h.id)) && (seen[String(h.id)] = true))
+    .filter((h: any) => { const id = h && h.id ? str(h.id, 40) : '';
+      return id && !RESERVED.has(id) && !Object.prototype.hasOwnProperty.call(seen, id) && (seen[id] = true); })
     .slice(0, MAX_HABITS)
     .map((h: any) => ({ id: str(h.id, 40), icon: habitIcon(h.icon, str(h.name, 40)), short: str(h.short, 5),
                         name: str(h.name || h.short, 40) || 'Habit' }));

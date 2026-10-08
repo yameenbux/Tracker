@@ -188,6 +188,7 @@ describe('habit icons', () => {
     expect(habitIcon('💧')).toBe('water');
     expect(habitIcon('🏋️‍♂️')).toBe('dumbbell');          // variation selectors and ZWJ sequences
     expect(habitIcon('🦄', 'Read 10 pages')).toBe('book');  // unknown emoji: guessed from the name
+    expect(habitIcon('🏃🏽')).toBe('run');                     // skin-tone modifier
     expect(habitIcon(undefined, 'Something')).toBe('check');
     expect(HABIT_ICONS.length).toBeGreaterThan(15);
   });
@@ -222,5 +223,7 @@ describe('hostile backups', () => {
     const b = parseBackup(text, null);
     expect(Object.keys(b.weights)).toEqual(['2026-01-05']);
     expect(Object.keys(b.lifts['2026-01-05'])).toEqual(['Squat']);
+    const ids = P.normalizeSettings({ plan: base, habits: [{ id: 'x'.repeat(40) + 'A', name: 'a' }, { id: 'x'.repeat(40) + 'B', name: 'b' }, { id: 'constructor', name: 'c' }] }).habits;
+    expect(ids).toHaveLength(1);                                // cut to length before de-duplicating; reserved ids dropped
   });
 });

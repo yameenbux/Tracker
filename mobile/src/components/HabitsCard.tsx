@@ -86,7 +86,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   const H = settings.habits;
   const hasMeals = settings.meals.items.length > 0;
   const anySession = days.some(d => { const x = settings.sessions[d.getDay()]; return x.title || x.items.length; });
-  if (!H.length && !anySession) {
+  if (!H.length && !anySession && !hasMeals) {
     return (
       <Card title="This week">
         <EmptyState icon="habits" title="No daily habits yet" body="Pick up to six small things that help, like water, steps or sleep. Ticking one takes a second."

@@ -52,7 +52,7 @@ describe('saved data', () => {
     const { result } = renderHook(() => useTracker());
     await waitFor(() => expect(result.current.ready).toBe(true));
     expect(result.current.state.settings).not.toBeNull();
-    expect(result.current.prefs.lock).toBe(false);
+    expect(result.current.prefs.lock).toBe(true);   // fails closed: unreadable prefs never switch the lock off
   });
 
   test('a damaged plan with intact weigh-ins is flagged rather than silently sent to setup', async () => {

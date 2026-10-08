@@ -161,3 +161,26 @@ describe('error and empty states', () => {
     expect(go).toHaveBeenCalled();
   });
 });
+
+describe('review fixes', () => {
+  test('someone with meals but no habits still gets the week view, not "No daily habits yet"', () => {
+    const { HabitsCard } = jest.requireActual('../components/HabitsCard');
+    const withMeals = { ...settings, habits: [], meals: { ...settings.meals, items: [{ when: '8am', text: 'Oats', kcal: 400, p: 20, c: 60, f: 8 }] } };
+    render(<HabitsCard settings={withMeals} habits={{}} onChange={jest.fn()} />);
+    expect(screen.queryByText('No daily habits yet')).toBeNull();
+    render(<HabitsCard settings={{ ...settings, habits: [] }} habits={{}} onChange={jest.fn()} />);
+    expect(screen.getByText('No daily habits yet')).toBeTruthy();
+  });
+  test('the crash screen only offers "set data aside" when a retry fails again straight away', () => {
+    const { ErrorBoundary } = jest.requireActual('../components/ErrorBoundary');
+    const err = jest.spyOn(console, 'error').mockImplementation(() => {});
+    let boom = true;
+    const Maybe = () => { if (boom) throw new Error('x'); return null; };
+    render(<ErrorBoundary><Maybe /></ErrorBoundary>);
+    expect(screen.queryByText('Set data aside and start again')).toBeNull();
+    fireEvent.press(screen.getByText('Try again'));                 // still broken
+    expect(screen.getByText('Set data aside and start again')).toBeTruthy();
+    boom = false;
+    err.mockRestore();
+  });
+});
