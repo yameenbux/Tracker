@@ -1,4 +1,4 @@
-export type Unit = 'kg' | 'imp';
+export type Unit = 'kg' | 'imp' | 'lb';   // kilograms, stones & pounds (UK), or pounds only (US)
 
 /** A planned maintenance break: the target line holds flat for `weeks` weeks from `start`. */
 export interface PlanBreak { start: string; weeks: number }

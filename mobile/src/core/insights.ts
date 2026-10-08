@@ -63,7 +63,8 @@ export function weeksOfData(plan: Plan, series: TrendPoint[], today: Date = new 
 
 /** Quarters of the way from start to goal that the trend has passed (0–4). Based on trend, so one lucky weigh-in doesn't count. */
 export function milestoneQuarter(plan: Plan, trendNow: number): number {
-  const done = (plan.startKg - trendNow) / (plan.startKg - plan.goalKg);
+  if (Math.abs(plan.startKg - plan.goalKg) < 0.5) return 0;            // maintaining: no "quarters of the way"
+  const done = (plan.startKg - trendNow) / (plan.startKg - plan.goalKg);   // works for gaining too (both negative)
   return Math.max(0, Math.min(4, Math.floor(done * 4 + 1e-9)));
 }
 export const MILESTONE_TEXT = ['', 'A quarter of the way there', 'Halfway to your goal', 'Three quarters of the way', 'Goal reached'];
