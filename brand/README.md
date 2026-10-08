@@ -1,10 +1,12 @@
 # Tidemark brand
 
 A tidemark is the line water leaves behind: the waves come and go, the mark shows where the level really is.
-That's the app. Daily weigh-ins slosh about (the dots), the trend is the level underneath (the line), and it eases
-down to settle on your goal line, with today marked where it lands. Four parts only, so it still reads at 29 px.
+That's the app, and the logo: your daily weigh-ins are the waves; they calm, and what's left is the trend, one flat
+coral line, with today marked where it lands. Read the trend, not the waves. Strokes are heavy enough to read at 29 px;
+in one colour (iOS tinted, Android themed) today becomes a ring so it stays separate from the line.
 
-Figma (editable master, plus the three directions explored — C · Signal was chosen and refined):
+Figma (editable master, the three Tidemark directions explored — A · Calming waves was chosen and refined — and the
+earlier Plumb work, archived):
 https://www.figma.com/design/CZGyRjRwm0vNKi5EQA33Ek
 
 | File | Use |
