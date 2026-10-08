@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, parseKey } from '../core/dates';
-import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, MAX_HABITS, PACES, SUGGESTED_HABITS } from '../core/plan';
+import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, HABIT_AMOUNTS, MAX_HABITS, PACES, SUGGESTED_HABITS } from '../core/plan';
+import { HabitAmount } from '../components/HabitAmount';
 import { fmt, lbPart, parseWeightInput, plausible, rangeText, showAmount, showRangeError, showWeight, stPart, toLbNum } from '../core/units';
-import type { Settings, Unit } from '../core/types';
+import type { Habit, Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { ProgressChart } from '../components/ProgressChart';
@@ -60,6 +61,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const [pace, setPace] = useState<string>('');   // empty = the recommended option for the goal's direction
   const [start, setStart] = useState(dateKey(new Date()));   // today: a plan that began last Monday starts you "behind"
   const [picked, setPicked] = useState<string[]>([]);        // habits chosen during setup (none by default)
+  const [amounts, setAmounts] = useState<Record<string, Habit>>({});   // a chosen habit with its amount changed (e.g. Steps 10k)
   const [editStart, setEditStart] = useState(false);
 
   // Losing, gaining or holding: each gets its own choices on the "how fast" step
@@ -75,7 +77,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const verdict = assessPlan(draft);
   const settings: Settings | null = verdict.ok
     ? defaultSettings({ startKg: startKg!, goalKg: goalKg!, start, goalDate, targets: buildTargets(startKg!, goalKg!, start, goalDate) },
-                      SUGGESTED_HABITS.filter(h => picked.includes(h.id)))
+                      SUGGESTED_HABITS.filter(h => picked.includes(h.id)).map(h => amounts[h.id] ?? h))
     : null;
 
   const order: Step[] = ['welcome', 'current', 'goal', 'pace', 'habits', 'plan', ...(lockAvailable ? ['lock' as Step] : [])];
@@ -194,11 +196,14 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
                     style={[s.habitChip, on && s.habitChipOn, full && { opacity: 0.4 }]}
                     accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled: full }} accessibilityLabel={h.name}>
                     <Icon name={habitIcon(h.icon, h.name)} size={20} color={on ? C.onFill : C.plum2} />
-                    <Text style={[s.habitChipTxt, on && { color: C.onFill }]} numberOfLines={1}>{h.name}</Text>
+                    <Text style={[s.habitChipTxt, on && { color: C.onFill }]} numberOfLines={1}>{(amounts[h.id] ?? h).name}</Text>
                   </Tap>
                 );
               })}
             </View>
+            {SUGGESTED_HABITS.filter(h => picked.includes(h.id) && HABIT_AMOUNTS[h.id]).map(h => (
+              <HabitAmount key={h.id} habit={amounts[h.id] ?? h} onChange={nh => setAmounts(a => ({ ...a, [h.id]: nh }))} />
+            ))}
           </>
         )}
 

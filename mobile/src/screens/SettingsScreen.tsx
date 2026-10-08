@@ -18,6 +18,7 @@ import { Icon, IconName } from '../components/Icons';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { Button, Tabs } from '../components/ui';
 import { Tap } from '../components/Motion';
+import { HabitAmount } from '../components/HabitAmount';
 import { choose, confirm, notify } from '../dialogs';
 import { success, tap } from '../feel';
 import { useReducedMotion } from '../motion';
@@ -384,7 +385,7 @@ function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: 
     <View style={s.wrap}>
       <PageHeader title="Daily habits" onBack={onBack} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        <Text style={s.lead}>Up to {MAX_HABITS}. An icon, a short label (5 letters) and a name. Removing a habit hides it; past ticks are kept.</Text>
+        <Text style={s.lead}>Up to {MAX_HABITS}. An icon, a short label (5 letters) and a name; for steps, water, sleep and veg, pick your own amount. Removing a habit hides it; past ticks are kept.</Text>
         <View style={s.form}>
           {habits.map((h, i) => (
             <View key={h.id}>
@@ -400,6 +401,7 @@ function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: 
                 <Icon name="close" size={16} color={C.danger} strokeWidth={2.4} />
               </Pressable>
             </View>
+            <HabitAmount habit={h} onChange={nh => setHabit(i, { name: nh.name })} />
             {picking === h.id && (
               <View style={s.iconGrid} accessibilityRole="radiogroup" accessibilityLabel={`Icon for ${h.name || `habit ${i + 1}`}`}>
                 {HABIT_ICONS.map(([name, label]) => {
