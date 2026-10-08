@@ -30,7 +30,7 @@ const WORDS: [RegExp, HabitIcon][] = [
 export function habitIcon(saved: unknown, name = ''): HabitIcon {
   const v = typeof saved === 'string' ? saved.trim() : '';
   if (NAMES.has(v)) return v as HabitIcon;
-  const e = EMOJI[v.replace(/[️‍].*$/u, '')];
+  const e = EMOJI[v.replace(/[\u{1F3FB}-\u{1F3FF}]/gu, '').replace(/[\uFE0F\u200D].*$/u, '')];   // drop skin tones, variation selectors, ZWJ tails
   if (e) return e;
   for (const [re, icon] of WORDS) if (re.test(name)) return icon;
   return 'check';

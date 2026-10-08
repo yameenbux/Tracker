@@ -73,7 +73,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
     const tw = trendOn(series, k);
     return (
       <View style={s.cmpCol}>
-        <LoadingImage uri={photoUri(photos[k][pose]!)} style={s.cmpImg} label={`${label} photo, ${longDate(k)}`} />
+        <LoadingImage key={photos[k][pose]} uri={photoUri(photos[k][pose]!)} style={s.cmpImg} label={`${label} photo, ${longDate(k)}`} />
         <View style={s.cmpBadge}><Text style={s.cmpBadgeTxt}>{label} · {shortDate(parseKey(k))}</Text></View>
         {tw != null && <Text style={s.cmpW}>{showWeight(tw, unit)} trend</Text>}
       </View>

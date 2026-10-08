@@ -89,7 +89,8 @@ export function useTracker() {
         setRecovered(true);
         AsyncStorage.removeItem(SET_ASIDE_FLAG).catch(() => {});
       }
-      try { if (rawPrefs) setPrefsState(cleanPrefs(JSON.parse(rawPrefs))); } catch { /* bad prefs just reset */ }
+      // Unreadable prefs reset, except the lock: fail closed, so tampering with prefs can't switch it off
+      try { if (rawPrefs) setPrefsState(cleanPrefs(JSON.parse(rawPrefs))); } catch { setPrefsState({ ...DEFAULT_PREFS, lock: true }); }
       if (raw) {
         try {
           const st = hydrate(raw);

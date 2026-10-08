@@ -137,7 +137,7 @@ function Main() {
       <CoverContext.Provider value={lock.covered}>
       <Onboarding unit={state.unit} setUnit={t.setUnit} lockAvailable={lock.lockAvailable} lockName={lock.lockName}
         onDone={finishSetup} onRestore={data.restore}
-        notice={t.recovered ? `Your saved plan couldn’t be read, so Plumb kept a copy on this phone${kept ? ` and kept your ${kept} weigh-ins` : ''}. Set your plan up again, or restore a backup.` : undefined} />
+        notice={t.recovered ? `Your saved plan couldn’t be read, so Plumb kept a copy on this phone${kept ? ` and kept your ${kept} weigh-in${kept === 1 ? '' : 's'}` : ''}. Set your plan up again, or restore a backup.` : undefined} />
       <CoverOverlay />
       </CoverContext.Provider>
     );

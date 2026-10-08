@@ -31,7 +31,10 @@ export function useLock(ready: boolean, prefs: Prefs, setPrefs: (p: Partial<Pref
     asking.current = true;
     try {
       const avail = await lockAvailability();
-      if (avail === 'unknown') return;   // couldn't check: fail closed (stay locked; the Unlock button tries again)
+      if (avail === 'unknown') {         // couldn't check: fail closed, but still let iOS try Face ID / passcode, so nobody is shut out
+        if (await unlock()) release();
+        return;
+      }
       if (avail === 'none') {            // passcode removed in iOS Settings: authentication can never succeed
         setPrefs({ lock: false });
         setLockAvailable(false);

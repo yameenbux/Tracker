@@ -1,6 +1,6 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { Component, Fragment, ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 import { C, F, themed } from '../theme';
 import { confirm, notify } from '../dialogs';
 import { shareBackup } from '../io';
@@ -13,11 +13,15 @@ import { Button } from './ui';
  * "Try again" remounts the app (re-reading storage). If it keeps failing, the saved data itself is the problem, so
  * two ways out appear: export it exactly as stored, or set it aside (kept, never deleted) and start again.
  */
-export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; attempt: number }> {
-  state = { error: null as Error | null, attempt: 0 };
+export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; attempt: number; retriedAt: number; away: boolean }> {
+  state = { error: null as Error | null, attempt: 0, retriedAt: 0, away: false };
+  // This screen sits outside the app's lock and cover, so it blanks itself for the app-switcher snapshot too
+  private sub?: { remove: () => void };
+  componentDidMount() { this.sub = AppState.addEventListener('change', st => this.setState({ away: st !== 'active' })); }
+  componentWillUnmount() { this.sub?.remove(); }
   static getDerivedStateFromError(error: Error) { return { error }; }
   componentDidCatch() { SplashScreen.hideAsync().catch(() => {}); }   // never leave the splash covering the recovery screen
-  retry = () => this.setState(st => ({ error: null, attempt: st.attempt + 1 }));
+  retry = () => this.setState(st => ({ error: null, attempt: st.attempt + 1, retriedAt: Date.now() }));
   /** The crash screen sits outside the lock screen, so its data actions ask for Face ID when the lock is on. */
   allowed = async (why: string) => !(await lockIsOn()) || unlock(why);
   exportRaw = async () => {
@@ -34,7 +38,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
   };
   render() {
     if (!this.state.error) return <Fragment key={this.state.attempt}>{this.props.children}</Fragment>;
-    const stuck = this.state.attempt > 0;   // "Try again" didn't help
+    if (this.state.away) return <View style={s.wrap} />;
+    const stuck = this.state.retriedAt > 0 && Date.now() - this.state.retriedAt < 60_000;   // crashed again within a minute of "Try again"
     return (
       <View style={s.wrap} accessibilityRole="alert">
         <Text style={s.title} accessibilityRole="header">Something went wrong</Text>
