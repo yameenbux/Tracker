@@ -222,7 +222,7 @@ function Main() {
               if (moved) delete after[moved.k];
               const wk = changeTable(trendSeries(weightSeries(settings.plan, after)), new Date(), [7])[0].change;
               show({ message: `${showWeight(kg, state.unit)} saved for ${k === today ? 'today' : longDate(k)}`
-                       + (wk != null ? ` · trend ${showChange(wk, state.unit)} this week` : ''),
+                       + (wk != null ? ` · trend ${showChange(wk, state.unit, 1)} this week` : ''),
                      ...(replaced != null || moved ? { action: 'Undo', onAction: undo } : {}) });
             }}
             onDelete={k => {

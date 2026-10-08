@@ -14,7 +14,7 @@ export function LockScreen({ lockName, onUnlock, cover }: { lockName: string; on
       {!cover && <>
         <Text style={s.title} accessibilityRole="header">Tidemark is locked</Text>
         <Text style={s.sub}>Your data stays on this phone.</Text>
-        {onUnlock && <Button label={`Unlock with ${lockName}`} kind="coral" onPress={onUnlock} style={{ marginTop: 28, alignSelf: 'stretch' }} />}
+        {onUnlock && <Button label={`Unlock with ${lockName}`} kind="primary" onPress={onUnlock} style={{ marginTop: 28, alignSelf: 'stretch' }} />}
       </>}
     </View>
   );
@@ -28,7 +28,7 @@ export function LoadFailedScreen({ onRetry }: { onRetry: () => void }) {
       <Text style={s.title} accessibilityRole="header">Couldn’t open your data</Text>
       <Text style={s.sub}>Your weigh-ins are still on this phone; Tidemark couldn’t read them just now. Nothing has been changed or deleted.
         {'\n\n'}Try again, or restart your iPhone if this keeps happening.</Text>
-      <Button label="Try again" kind="coral" onPress={onRetry} style={{ marginTop: 28, alignSelf: 'stretch' }} />
+      <Button label="Try again" kind="primary" onPress={onRetry} style={{ marginTop: 28, alignSelf: 'stretch' }} />
     </View>
   );
 }
