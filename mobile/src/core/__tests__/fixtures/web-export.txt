@@ -1,57 +1,57 @@
 TRACKER EXPORT
-Generated: (fixture)
+Generated: (fixture, fictional data)
 
-Goal:  71.0 kg  (11 st 3 lb)  by 3 May 2027
-Start: 83.0 kg  on 28 Sep 2026
-Latest: 82.1 kg  (6 Oct 2026)
+Goal:  84.0 kg  by 3 May 2027
+Start: 96.0 kg  on 28 Sep 2026
+Latest: 95.1 kg  (6 Oct 2026)
 
 WEEKLY WEIGH-INS (kg)
 Week  Date     Target   Actual   vs
-W1    28 Sep   83.0     83.0     0.0
-W2    5 Oct    82.5     82.4     -0.1
-W3    12 Oct   82.0     -        
-W4    19 Oct   81.5     -        
-W5    26 Oct   81.0     -        
-W6    2 Nov    80.5     -        
-W7    9 Nov    80.0     -        
-W8    16 Nov   79.5     -        
-W9    23 Nov   79.0     -        
-W10   30 Nov   78.5     -        
-W11   7 Dec    78.0     -        
-W12   14 Dec   77.5     -        
-W13   21 Dec   77.5     -        
-W14   28 Dec   77.5     -        
-W15   4 Jan    77.5     -        
-W16   11 Jan   77.0     -        
-W17   18 Jan   76.5     -        
-W18   25 Jan   76.0     -        
-W19   1 Feb    75.5     -        
-W20   8 Feb    75.0     -        
-W21   15 Feb   74.5     -        
-W22   22 Feb   74.0     -        
-W23   1 Mar    73.7     -        
-W24   8 Mar    73.4     -        
-W25   15 Mar   73.1     -        
-W26   22 Mar   72.8     -        
-W27   29 Mar   72.5     -        
-W28   5 Apr    72.2     -        
-W29   12 Apr   71.9     -        
-W30   19 Apr   71.6     -        
-W31   26 Apr   71.3     -        
-W32   3 May    71.0     -        
+W1    28 Sep   96.0     96.0     0.0
+W2    5 Oct    95.5     95.4     -0.1
+W3    12 Oct   95.0     -
+W4    19 Oct   94.5     -
+W5    26 Oct   94.0     -
+W6    2 Nov    93.5     -
+W7    9 Nov    93.0     -
+W8    16 Nov   92.5     -
+W9    23 Nov   92.0     -
+W10   30 Nov   91.5     -
+W11   7 Dec    91.0     -
+W12   14 Dec   90.5     -
+W13   21 Dec   90.5     -
+W14   28 Dec   90.5     -
+W15   4 Jan    90.5     -
+W16   11 Jan   90.0     -
+W17   18 Jan   89.5     -
+W18   25 Jan   89.0     -
+W19   1 Feb    88.5     -
+W20   8 Feb    88.0     -
+W21   15 Feb   87.5     -
+W22   22 Feb   87.0     -
+W23   1 Mar    86.7     -
+W24   8 Mar    86.4     -
+W25   15 Mar   86.1     -
+W26   22 Mar   85.8     -
+W27   29 Mar   85.5     -
+W28   5 Apr    85.2     -
+W29   12 Apr   84.9     -
+W30   19 Apr   84.6     -
+W31   26 Apr   84.3     -
+W32   3 May    84.0     -
 
 ALL WEIGH-INS (kg) — 3 logged
-2026-09-28   83.0
-2026-10-05   82.4
-2026-10-06   82.1
+2026-09-28   96.0
+2026-10-05   95.4
+2026-10-06   95.1
 
-DAILY HABITS  (A=Water 3 L, B=Steps 8k, C=Workout, D=Intimacy)
+DAILY HABITS  (A=Water 3 L, B=Steps 8k, C=Workout, D=Stretch)
 2026-10-06   A - - D
 
 Water 3 L       total days: 1
 Steps 8k        total days: 0
 Workout         total days: 0
-Intimacy        total days: 1
+Stretch         total days: 1
 
 --- raw backup (keep this to restore) ---
-{"app":"tracker","version":2,"settings":{"plan":{"start":"2026-09-28","startKg":83,"goalKg":71,"goalDate":"2027-05-03","targets":[83,82.5,82,81.5,81,80.5,80,79.5,79,78.5,78,77.5,77.5,77.5,77.5,77,76.5,76,75.5,75,74.5,74,73.7,73.4,73.1,72.8,72.5,72.2,71.9,71.6,71.3,71]},"event":{"name":"Run Media City 10k","date":"2026-09-24","detail":"MediaCity UK, Salford · flat, 4 laps"},"habits":[{"id":"water","icon":"💧","short":"3 L","name":"Water 3 L"},{"id":"steps","icon":"👟","short":"8K","name":"Steps 8k"},{"id":"workout","icon":"🏋","short":"WORK","name":"Workout"},{"id":"sex","icon":"❤️","short":"SEX","name":"Intimacy"}],"sessions":{"0":{"title":"AM · Walk / rest","items":["8,000 steps","Optional: light stretching or mobility"],"note":"Recovery matters as much as the sessions."},"1":{"title":"AM · Upper body + core","items":["Lat pulldown — 3 × 10–12","Seated cable row — 3 × 10–12","Dumbbell bench press — 3 × 10–12","Dumbbell shoulder press — 3 × 10–12","Band pull-aparts — 3 × 15","— core —","Dead bug — 3 × 8 each side","Bird-dog — 3 × 8 each side","Pallof press — 3 × 10 each side"],"note":"Eat something small first. Controlled reps, 2 sec down."},"2":{"title":"AM · Bike / incline walk (Achilles)","items":["25–30 min stationary bike, easy-moderate resistance — OR —","30–35 min incline treadmill walk, 5–8% grade, brisk pace","Achilles: 3 × 15 isometric calf holds (mid-range, no stretch into pain)","Ice 10 min after if any tightness"],"note":"No running, no sprint work, no jumping until cleared. Sharp pain = stop and reassess."},"3":{"title":"AM · Lower body","items":["Goblet squat — 3 × 10–12","Romanian deadlift (DB) — 3 × 10–12","Leg press — 3 × 12–15","Glute bridge — 3 × 12","Calf raise — 2 × 12, light, pain-free range only (Achilles — drop this if it's sore next day)","— core —","Side plank — 3 × 30 sec each side"],"note":"Start lighter than you think. First real load on the leg. Squat/RDL/leg press are all fine on the Achilles — it's the calf raise and any explosive push-off to watch."},"4":{"title":"AM · Walk only","items":["8,000 steps across the day","Optional: 10 min mobility / stretching"],"note":"Genuine rest day. Keep the morning slot, just walk."},"5":{"title":"AM · Upper body + core","items":["Incline dumbbell press — 3 × 10–12","Chest-supported row — 3 × 10–12","Face pulls — 3 × 15","Lateral raise — 3 × 12","Bicep curl / tricep extension — 2 × 12 each","— core —","Plank — 3 × 30–45 sec","Bird-dog — 3 × 8 each side"],"note":"Different angles to Monday. Same controlled tempo."},"6":{"title":"AM · Bike / incline walk (Achilles)","items":["40–50 min stationary bike, easy-moderate resistance — OR —","45–60 min incline treadmill walk, 5–8% grade","Achilles: 3 × 15 eccentric heel drops off a step (bent + straight knee)","Stretch calves gently after, no bouncing"],"note":"This is the long session, just lower-impact. Once pain-free for 2 full weeks, reintroduce easy running here first."}},"meals":{"items":[{"when":"~6:00am · pre-train (optional)","text":"Half a banana or a few dates. Fasted is fine for easy runs.","kcal":null,"p":null,"c":null,"f":null},{"when":"~8:30am · breakfast (post-workout)","text":"40g oats, 150g Fage 0%, 30g whey isolate","kcal":345,"p":45,"c":32,"f":3},{"when":"1:00pm · lunch","text":"Chicken wrap — 150g chicken, wholemeal tortilla, 30g spinach, 30g pepper, chilli sauce","kcal":450,"p":47,"c":24,"f":17},{"when":"7:00pm · dinner (eat slowly)","text":"4 eggs, 2 Jason's sourdough slices, ½ avocado, mushrooms, tomatoes","kcal":680,"p":38,"c":57,"f":33}],"target":{"kcal":1800,"p":140,"c":175,"f":60}}},"weights":{"2026-10-06":82.1,"2026-09-28":83,"2026-10-05":82.4},"habits":{"2026-10-06":{"water":true,"sex":true}},"unit":"kg"}
+{"app":"tracker","version":2,"settings":{"plan":{"start":"2026-09-28","startKg":96.0,"goalKg":84.0,"goalDate":"2027-05-03","targets":[96.0,95.5,95.0,94.5,94.0,93.5,93.0,92.5,92.0,91.5,91.0,90.5,90.5,90.5,90.5,90.0,89.5,89.0,88.5,88.0,87.5,87.0,86.7,86.4,86.1,85.8,85.5,85.2,84.9,84.6,84.3,84.0]},"event":{"name":"Spring 10K","date":"2026-09-24","detail":"Riverside park · flat, 2 laps"},"habits":[{"id":"water","icon":"💧","short":"3 L","name":"Water 3 L"},{"id":"steps","icon":"👟","short":"8K","name":"Steps 8k"},{"id":"workout","icon":"🏋","short":"WORK","name":"Workout"},{"id":"stretch","icon":"🧘","short":"STR","name":"Stretch"}],"sessions":{"0":{"title":"AM · Walk / rest","items":["30 min easy walk"],"note":"Rest day."},"1":{"title":"AM · Upper body + core","items":["Lat pulldown — 3 × 10–12","Dumbbell bench press — 3 × 10–12","# core","Dead bug — 3 × 8 each side"],"note":"Controlled reps."},"2":{"title":"AM · Bike / incline walk","items":["25–30 min stationary bike","— OR —","30 min incline treadmill walk"],"note":"Easy to moderate."},"3":{"title":"AM · Lower body","items":["Goblet squat — 3 × 10–12","Romanian deadlift — 3 × 10–12","Glute bridge — 3 × 12"],"note":"Start light."},"4":{"title":"AM · Walk only","items":["8,000 steps across the day"],"note":"Rest day."},"5":{"title":"AM · Upper body + core","items":["Seated row — 3 × 10–12","Shoulder press — 3 × 10–12","# core","Side plank — 3 × 30 sec"],"note":""},"6":{"title":"AM · Bike / incline walk","items":["30 min easy bike"],"note":""}},"meals":{"items":[{"when":"~7:30am · breakfast","text":"Porridge, yoghurt and berries","kcal":380,"p":25,"c":55,"f":8},{"when":"~1:00pm · lunch","text":"Chicken salad wrap","kcal":450,"p":40,"c":35,"f":15},{"when":"~4:00pm · snack","text":"Apple and a protein bar","kcal":250,"p":20,"c":30,"f":6},{"when":"~7:00pm · dinner","text":"Salmon, rice and greens","kcal":600,"p":40,"c":60,"f":20}],"target":{"kcal":1800,"p":140,"c":175,"f":60}}},"weights":{"2026-10-06":95.1,"2026-09-28":96.0,"2026-10-05":95.4},"habits":{"2026-10-06":{"water":true,"stretch":true}},"unit":"kg"}

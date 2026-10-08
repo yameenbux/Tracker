@@ -11,7 +11,7 @@ const DoneId = createContext<string | undefined>(undefined);
 
 /** Wrap a window's content; its number fields then get that window's Done bar. */
 export function DoneWindow({ children }: { children: React.ReactNode }) {
-  const id = 'plumb-done-' + useId().replace(/[^a-zA-Z0-9]/g, '');
+  const id = 'tidemark-done-' + useId().replace(/[^a-zA-Z0-9]/g, '');
   return (
     <DoneId.Provider value={id}>
       {children}

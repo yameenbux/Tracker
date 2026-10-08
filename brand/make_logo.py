@@ -1,4 +1,4 @@
-# Generates the Plumb brand marks as SVG.
+# Generates the Tidemark brand marks as SVG.
 # The mark: daily weigh-ins scatter, the trend eases down and settles on the goal line, and today is marked where it lands.
 # Usage: python3 make_logo.py <out-dir>   (needs `pip install fonttools` and mobile/node_modules for the font)
 import math, os, sys
@@ -62,13 +62,13 @@ def mark_only(u, scale=1.0, mono=None):
     t = f'translate({512 - 512 * scale} {512 - 512 * scale}) scale({scale})'
     return svg(defs(u) + f'<g transform="{t}">{mark(u, mono)}</g>')
 
-# ---- wordmark: "plumb" in Space Grotesk Bold, outlined so it needs no font ----
+# ---- wordmark: "tidemark" in Space Grotesk Bold, outlined so it needs no font ----
 font = TTFont(FONT); gs = font.getGlyphSet(); cmap = font.getBestCmap()
 asc, desc = font['hhea'].ascent, -font['hhea'].descent
 
 def word(ink):
     x, parts = 0, []
-    for ch in 'plumb':
+    for ch in 'tidemark':
         g = gs[cmap[ord(ch)]]; pen = SVGPathPen(gs); g.draw(pen)
         parts.append(f'<path transform="translate({x} {asc}) scale(1 -1)" d="{pen.getCommands()}" fill="{ink}"/>')
         x += g.width
@@ -91,13 +91,13 @@ def wordmark(ink, height=200):
     return svg(w_paths, f'{height * vb_w / vb_h:.0f}', height, f'{-pad} {-pad} {vb_w} {vb_h}')
 
 files = {
-    'plumb-app-icon.svg': icon('a'),
-    'plumb-app-icon-rounded.svg': icon('b', rounded=True),
-    'plumb-mark.svg': mark_only('c'),
-    'plumb-mark-mono.svg': mark_only('d', mono='#FFFFFF'),
-    'plumb-wordmark.svg': wordmark(PLUM1),
-    'plumb-lockup.svg': lockup('e', PLUM1),
-    'plumb-lockup-on-plum.svg': lockup('f', PAPER, page=PLUM1),
+    'tidemark-app-icon.svg': icon('a'),
+    'tidemark-app-icon-rounded.svg': icon('b', rounded=True),
+    'tidemark-mark.svg': mark_only('c'),
+    'tidemark-mark-mono.svg': mark_only('d', mono='#FFFFFF'),
+    'tidemark-wordmark.svg': wordmark(PLUM1),
+    'tidemark-lockup.svg': lockup('e', PLUM1),
+    'tidemark-lockup-on-plum.svg': lockup('f', PAPER, page=PLUM1),
 }
 os.makedirs(OUT, exist_ok=True)
 for name, s in files.items():

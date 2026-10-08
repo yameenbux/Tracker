@@ -21,7 +21,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
       const b = parseBackup(text, state.settings);
       const nW = Object.keys(b.weights).length, nH = Object.keys(b.habits).length;
       const ok = await confirm('Restore this backup?',
-        `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Plumb.`, 'Restore');
+        `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Tidemark.`, 'Restore');
       if (!ok) return;
       await t.snapshot('before_restore');
       const before = state;
@@ -36,14 +36,14 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   };
 
   const exportCsv = async () => {
-    try { await shareBackup('plumb-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
+    try { await shareBackup('tidemark-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
     catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
 
   const exportData = async () => {
     if (!state.settings) return;
     try {
-      await shareBackup('plumb-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings }));
+      await shareBackup('tidemark-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings }));
       // The share sheet closes the same way whether the file was saved or the sheet was cancelled, so ask
       if (await confirm('Did you save the backup?', 'Only say yes if the file went somewhere safe: Files, iCloud Drive, email or a computer.', 'Yes, it’s saved', false)) {
         t.setPrefs({ lastBackup: new Date().toISOString() });
@@ -56,7 +56,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   const exportRescued = async () => {
     const raw = await latestRescue();
     if (!raw) { notify('Nothing to export', 'There is no saved copy on this phone.'); return; }
-    try { await shareBackup('plumb-rescued-' + dateKey(new Date()) + '.txt', raw); }
+    try { await shareBackup('tidemark-rescued-' + dateKey(new Date()) + '.txt', raw); }
     catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
 
@@ -72,7 +72,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
 
   const eraseAll = async () => {
     if (!(await confirm('Delete all your data?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
-    if (!(await confirm('Are you sure?', 'Plumb will start again from setup.', 'Delete everything'))) return;
+    if (!(await confirm('Are you sure?', 'Tidemark will start again from setup.', 'Delete everything'))) return;
     if (!(await eraseStorage())) { notify('Couldn’t erase', 'Nothing was deleted. Try again.'); return; }
     for (const day of Object.values(state.photos)) for (const ref of Object.values(day)) if (ref) deletePhoto(ref);
     deleteAllPhotos();

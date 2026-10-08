@@ -389,47 +389,11 @@ function legacySettings() {
       targets: [83.0, 82.5, 82.0, 81.5, 81.0, 80.5, 80.0, 79.5, 79.0, 78.5, 78.0, 77.5, 77.5, 77.5, 77.5, 77.0,
                 76.5, 76.0, 75.5, 75.0, 74.5, 74.0, 73.7, 73.4, 73.1, 72.8, 72.5, 72.2, 71.9, 71.6, 71.3, 71.0]
     },
-    event: { name: "Run Media City 10k", date: "2026-09-24", detail: "MediaCity UK, Salford · flat, 4 laps" },
-    habits: DEFAULT_HABITS.concat([{ id: "sex", icon: "❤️", short: "SEX", name: "Intimacy" }]),
-    sessions: {
-      1: { title: "AM · Upper body + core", items: [
-            "Lat pulldown — 3 × 10–12", "Seated cable row — 3 × 10–12", "Dumbbell bench press — 3 × 10–12",
-            "Dumbbell shoulder press — 3 × 10–12", "Band pull-aparts — 3 × 15", "— core —",
-            "Dead bug — 3 × 8 each side", "Bird-dog — 3 × 8 each side", "Pallof press — 3 × 10 each side"],
-           note: "Eat something small first. Controlled reps, 2 sec down." },
-      2: { title: "AM · Bike / incline walk (Achilles)", items: [
-            "25–30 min stationary bike, easy-moderate resistance — OR —",
-            "30–35 min incline treadmill walk, 5–8% grade, brisk pace",
-            "Achilles: 3 × 15 isometric calf holds (mid-range, no stretch into pain)",
-            "Ice 10 min after if any tightness"],
-           note: "No running, no sprint work, no jumping until cleared. Sharp pain = stop and reassess." },
-      3: { title: "AM · Lower body", items: [
-            "Goblet squat — 3 × 10–12", "Romanian deadlift (DB) — 3 × 10–12", "Leg press — 3 × 12–15", "Glute bridge — 3 × 12",
-            "Calf raise — 2 × 12, light, pain-free range only (Achilles — drop this if it's sore next day)",
-            "— core —", "Side plank — 3 × 30 sec each side"],
-           note: "Start lighter than you think. First real load on the leg. Squat/RDL/leg press are all fine on the Achilles — it's the calf raise and any explosive push-off to watch." },
-      4: { title: "AM · Walk only", items: ["8,000 steps across the day", "Optional: 10 min mobility / stretching"],
-           note: "Genuine rest day. Keep the morning slot, just walk." },
-      5: { title: "AM · Upper body + core", items: [
-            "Incline dumbbell press — 3 × 10–12", "Chest-supported row — 3 × 10–12", "Face pulls — 3 × 15", "Lateral raise — 3 × 12",
-            "Bicep curl / tricep extension — 2 × 12 each", "— core —", "Plank — 3 × 30–45 sec", "Bird-dog — 3 × 8 each side"],
-           note: "Different angles to Monday. Same controlled tempo." },
-      6: { title: "AM · Bike / incline walk (Achilles)", items: [
-            "40–50 min stationary bike, easy-moderate resistance — OR —", "45–60 min incline treadmill walk, 5–8% grade",
-            "Achilles: 3 × 15 eccentric heel drops off a step (bent + straight knee)", "Stretch calves gently after, no bouncing"],
-           note: "This is the long session, just lower-impact. Once pain-free for 2 full weeks, reintroduce easy running here first." },
-      0: { title: "AM · Walk / rest", items: ["8,000 steps", "Optional: light stretching or mobility"],
-           note: "Recovery matters as much as the sessions." }
-    },
-    meals: {
-      items: [
-        { when: "~6:00am · pre-train (optional)", text: "Half a banana or a few dates. Fasted is fine for easy runs.", kcal: null, p: null, c: null, f: null },
-        { when: "~8:30am · breakfast (post-workout)", text: "40g oats, 150g Fage 0%, 30g whey isolate", kcal: 345, p: 45, c: 32, f: 3 },
-        { when: "1:00pm · lunch", text: "Chicken wrap — 150g chicken, wholemeal tortilla, 30g spinach, 30g pepper, chilli sauce", kcal: 450, p: 47, c: 24, f: 17 },
-        { when: "7:00pm · dinner (eat slowly)", text: "4 eggs, 2 Jason's sourdough slices, ½ avocado, mushrooms, tomatoes", kcal: 680, p: 38, c: 57, f: 33 }
-      ],
-      target: { kcal: 1800, p: 140, c: 175, f: 60 }
-    }
+    // Only the plan dates matter (old weekly entries were numbered from this start). Nothing personal is kept here.
+    event: null,
+    habits: DEFAULT_HABITS.map(h => ({ ...h })),
+    sessions: emptySessions(),
+    meals: { items: [], target: { kcal: null, p: null, c: null, f: null } }
   };
 }
 

@@ -9,7 +9,7 @@ import { DateInput, UnitToggle } from '../components/Fields';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { ProgressChart } from '../components/ProgressChart';
 import { Icon, IconName } from '../components/Icons';
-import { PlumbIcon } from '../components/Logo';
+import { TidemarkIcon } from '../components/Logo';
 import { Button } from '../components/ui';
 import { C, F, themed } from '../theme';
 
@@ -82,7 +82,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
 
   const goalNote = step === 'goal' && plausible(goalKg) && plausible(startKg)
     ? dir === 'gain' ? 'A gain plan: the line rises slowly, so most of it is muscle rather than fat.'
-      : dir === 'maintain' ? 'A maintenance plan: the line holds steady and Plumb shows how close you stay to it.'
+      : dir === 'maintain' ? 'A maintenance plan: the line holds steady and Tidemark shows how close you stay to it.'
       : null
     : null;
   const rate = (p: number) => {
@@ -105,8 +105,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {step === 'welcome' && (
           <View style={{ paddingTop: 40 }}>
-            <PlumbIcon size={64} />
-            <Text style={[s.eyebrow, { marginTop: 22 }]}>Plumb</Text>
+            <TidemarkIcon size={64} />
+            <Text style={[s.eyebrow, { marginTop: 22 }]}>Tidemark</Text>
             <Text style={s.h1} accessibilityRole="header">A weight tracker that stays yours.</Text>
             {notice && (
               <View style={s.notice} accessibilityRole="alert"><Icon name="shield" size={20} color={C.warnInk} /><Text style={s.noticeTxt}>{notice}</Text></View>
@@ -200,7 +200,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
               <View style={s.whyBox}>
                 <Text style={s.whyBody}>
                   {dir === 'maintain'
-                    ? <>The dashed line stays at {showWeight(settings.plan.goalKg, unit)} until {longDate(settings.plan.goalDate)}. Plumb shows how far your trend drifts from it; within {unit === 'kg' ? 'about a kilo' : 'about 2 lb'} either way is normal day-to-day life.</>
+                    ? <>The dashed line stays at {showWeight(settings.plan.goalKg, unit)} until {longDate(settings.plan.goalDate)}. Tidemark shows how far your trend drifts from it; within {unit === 'kg' ? 'about a kilo' : 'about 2 lb'} either way is normal day-to-day life.</>
                     : <>Your pace is a share of body weight per week: {chosen.label} is {pct}%, so from {showWeight(settings.plan.startKg, unit)} that’s about {rate(pct)} a week.
                       {'\n\n'}Dividing the {showAmount(Math.abs(settings.plan.startKg - settings.plan.goalKg), unit)} you want to {dir === 'gain' ? 'gain' : 'lose'} by that pace gives {settings.plan.targets.length - 1} weeks, so the goal date is {longDate(settings.plan.goalDate)}.</>}
                   {'\n\n'}Your own weigh-ins are smoothed into a trend, so a salty dinner or a hard workout won’t knock you off the line.
@@ -213,8 +213,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'lock' && (
           <View style={{ paddingTop: 40 }}>
             <View style={s.lockBadge}><Icon name="lock" size={34} color={C.plum2} strokeWidth={2.2} /></View>
-            <Text style={s.h2} accessibilityRole="header">Lock Plumb with {lockName}?</Text>
-            <Text style={s.sub}>Your weight and habits are personal. With the lock on, Plumb asks for {lockName} each time it opens. You can change this in Settings.</Text>
+            <Text style={s.h2} accessibilityRole="header">Lock Tidemark with {lockName}?</Text>
+            <Text style={s.sub}>Your weight and habits are personal. With the lock on, Tidemark asks for {lockName} each time it opens. You can change this in Settings.</Text>
           </View>
         )}
       </ScrollView>

@@ -123,11 +123,11 @@ describe('backups', () => {
   test('restores a backup exported by the web app', () => {
     const r = parseBackup(webExport, null);
     expect(r.settings.plan.targets).toHaveLength(32);
-    expect(r.settings.plan.targets[12]).toBe(77.5);                    // the Christmas hold survives
-    expect(r.settings.sessions[2].title).toContain('Achilles');
+    expect(r.settings.plan.targets[12]).toBe(90.5);                    // the Christmas hold survives
+    expect(r.settings.sessions[2].title).toContain('incline walk');
     expect(r.settings.meals.items).toHaveLength(4);
-    expect(r.weights).toMatchObject({ '2026-09-28': 83, '2026-10-05': 82.4, '2026-10-06': 82.1 });
-    expect(r.habits['2026-10-06']).toEqual({ water: true, sex: true });
+    expect(r.weights).toMatchObject({ '2026-09-28': 96, '2026-10-05': 95.4, '2026-10-06': 95.1 });
+    expect(r.habits['2026-10-06']).toEqual({ water: true, stretch: true });
   });
 
   test('round trip through our own export is lossless', () => {

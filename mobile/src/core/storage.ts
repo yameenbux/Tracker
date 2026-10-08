@@ -42,7 +42,7 @@ export function cleanPrefs(p: any): Prefs {
  */
 export function migrate(s: any): any {
   const v = Number.isInteger(s.v) ? s.v : 1;
-  if (v > SCHEMA_VERSION) throw new Error('saved by a newer version of Plumb');   // never down-convert (and lose) newer data
+  if (v > SCHEMA_VERSION) throw new Error('saved by a newer version of Tidemark');   // never down-convert (and lose) newer data
   return s;
 }
 

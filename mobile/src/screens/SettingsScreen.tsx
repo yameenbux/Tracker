@@ -168,21 +168,21 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
           <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
         </Group>
-        <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Plumb works out what you really burn from your trend.</Text>
+        <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
 
         <Group title="Display">
           <Row icon="moon" label="Appearance" wide right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} last />
         </Group>
 
-        <Group title="Reminder" footer={p.reminderBlocked ? 'Notifications for Plumb are switched off in iOS Settings, so no reminder will appear until they’re allowed again.'
+        <Group title="Reminder" footer={p.reminderBlocked ? 'Notifications for Tidemark are switched off in iOS Settings, so no reminder will appear until they’re allowed again.'
           : 'A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.'}>
           <SwitchRow icon="bell" label="Daily weigh-in reminder" value={p.reminder.on} onChange={on => p.onReminderChange({ ...p.reminder, on })} last={!p.reminder.on} />
-          {p.reminderBlocked && <Row icon="info" label="Allow notifications" value="iOS Settings" onPress={() => Linking.openSettings().catch(() => {})} hint="Opens Plumb’s page in iOS Settings" />}
+          {p.reminderBlocked && <Row icon="info" label="Allow notifications" value="iOS Settings" onPress={() => Linking.openSettings().catch(() => {})} hint="Opens Tidemark’s page in iOS Settings" />}
           {p.reminder.on && <Row icon="calendar" label="Time" last right={<TimeInput hour={p.reminder.hour} minute={p.reminder.minute}
             onChange={(hour, minute) => p.onReminderChange({ ...p.reminder, hour, minute })} />} />}
         </Group>
 
-        <Group title="Privacy & data" footer="Everything lives on this phone only. Plumb has no account and no servers. A backup file saved to iCloud Drive or Files is the only copy if you lose your phone.">
+        <Group title="Privacy & data" footer="Everything lives on this phone only. Tidemark has no account and no servers. A backup file saved to iCloud Drive or Files is the only copy if you lose your phone.">
           <SwitchRow icon="lock" label={`Lock with ${p.lockName}`} value={p.lock} onChange={p.onLockChange} disabled={!p.lockAvailable} />
           <Row icon="download" label="Export backup" value={backupDays == null ? 'Never' : backupDays === 0 ? 'Today' : `${backupDays}d ago`} onPress={p.onExport}
             hint="Saves a backup file you can restore later" />
@@ -199,10 +199,10 @@ export function SettingsScreen(p: SettingsProps) {
         <Group title="About" footer={`Support: ${SUPPORT_EMAIL}`}>
           <Row icon="shield" label="Privacy policy" onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL, { controlsColor: C.coralInk }).catch(() => Linking.openURL(PRIVACY_URL).catch(() => {}))} hint="Opens the policy" />
           <Row icon="mail" label="Contact support" hint={`Opens Mail to ${SUPPORT_EMAIL}`}
-            onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Plumb ${version}`)}`).catch(() => notify('No mail app', `Email ${SUPPORT_EMAIL} from any device.`))} />
+            onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Tidemark ${version}`)}`).catch(() => notify('No mail app', `Email ${SUPPORT_EMAIL} from any device.`))} />
           <Row icon="info" label="Version" value={build ? `${version} (${build})` : version} last />
         </Group>
-        <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Plumb · a weight tracker that stays yours{'\n'}Targets and estimates are guidance, not medical advice.</Text>
+        <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Tidemark · read the trend, not the waves{'\n'}Targets and estimates are guidance, not medical advice.</Text>
       </ScrollView>
     </View>
     {page !== 'root' && <Pushed key={page} onBack={back} leaving={leaving} onGone={gone}>{subPage()}</Pushed>}

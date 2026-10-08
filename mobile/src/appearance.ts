@@ -4,7 +4,7 @@ import { AppearancePref, Scheme, setScheme, useScheme } from './theme';
 
 /**
  * Applies the Appearance setting. "Auto" follows iOS (including the sunset switch); Light or Dark overrides it for
- * Plumb only, and native pieces (alerts, date pickers, the keyboard, share sheets) follow because the override is
+ * Tidemark only, and native pieces (alerts, date pickers, the keyboard, share sheets) follow because the override is
  * set on the app's window too.
  */
 export function useAppearance(pref: AppearancePref): Scheme {

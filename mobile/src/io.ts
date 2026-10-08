@@ -18,7 +18,7 @@ export async function shareBackup(filename: string, text: string, kind: 'text' |
   file.write(text);
   try {
     await Sharing.shareAsync(file.uri, { mimeType, UTI: kind === 'csv' ? 'public.comma-separated-values-text' : 'public.plain-text',
-                                         dialogTitle: kind === 'csv' ? 'Plumb data (CSV)' : 'Plumb backup' });
+                                         dialogTitle: kind === 'csv' ? 'Tidemark data (CSV)' : 'Tidemark backup' });
   } finally {
     try { if (file.exists) file.delete(); } catch { /* the share target already has its copy */ }   // don't leave copies behind
   }
@@ -41,12 +41,12 @@ export async function pickBackupText(): Promise<string | null> {
   const tooBig = (n: number | null | undefined) => (n ?? 0) > MAX_BACKUP_BYTES;
   if (Platform.OS === 'web') {
     if (!asset.file) return null;
-    if (tooBig(asset.file.size)) throw new Error('That file is too big to be a Plumb backup.');
+    if (tooBig(asset.file.size)) throw new Error('That file is too big to be a Tidemark backup.');
     return asset.file.text();
   }
   const f = new File(asset.uri);
   try {
-    if (tooBig(asset.size ?? f.size)) throw new Error('That file is too big to be a Plumb backup.');
+    if (tooBig(asset.size ?? f.size)) throw new Error('That file is too big to be a Tidemark backup.');
     return await f.text();
   } finally {
     try { if (f.exists) f.delete(); } catch { /* temp copy */ }   // never leave the picked copy in the cache
