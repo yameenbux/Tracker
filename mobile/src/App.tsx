@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { lengthUnitFor } from './core/body';
+import { FEATURES } from './features';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
@@ -86,7 +87,7 @@ function Main() {
   // Reminders: skip today once it's logged, and keep the window rolling (re-run each day and on changes)
   const loggedToday = state.weights[today] != null;
   useEffect(() => { if (t.ready) applyReminder(prefs.reminder, loggedToday); }, [t.ready, prefs.reminder, loggedToday, today]);
-  const med = state.settings?.medication, doses = state.doses;
+  const med = FEATURES.medication ? state.settings?.medication : null, doses = state.doses;
   useEffect(() => { if (t.ready) applyDoseReminders(med, doses ?? {}); }, [t.ready, med, doses, today]);
   // Tapping a reminder opens the log sheet. It waits for Face ID when the lock is on, then opens straight after unlock.
   const [pendingLog, setPendingLog] = useState<number | null>(null);

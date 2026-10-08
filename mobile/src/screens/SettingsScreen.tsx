@@ -21,11 +21,12 @@ import { Tap } from '../components/Motion';
 import { HabitAmount } from '../components/HabitAmount';
 import { choose, confirm, notify } from '../dialogs';
 import { success, tap } from '../feel';
+import { FEATURES } from '../features';
+import { SUPPORT_EMAIL } from '../support';
 import { useReducedMotion } from '../motion';
 import { allowReminders, DOSE_HOUR, timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
-export const SUPPORT_EMAIL = 'yameen@ysbdesigns.uk';
 export const PRIVACY_URL = 'https://yameenbux.github.io/Tracker/privacy.html';
 
 // ---------- building blocks: iOS grouped list ----------
@@ -175,8 +176,8 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
-          <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
-            onPress={() => setPage('medication')} />
+{FEATURES.medication &&           <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
+            onPress={() => setPage('medication')} />}
           <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>

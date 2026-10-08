@@ -76,6 +76,19 @@ What each protection is, and what it isn't:
   and a development build with EAS. Planned as step 2b.
 - **iCloud sync and widgets** — also need a development build.
 
+## Before a release
+
+- **Errors:** there's no crash-reporting SDK (it would send data off the phone and break "Data Not Collected"). The
+  error screen offers "Email the error to support" with the error and app version only. For crashes, use the reports
+  Apple collects from people who opted in: App Store Connect → TestFlight / App Analytics → Crashes, or Xcode's
+  Organizer.
+- **Risky features can be switched off for a build** (`src/features.ts`): set `EXPO_PUBLIC_DISABLE_MEDICATION=1`
+  (hides the medication log and dose reminders; saved doses are kept) or `EXPO_PUBLIC_DISABLE_PROTECTED_BACKUPS=1`
+  (plain backups only) in `eas.json` under the build profile's `env`. There's no remote switch, because there's no server.
+- **Website:** `.github/workflows/pages.yml` publishes the web app, privacy policy and classic tracker on every push
+  to `main`; `site-check.yml` checks them every 6 hours and fails (GitHub emails the failure) if one is down.
+- **Logging:** app code can't call `console` (lint rule), so release builds log nothing of ours.
+
 ## Development
 
 ```bash
