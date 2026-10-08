@@ -208,15 +208,14 @@ coverage drops below the floor set in `mobile/package.json`.
 
 | Address | What it is |
 | :--- | :--- |
-| `/Tracker/` | The website: what Tidemark does, Free and Plus, support questions and the full privacy policy. Use it as the App Store **Support URL** |
-| `/Tracker/privacy.html` | The privacy policy on its own, which every app build links to. This is the page that has to stay up |
-| `/Tracker/app/` | The web build of the app: the owner's private test tool, not a product. `noindex`, and not linked from anywhere |
-| `/Tracker/classic/` | The original tracker, kept for the owner's old data. `noindex` |
+| `tidemark.ysbdesigns.uk/` | The website: what Tidemark does, Free and Plus, support questions and the full privacy policy. Use it as the App Store **Support URL** |
+| `/privacy.html` | The privacy policy on its own, which every app build links to. This is the page that has to stay up |
+| `/app/` | The web build of the app: the owner's private test tool, not a product. `noindex`, and not linked from anywhere |
+| `/classic/` | The original tracker, kept for the owner's old data. `noindex` |
 
 The web build is not offered to anyone, so the privacy policy doesn't cover it.
-It keeps its data in the browser's storage for `yameenbux.github.io`, which any
-other site published from that GitHub account can read, so use it with test
-data, not real medication records. Photos are switched off on web, because they
+It keeps its data in the browser's storage for `tidemark.ysbdesigns.uk`, which
+nothing else is served from. Photos are switched off on web, because they
 would fill the browser's storage.
 
 **Settings → Pages → Source** must be **GitHub Actions**, not a branch.
@@ -228,10 +227,13 @@ email you, if one is down. Only the deploy job can publish: the build job, which
 installs packages, gets read access only, and every action is pinned to a commit.
 
 > [!CAUTION]
-> **`WEB_BASE_URL` decides every address in the web build.** The workflow sets it
-> to `/Tracker` because Pages serves the repo from a subfolder. If the site ever
-> moves to its own domain, set it to empty in the same change, or every script
-> and icon on the live site 404s.
+> **The custom domain lives in two places.** GitHub serves the site at
+> `tidemark.ysbdesigns.uk` because of **Settings → Pages → Custom domain** and the
+> CNAME record at the domain's DNS. The workflow builds every address for that
+> domain: `WEB_BASE_URL=/app` for the test build and an empty base path for the
+> site. Change the domain and update both in the same change, or every script and
+> icon on the live site 404s. The app's privacy link (`mobile/src/support.ts`) is
+> fixed into every build, so keep `/privacy.html` working at the old address too.
 
 ### Where things live
 

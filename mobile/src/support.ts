@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 export const SUPPORT_EMAIL = 'yameen@ysbdesigns.uk';
-export const PRIVACY_URL = 'https://yameenbux.github.io/Tracker/privacy.html';
+export const PRIVACY_URL = 'https://tidemark.ysbdesigns.uk/privacy.html';
 /** Apple's standard licence agreement, which Tidemark uses as its terms of use (linked from the paywall, as Apple requires). */
 export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
