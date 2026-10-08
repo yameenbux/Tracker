@@ -33,6 +33,8 @@ describe('theme', () => {
       expect(ratio('#FFFFFF', C.primary)).toBeGreaterThanOrEqual(4.5);
       expect(ratio(C.onDone, C.done)).toBeGreaterThanOrEqual(4.5);
       expect(ratio(C.done, C.card)).toBeGreaterThanOrEqual(3);
+      expect(ratio(C.empty, C.card)).toBeGreaterThanOrEqual(1.45);   // an empty habit square stays visible
+      expect(ratio(C.done, C.empty)).toBeGreaterThanOrEqual(1.8);    // and still reads apart from a ticked one
     }
   });
 

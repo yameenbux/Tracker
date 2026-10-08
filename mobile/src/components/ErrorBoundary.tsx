@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
           ? 'Tidemark keeps stopping at the same place, so something in the saved data is probably the cause. Nothing has been deleted.'
           : 'Your data is safe. It’s saved on this phone and nothing was deleted.'}</Text>
         <Text style={s.detail} numberOfLines={3}>{this.state.error.message}</Text>
-        <Button label="Try again" kind="coral" onPress={this.retry} style={{ alignSelf: 'stretch', marginTop: 24 }} />
+        <Button label="Try again" onPress={this.retry} style={{ alignSelf: 'stretch', marginTop: 24 }} />
         <Button label="Email the error to support" kind="ghost" icon="mail" onPress={this.report} style={{ alignSelf: 'stretch', marginTop: 10 }} />
         <Text style={s.note}>Opens an email you can read first. It holds the error and app version, never your data.</Text>
         {stuck && <>

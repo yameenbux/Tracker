@@ -6,11 +6,11 @@ import { MedicationToday, MedicationTrend } from '../components/Medication';
 import { isDue, missedDose } from '../core/medication';
 import { FEATURES } from '../features';
 import { cloneElement, isValidElement, useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LengthUnit, lengthUnitFor, measureSummary, showLength } from '../core/body';
 import { estimateExpenditure } from '../core/calories';
-import { DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
-import { consistency, milestoneQuarter } from '../core/insights';
+import { addDays, DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
+import { consistency, lineWord, milestoneQuarter } from '../core/insights';
 import { direction, lineStatus, sign } from '../core/plan';
 import { milestonePlanKey } from '../core/storage';
 import { backupDue, changeTable, daysSince, recentTrend } from '../core/summary';
@@ -67,18 +67,24 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   useEffect(() => { if (legacy) t.setPrefs({ milestoneFor: planKey }); }, [legacy, planKey, t]);
   const eta = trendNow != null ? projectedGoalDate(trendNow, settings.plan.goalKg, rate) : null;
   const H = usableHabits(settings.habits, plus);   // free: the first few; the rest are kept for Plus
-  const doneToday = H.filter(h => state.habits[todayKey]?.[h.id]).length;
+  const last7 = Array.from({ length: 7 }, (_, i) => dateKey(addDays(now, -i)));
+  const fullDays = last7.filter(k => H.length > 0 && H.every(h => state.habits[k]?.[h.id])).length;
+  const someDays = last7.filter(k => H.some(h => state.habits[k]?.[h.id])).length - fullDays;
+  const weighIns7 = last7.filter(k => state.weights[k] != null).length;
+  // At the largest text sizes two tiles can't share a row without breaking words: one per row instead
+  const stack = useWindowDimensions().fontScale > 1.35;
   const avg30 = H.length ? Math.round(H.reduce((a, h) => { const c = consistency(state.habits, h.id, 30, now, settings.plan.start); return a + (c.of ? c.done / c.of : 0); }, 0) / H.length * 100) : 0;
   const waist = measureSummary(state.measurements, 'waist');
   const tdee = settings.trackCalories ? estimateExpenditure(state.intake, series) : null;
-  const status = trendNow != null ? lineStatus(settings.plan, trendNow) : null;   // same answer as the hero's "vs line"
+  const status = trendNow != null ? lineStatus(settings.plan, trendNow) : null;   // same answer as the hero's "vs plan"
   const week = changeTable(series, now, [7])[0].change;
+  const d = sign(direction(settings.plan));
+  const word = status ? lineWord(status, d) : null;
   // On a dose day the card goes straight under the hero; otherwise it sits with the other daily items
   // On a dose day, or when a dose looks missed, the card goes straight under the hero; otherwise it sits lower.
   // It stays put once taken, so Undo doesn't jump away.
   const med = FEATURES.medication && plus ? settings.medication : null, doseLog = state.doses ?? {};
   const doseToday = !!med && (isDue(med, doseLog, now) || !!doseLog[props.today] || !!missedDose(med, doseLog, now));
-  const d = sign(direction(settings.plan));
 
   return (
     <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={() => openSettings()} scrollTop={scrollTop}>
@@ -88,39 +94,42 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
       {quarter > celebrated && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter, milestoneFor: planKey })} />
       )}
-      <View style={s.tiles}>
-        <Tile icon="trend" label="This week" onPress={() => go('trend')}
-          value={week != null ? showChange(week, unit) : '—'}
+      <View style={[s.tiles, stack && s.tilesStacked]}>
+        <Tile icon="trend" label="This week" onPress={() => go('trend')} wide={stack}
+          value={week != null ? showChange(week, unit, 1) : '—'}
           valueColor={week == null || d === 0 ? C.ink : week * d > 0.05 ? C.mintInk : week * d < -0.05 ? C.coralInk : C.ink}
           sub={week != null ? 'trend change, 7 days' : 'Needs a week of weigh-ins'}
           spark={recentTrend(series, 30)}
-          a11y={week != null ? `Trend changed ${showChange(week, unit)} in the last 7 days` : 'Weekly change, needs a week of weigh-ins'} />
-        <Tile icon="target" label="Pace" onPress={() => go('trend')}
-          value={rate ? showChange(rate.perWeek, unit, 2) : '—'}
+          a11y={week != null ? `Trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'Weekly change, needs a week of weigh-ins'} />
+        <Tile icon="target" label="Pace" onPress={() => go('trend')} wide={stack}
+          value={rate ? showChange(rate.perWeek, unit, 1) : '—'}
           valueColor={rate ? (d === 0 ? C.ink : rate.perWeek * d > 0.05 ? C.mintInk : rate.perWeek * d < -0.05 ? C.coralInk : C.ink) : C.inkSoft}
-          sub={rate ? (eta ? `a week · goal around ${shortDate(parseKey(eta))}` : 'a week') : 'Needs 4 weigh-ins over 10 days'}
-          a11y={(rate ? `Pace ${showChange(rate.perWeek, unit, 2)} a week${eta ? ', goal around ' + longDate(eta) : ''}` : 'Pace, needs 4 weigh-ins over 10 days')
-            + (status && !status.onLine && !status.ahead ? `, ${showAmount(status.off, unit)} ${d === 0 ? 'off your weight' : 'behind the line'}` : status && rate ? ', on the line' : '')}>
-          {status && !status.onLine && !status.ahead ? <Text style={s.tileNote}>{showAmount(status.off, unit)} {d === 0 ? 'off your weight' : 'behind the line'}</Text>
-            : status && rate ? <Text style={[s.tileNote, { color: C.mintInk }]}>{status.ahead ? 'Ahead of the line' : 'On the line'}</Text> : null}
+          sub={rate ? (eta ? `a week · at this pace: goal ${shortDate(parseKey(eta))}` : 'a week') : 'Needs 4 weigh-ins over 10 days'}
+          a11y={(rate ? `Pace ${showChange(rate.perWeek, unit, 1)} a week${eta ? ', at this pace the goal is around ' + longDate(eta) : ''}` : 'Pace, needs 4 weigh-ins over 10 days')
+            + (status && rate && word ? `, ${word}${status.onLine ? '' : ' by ' + showAmount(status.off, unit)}` : '')}>
+          {/* Same words as the hero: On track / Ahead / Behind (or Off, when holding) */}
+          {status && rate && word ? <Text style={[s.tileNote, (status.onLine || status.ahead) && { color: C.mintInk }]}>{word}{status.onLine ? '' : ` by ${showAmount(status.off, unit)}`}</Text> : null}
         </Tile>
       </View>
-      <View style={s.tiles}>
-        <Tile icon="habits" label="Habits" onPress={() => go('habits')}
-          value={H.length ? `${doneToday} of ${H.length}` : 'Add habits'}
-          sub={H.length ? `today · ${avg30}% over 30 days` : 'Small daily ticks, no streaks'}
-          a11y={H.length ? `Habits: ${doneToday} of ${H.length} done today, ${avg30} percent over 30 days` : 'Habits, none set up'}>
-          {H.length ? <WeekDots log={state.habits} ids={H.map(h => h.id)} /> : null}
+      <View style={[s.tiles, stack && s.tilesStacked]}>
+        {/* Consistency, not today's ticks (the chips below already show those) */}
+        <Tile icon="habits" label="Habits" onPress={() => go('habits')} wide={stack}
+          value={H.length ? `${avg30}%` : 'Add habits'}
+          sub={H.length ? 'consistency, last 30 days' : 'Small daily ticks, no streaks'}
+          a11y={H.length ? `Habits: ${avg30} percent over the last 30 days. Last 7 days: all done on ${fullDays} ${fullDays === 1 ? 'day' : 'days'}, some on ${someDays}` : 'Habits, none set up'}>
+          {H.length ? <><WeekDots log={state.habits} ids={H.map(h => h.id)} /><Text style={s.dotsCap} maxFontSizeMultiplier={1.4}>last 7 days</Text></> : null}
         </Tile>
         {settings.trackCalories && plus ? (
-          <Tile icon="flame" label="Calories" onPress={() => go('body')}
+          <Tile icon="flame" label="Calories" onPress={() => go('body')} wide={stack}
             value={tdee ? `${tdee.tdee.toLocaleString()} kcal` : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log today'}
             sub={tdee ? 'you really burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'One number a day'}
             a11y={tdee ? `Estimated burn ${tdee.tdee} kcal a day` : 'Calories'} />
         ) : (
-          !plus ? <Tile icon="ruler" label="Body" onPress={() => go('body')} value="Plus" sub="Measurements, photos and calories"
-            a11y="Body measurements, part of Tidemark Plus" /> :
-          <Tile icon="ruler" label="Body" onPress={() => go('body')}
+          // Free: a real number about their own data, not an advert in data's clothing
+          !plus ? <Tile icon="scale" label="Weigh-ins" onPress={() => go('trend')} wide={stack}
+            value={`${weighIns7} of 7`} sub="days weighed, last 7 days"
+            a11y={`Weigh-ins: ${weighIns7} of the last 7 days`} /> :
+          <Tile icon="ruler" label="Body" onPress={() => go('body')} wide={stack}
             value={waist && waist.first.k !== waist.latest.k ? lengthChange(waist.change, lu) : waist ? showLength(waist.latest.cm, lu) : 'Measure'}
             sub={waist && waist.first.k !== waist.latest.k ? `waist since ${shortDate(parseKey(waist.first.k))} · now ${showLength(waist.latest.cm, lu)}`
               : waist ? 'waist · measure again in a few weeks' : 'Waist and photos show what the scale can’t'}
@@ -203,7 +212,7 @@ export function TodayNotices({ part = 'urgent', t, lockLost, onLockLostDismiss, 
   const urgent = t.recovered || !!pendingPlan || lockLost || t.saveFailed;
   const showBackup = part === 'nudge' && !urgent && !backupHidden && backupDue(prefs.lastBackup, Object.keys(state.weights).length);
   if (part === 'nudge') return showBackup ? <Notice icon="download" title={lastBackupDays == null ? 'Make your first backup' : `Last backup ${lastBackupDays} days ago`}
-    body="Your data lives only on this phone. A backup file in iCloud Drive or Files means a lost phone isn’t lost data."
+    body="Your data lives only on this phone. A backup file kept somewhere safe off this phone means a lost phone isn’t lost data."
     action="Back up now" onAction={onExport} onDismiss={onBackupHide} /> : null;
   return (
     <>
@@ -231,7 +240,7 @@ export function TodayNotices({ part = 'urgent', t, lockLost, onLockLostDismiss, 
       )}
       {showBackup && (
         <Notice icon="download" title={lastBackupDays == null ? 'Make your first backup' : `Last backup ${lastBackupDays} days ago`}
-          body="Your data lives only on this phone. A backup file in iCloud Drive or Files means a lost phone isn’t lost data."
+          body="Your data lives only on this phone. A backup file kept somewhere safe off this phone means a lost phone isn’t lost data."
           action="Back up now" onAction={onExport} onDismiss={onBackupHide} />
       )}
     </>
@@ -240,5 +249,7 @@ export function TodayNotices({ part = 'urgent', t, lockLost, onLockLostDismiss, 
 
 const s = themed(() => StyleSheet.create({
   tiles: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  tilesStacked: { flexDirection: 'column' },
+  dotsCap: { fontFamily: F.body, fontSize: 11.5, color: C.inkSoft, marginTop: 5 },
   tileNote: { fontFamily: F.bodySemi, fontSize: 13, color: C.warnInk },
 }));

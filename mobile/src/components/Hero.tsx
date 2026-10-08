@@ -2,7 +2,8 @@ import { memo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
-import { direction, latestWeight, lineStatus, sign } from '../core/plan';
+import { FIRST_DAYS, firstDaysText, lineWord } from '../core/insights';
+import { direction, latestWeight, lineStatus, sign, weightSeries } from '../core/plan';
 import type { TrendPoint } from '../core/trend';
 import { fmt, lbPart, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
@@ -36,9 +37,14 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
     const asKg = (primary ? unit === 'kg' : unit !== 'kg');
     return asKg ? fmt(Math.abs(kg)) + ' kg' : Math.abs(toLbNum(kg)).toFixed(1) + ' lb';
   };
+  const second = unit !== 'kg';                 // a kg line under pounds can help; a pounds line under kg is noise
   const status = last ? lineStatus(plan, last.trend) : null;
+  const word = status ? lineWord(status, d) : null;
   const short = (kg: number) => showWeight(kg, unit).replace(' kg', '');
   const today = lw?.k === dateKey(new Date());
+  // Until there are a few weigh-ins there's nothing to judge yet: say what's next instead of a verdict
+  const count = trend?.length ?? weightSeries(plan, weights).length;
+  const early = count < FIRST_DAYS;
 
   return (
     <LinearGradient colors={[C.heroA, C.heroB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
@@ -70,28 +76,40 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
       <View style={s.pillRow}>
         {dir === 'maintain'
           ? <Text style={s.pillTxt}>Holding · <Text style={s.peachB}>{showWeight(plan.goalKg, unit)}</Text> until <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>
-          : <Text style={s.pillTxt}>Plan ends <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>}
+          : <Text style={s.pillTxt}>Plan: goal by <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>}
       </View>
 
+      {early ? (
+        <View style={s.first} accessible accessibilityLabel={`${count} of ${FIRST_DAYS} weigh-ins. ${firstDaysText(count)}`}>
+          <View style={s.firstHead}>
+            <Text style={s.chipK} maxFontSizeMultiplier={1.3}>First days</Text>
+            <View style={s.firstDots}>
+              {Array.from({ length: FIRST_DAYS }, (_, i) => <View key={i} style={[s.firstDot, i < count && s.firstDotOn]} />)}
+            </View>
+          </View>
+          <Text style={s.firstTxt} maxFontSizeMultiplier={1.5}>{firstDaysText(count)}</Text>
+        </View>
+      ) : (
       <View style={s.chips}>
         <View style={s.chip} accessible accessibilityLabel={`${changeLabel} ${kgOrLb(change, true)}`}>
           <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{changeLabel}</Text>
           <Text style={[s.chipV, changeTone === 'good' && s.good, changeTone === 'over' && s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{kgOrLb(change, true)}</Text>
-          <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(change, false)}</Text>
+          {second && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(change, false)}</Text>}
         </View>
         <View style={s.chip} accessible accessibilityLabel={`${d === 0 ? 'From goal' : 'To goal'} ${kgOrLb(togo, true)}`}>
           <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{d === 0 ? 'From goal' : 'To goal'}</Text>
           <Text style={s.chipV} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{kgOrLb(togo, true)}</Text>
-          <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(togo, false)}</Text>
+          {second && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(togo, false)}</Text>}
         </View>
-        <View style={s.chip} accessible accessibilityLabel={!status ? 'Versus the line: no weigh-in yet' : status.onLine ? 'On the line' : `${kgOrLb(status.off, true)} ${status.ahead ? 'ahead of' : 'behind'} the line`}>
-          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{!status || status.onLine ? 'vs line' : status.ahead ? 'Ahead' : 'Behind'}</Text>
+        <View style={s.chip} accessible accessibilityLabel={!status || !word ? 'Versus the plan: no weigh-in yet' : status.onLine ? word : `${word} by ${kgOrLb(status.off, true)}`}>
+          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{d === 0 ? 'vs goal' : 'vs plan'}</Text>
           <Text style={[s.chipV, !status ? null : status.onLine || status.ahead ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
-            {!status ? '—' : status.onLine ? 'On it' : kgOrLb(status.off, true)}
+            {word ?? '—'}
           </Text>
-          {status && !status.onLine && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>of the line</Text>}
+          {status && !status.onLine && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>by {kgOrLb(status.off, true)}</Text>}
         </View>
       </View>
+      )}
     </LinearGradient>
   );
 });
@@ -118,6 +136,12 @@ const s = themed(() => StyleSheet.create({
   chipK: { fontFamily: F.body, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: 5 },
   chipV: { fontFamily: F.displaySemi, fontSize: 17, color: '#fff' },
   chipV2: { fontFamily: F.displaySemi, fontSize: 12, color: 'rgba(255,255,255,0.68)', marginTop: 3 },
+  first: { marginTop: 20, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: 12 },
+  firstHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  firstDots: { flexDirection: 'row', gap: 5, marginBottom: 5 },
+  firstDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.22)' },
+  firstDotOn: { backgroundColor: '#fff' },
+  firstTxt: { fontFamily: F.body, fontSize: 14, color: 'rgba(255,255,255,0.88)', lineHeight: 19 },
   good: { color: C.heroGood },
   over: { color: C.heroOver },
 }));

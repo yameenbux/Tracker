@@ -115,7 +115,9 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
         {H.map(h => (
           <View key={h.id} style={s.icCol} accessible accessibilityLabel={h.name}>
             <Icon name={habitIcon(h.icon, h.name)} size={18} color={C.plum2} />
-            <Text style={s.icSmall}>{h.short.toUpperCase()}</Text>
+            {/* The column is as wide as a checkbox: the short name stays at its set size (the column reads the full name to VoiceOver) */}
+            <Text style={s.icSmall} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={1}
+              importantForAccessibility="no" accessibilityElementsHidden>{h.short.toUpperCase()}</Text>
           </View>
         ))}
       </View>
@@ -182,7 +184,7 @@ const s = themed(() => StyleSheet.create({
   cap: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, paddingHorizontal: 4, marginTop: -4, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 },
   icCol: { width: 30, alignItems: 'center' },
-  icSmall: { fontFamily: F.bodyBold, fontSize: 10, color: C.inkSoft, marginTop: 3 },
+  icSmall: { fontFamily: F.bodyBold, fontSize: 9, color: C.inkSoft, marginTop: 3, width: 40, textAlign: 'center' },   // may spill into the 8pt gap, never into the next label
   dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line },
   today: { backgroundColor: C.todayBg, borderLeftWidth: 3, borderLeftColor: C.coral, borderRadius: 10, borderBottomColor: 'transparent' },   // rounded highlight; plain rows keep straight dividers
   dayTxt: { fontFamily: F.displaySemi, fontSize: 14, color: C.ink },
