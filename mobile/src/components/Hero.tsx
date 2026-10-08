@@ -85,10 +85,11 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
           <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(togo, false)}</Text>
         </View>
         <View style={s.chip} accessible accessibilityLabel={!status ? 'Versus the line: no weigh-in yet' : status.onLine ? 'On the line' : `${kgOrLb(status.off, true)} ${status.ahead ? 'ahead of' : 'behind'} the line`}>
-          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>vs line</Text>
-          <Text style={[s.chipV, { fontSize: 15 }, !status ? null : status.onLine || status.ahead ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
-            {!status ? '—' : status.onLine ? 'On the line' : (status.ahead ? 'Ahead ' : 'Behind ') + kgOrLb(status.off, true)}
+          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{!status || status.onLine ? 'vs line' : status.ahead ? 'Ahead' : 'Behind'}</Text>
+          <Text style={[s.chipV, !status ? null : status.onLine || status.ahead ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
+            {!status ? '—' : status.onLine ? 'On it' : kgOrLb(status.off, true)}
           </Text>
+          {status && !status.onLine && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>of the line</Text>}
         </View>
       </View>
     </LinearGradient>
