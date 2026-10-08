@@ -6,9 +6,10 @@ import { direction, latestWeight, sign, targetAt } from '../core/plan';
 import { fmt, lbPart, showWeight, stPart, toLbNum, toStLb } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
 import { useAnimatedNumber, useAnimatedPercent } from '../motion';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 
 export const Hero = memo(function Hero({ settings, weights, unit }: { settings: Settings; weights: Weights; unit: Unit; today?: string }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const plan = settings.plan;
   const lw = latestWeight(plan, weights);
   const cur = lw ? lw.kg : plan.startKg;
@@ -36,7 +37,7 @@ export const Hero = memo(function Hero({ settings, weights, unit }: { settings: 
 
 
   return (
-    <LinearGradient colors={[C.plum1, C.plum2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
+    <LinearGradient colors={[C.heroA, C.heroB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
       <Text style={s.label}>Current weight</Text>
       <View style={s.current} accessible accessibilityLabel={(lw ? 'Current weight ' : 'Starting weight ') + showWeight(cur, unit)}>
         {unit === 'kg' || unit === 'lb'
@@ -88,7 +89,7 @@ export const Hero = memo(function Hero({ settings, weights, unit }: { settings: 
   );
 });
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   hero: { borderRadius: 22, paddingTop: 24, paddingHorizontal: 22, paddingBottom: 20, marginBottom: 16 },
   label: { fontFamily: F.bodySemi, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' },
   current: { flexDirection: 'row', alignItems: 'baseline', gap: 7, marginTop: 6, flexWrap: 'wrap' },
@@ -113,4 +114,4 @@ const s = StyleSheet.create({
   chipV2: { fontFamily: F.displaySemi, fontSize: 12, color: 'rgba(255,255,255,0.68)', marginTop: 3 },
   good: { color: C.heroGood },
   over: { color: C.heroOver },
-});
+}));

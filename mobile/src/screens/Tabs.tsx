@@ -21,7 +21,7 @@ import { Notice, SectionLabel, Tab, TabScreen } from '../components/Shell';
 import { TrendCard } from '../components/TrendCard';
 import { success } from '../feel';
 import type { Tracker } from '../store';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 
 /** What every tab needs: the data, the derived trend, and ways to move around. */
 export interface TabProps {
@@ -198,7 +198,7 @@ export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onB
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   tiles: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   tileNote: { fontFamily: F.bodySemi, fontSize: 13, color: C.warnInk },
-});
+}));

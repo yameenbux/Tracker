@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.yameenbux.plumb",
@@ -99,7 +99,11 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 112,
           "resizeMode": "contain",
-          "backgroundColor": "#FBF7F3"
+          "backgroundColor": "#FBF7F3",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#121019"
+          }
         }
       ],
       "expo-web-browser",

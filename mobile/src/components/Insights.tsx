@@ -9,7 +9,7 @@ import type { TrendPoint } from '../core/trend';
 import { showChange } from '../core/units';
 import type { HabitLog, Settings, Unit } from '../core/types';
 import { tick } from '../feel';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { Icon, IconName } from './Icons';
 import { Card } from './ui';
 
@@ -70,6 +70,7 @@ export function WeekDots({ log, ids, today = new Date() }: { log: HabitLog; ids:
 
 /** Trend change over 3, 7, 14 and 30 days (Bevel-style table). */
 export const ChangeTable = memo(function ChangeTable({ series, unit, d = -1 }: { series: TrendPoint[]; unit: Unit; today?: string; d?: -1 | 0 | 1 }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const rows = changeTable(series);
   return (
     <Card title="Trend change">
@@ -93,6 +94,7 @@ export const ChangeTable = memo(function ChangeTable({ series, unit, d = -1 }: {
 
 /** 30-day dot grid per habit (MacroFactor-style), with the consistency figure beside it. */
 export const HabitGrids = memo(function HabitGrids({ settings, habits }: { settings: Settings; habits: HabitLog; today?: string }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   if (!settings.habits.length) return null;
   return (
     <Card title="Last 30 days">
@@ -133,8 +135,8 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
             <Pressable key={h.id} onPress={() => { tick(); onChange(toggleHabit(habits, key, h.id)); }} style={[s.chip, on && s.chipOn]}
               accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={h.name}>
               <Text style={s.chipIcon}>{h.icon}</Text>
-              <Text style={[s.chipTxt, on && { color: C.ink }]} numberOfLines={1}>{h.name}</Text>
-              {on && <Icon name="check" size={16} color={C.ink} strokeWidth={2.6} />}
+              <Text style={[s.chipTxt, on && { color: C.onCoral }]} numberOfLines={1}>{h.name}</Text>
+              {on && <Icon name="check" size={16} color={C.onCoral} strokeWidth={2.6} />}
             </Pressable>
           );
         })}
@@ -152,7 +154,7 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   tile: { flex: 1, minHeight: 150, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 },
   tileHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tileLabel: { flex: 1, fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
@@ -160,7 +162,7 @@ const s = StyleSheet.create({
   tileSub: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 2, lineHeight: 17 },
   dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.chip },
   dotOn: { backgroundColor: C.coralInk },
-  dotSome: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.coralInk },
+  dotSome: { backgroundColor: C.raised, borderWidth: 2, borderColor: C.coralInk },
   table: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
   cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
   cellK: { fontFamily: F.bodySemi, fontSize: 11, color: C.inkSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
@@ -182,4 +184,4 @@ const s = StyleSheet.create({
   sess: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginHorizontal: 2, padding: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },
   sessK: { fontFamily: F.bodySemi, fontSize: 11, color: C.plum2, textTransform: 'uppercase', letterSpacing: 0.8 },
   sessV: { fontFamily: F.displaySemi, fontSize: 15, color: C.ink, marginTop: 2 },
-});
+}));

@@ -10,7 +10,7 @@ import { useLock } from '../useLock';
 const settings = defaultSettings({ start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: buildTargets(90, 80, '2026-01-05', '2026-06-01') });
 const props = (over: Partial<SettingsProps> = {}): SettingsProps => ({
   settings, unit: 'kg', setUnit: jest.fn(), lock: false, lockAvailable: true, lockName: 'Face ID', onLockChange: jest.fn(),
-  reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), lastBackup: null, weighIns: 3, weights: {}, onPlanLeftUnsaved: jest.fn(),
+  reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), appearance: 'system', onAppearanceChange: jest.fn(), lastBackup: null, weighIns: 3, weights: {}, onPlanLeftUnsaved: jest.fn(),
   onSave: jest.fn(), onClose: jest.fn(), onExport: jest.fn(), onExportCsv: jest.fn(), onRestore: jest.fn(), onReset: jest.fn(), onEraseAll: jest.fn(), ...over,
 });
 
@@ -96,5 +96,14 @@ describe('lock', () => {
     await waitFor(() => expect(result.current.lockLost).toBe(true));
     expect(setPrefs).toHaveBeenCalledWith({ lock: false });
     await act(async () => {});
+  });
+});
+
+describe('appearance', () => {
+  test('the Appearance control reports the choice', () => {
+    const p = props();
+    render(<SettingsScreen {...p} />);
+    fireEvent.press(screen.getByLabelText('Dark'));
+    expect(p.onAppearanceChange).toHaveBeenCalledWith('dark');
   });
 });

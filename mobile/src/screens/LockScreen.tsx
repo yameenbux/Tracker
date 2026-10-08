@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { PlumbIcon } from '../components/Logo';
 import { Button } from '../components/ui';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 
 /**
  * Calm, single-action lock screen (modelled on Apple Photos' hidden album).
@@ -20,8 +20,8 @@ export function LockScreen({ lockName, onUnlock, cover }: { lockName: string; on
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 40 },
   title: { fontFamily: F.display, fontSize: 24, color: C.ink, marginTop: 16, textAlign: 'center' },
   sub: { fontFamily: F.body, fontSize: 15, color: C.inkSoft, marginTop: 6, textAlign: 'center' },
-});
+}));

@@ -1,7 +1,7 @@
 import * as SplashScreen from 'expo-splash-screen';
 import { Component, ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 import { Button } from './ui';
 
 /**
@@ -25,9 +25,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
   }
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 32 },
   title: { fontFamily: F.display, fontSize: 24, color: C.ink, textAlign: 'center' },
   body: { fontFamily: F.body, fontSize: 15, color: C.inkSoft, marginTop: 8, textAlign: 'center', lineHeight: 21 },
   detail: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, marginTop: 16, textAlign: 'center', opacity: 0.7 },
-});
+}));

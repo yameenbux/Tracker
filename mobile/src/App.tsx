@@ -25,7 +25,8 @@ import { Onboarding } from './screens/Onboarding';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { BodyTab, HabitsTab, TabProps, TodayNotices, TodayTab, TrendTab } from './screens/Tabs';
 import { Reminder, useTracker } from './store';
-import { C } from './theme';
+import { useAppearance } from './appearance';
+import { C, themed, useScheme } from './theme';
 import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
 
@@ -52,6 +53,7 @@ function Main() {
   const t = useTracker();
   const { state, prefs } = t;
   const today = useToday();
+  useAppearance(prefs.appearance);
   const [tab, setTab] = useState<Tab>('today');
   const [scrollTop, setScrollTop] = useState<Record<Tab, number>>({ today: 0, trend: 0, habits: 0, body: 0 });   // per tab
   const [pendingPlan, setPendingPlan] = useState<Settings['plan'] | null>(null);   // plan edits left unsaved
@@ -170,6 +172,7 @@ function Main() {
             <SettingsScreen settings={settings} unit={state.unit} setUnit={t.setUnit}
               lock={prefs.lock} lockAvailable={lock.lockAvailable} lockName={lock.lockName} onLockChange={on => lock.setLock(on, lock.lockName)}
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
+              appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               onSave={t.setSettings} onClose={closeSettings}
               onExport={data.exportData} onExportCsv={data.exportCsv} onRestore={data.restore} onReset={data.reset}
@@ -191,9 +194,10 @@ export default function App() {
     HankenGrotesk_400Regular, HankenGrotesk_500Medium, HankenGrotesk_600SemiBold, HankenGrotesk_700Bold,
   });
   useEffect(() => { if (fontError) SplashScreen.hideAsync().catch(() => {}); }, [fontError]);
+  const scheme = useScheme();                    // the whole tree repaints when the appearance changes
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       <ErrorBoundary>
         {/* If the fonts fail to load, carry on with the system font rather than a blank screen */}
         {fontsLoaded || fontError ? <Main /> : <View style={s.fill} />}
@@ -202,8 +206,8 @@ export default function App() {
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   fill: { flex: 1, backgroundColor: C.bg },
   // Native: keep hidden tabs laid out (scroll positions survive). Web preview: take them out of the page entirely.
   hidden: Platform.OS === 'web' ? { display: 'none' } : { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 0 },
-});
+}));

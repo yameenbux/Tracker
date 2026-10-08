@@ -11,7 +11,7 @@ import { ProgressChart } from '../components/ProgressChart';
 import { Icon, IconName } from '../components/Icons';
 import { PlumbIcon } from '../components/Logo';
 import { Button } from '../components/ui';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 
 type Step = 'welcome' | 'current' | 'goal' | 'pace' | 'plan' | 'lock';
 
@@ -242,7 +242,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 44 },
   backBtn: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
@@ -262,9 +262,9 @@ const s = StyleSheet.create({
   bigUnit: { fontFamily: F.bodySemi, fontSize: 18, color: C.inkSoft, marginLeft: 4 },
   note: { fontFamily: F.body, fontSize: 14.5, color: C.plum2, textAlign: 'center', lineHeight: 20, marginTop: 4, paddingHorizontal: 12 },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, textAlign: 'center', marginBottom: 10, lineHeight: 19 },
-  warn: { fontFamily: F.body, fontSize: 13, color: C.warnInk, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 12, padding: 12, lineHeight: 19, marginTop: 4 },
+  warn: { fontFamily: F.body, fontSize: 13, color: C.warnInk, backgroundColor: C.warnBg, borderWidth: 1, borderColor: C.warnLine, borderRadius: 12, padding: 12, lineHeight: 19, marginTop: 4 },
   pace: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.line, borderRadius: 16, padding: 16, marginTop: 10 },
-  paceOn: { borderColor: C.plum2, backgroundColor: '#F7F3FB' },
+  paceOn: { borderColor: C.plum2, backgroundColor: C.paceOn },
   paceName: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
   paceMeta: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 3 },
   rec: { backgroundColor: C.mintBg, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
@@ -280,10 +280,10 @@ const s = StyleSheet.create({
   whyBox: { marginTop: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 },
   whyBody: { fontFamily: F.body, fontSize: 14, color: C.ink, lineHeight: 20 },
   lockBadge: { width: 72, height: 72, borderRadius: 20, backgroundColor: C.panel, alignItems: 'center', justifyContent: 'center' },
-  notice: { flexDirection: 'row', gap: 10, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 14, padding: 14, marginBottom: 14 },
+  notice: { flexDirection: 'row', gap: 10, backgroundColor: C.warnBg, borderWidth: 1, borderColor: C.warnLine, borderRadius: 14, padding: 14, marginBottom: 14 },
   noticeTxt: { flex: 1, fontFamily: F.body, fontSize: 14, color: C.warnInk, lineHeight: 20 },
   linkBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
   footer: { paddingTop: 8 },
   secondary: { paddingVertical: 14, alignItems: 'center' },
   secondaryTxt: { fontFamily: F.bodyBold, fontSize: 14.5, color: C.ink },
-});
+}));

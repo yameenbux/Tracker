@@ -8,7 +8,7 @@ import { tick } from '../feel';
 import { Icon } from './Icons';
 import { Sheet } from './Sheet';
 import type { Settings, Unit, Weights } from '../core/types';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 import { DateInput, WeightInput } from './Fields';
 import { Button, Card, Pill } from './ui';
 
@@ -126,7 +126,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   race: { borderRadius: 18, padding: 18, marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
   raceLabel: { fontFamily: F.bodyBold, fontSize: 11.5, letterSpacing: 1.6, textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)' },
   raceName: { fontFamily: F.display, fontSize: 20, color: '#fff', marginTop: 3 },
@@ -148,4 +148,4 @@ const s = StyleSheet.create({
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 },
   dateLabel: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   hint: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, marginTop: 10, lineHeight: 19, textAlign: 'center' },
-});
+}));

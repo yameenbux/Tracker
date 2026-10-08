@@ -45,9 +45,7 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
 
 - **Apple Health sync** — Expo Go can't use HealthKit. Needs the Apple Developer Program (£79/year)
   and a development build with EAS. Planned as step 2b.
-- **Dark mode** — the app is light-only by choice for now (`userInterfaceStyle: "light"`); the icon has dark and tinted variants.
 - **iCloud sync and widgets** — also need a development build.
-- Weight gain / maintenance goals.
 
 ## Development
 
