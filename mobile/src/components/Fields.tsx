@@ -4,6 +4,7 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, TextStyle, View } fro
 import { dateKey, parseKey, validKey } from '../core/dates';
 import { fmt, lbPart, parseWeightInput, stPart } from '../core/units';
 import type { Unit } from '../core/types';
+import { DONE_ID } from './KeyboardDone';
 import { C, F } from '../theme';
 
 /** kg / st-lb toggle */
@@ -60,7 +61,7 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
     return (
       <View style={s.wRow}>
         <TextInput style={[...box, w(84, 66, 132)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
-          maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} keyboardType="decimal-pad"
+          maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="decimal-pad"
           placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' in kilograms'} />
         <Text style={s.unit}>kg</Text>
       </View>
@@ -69,11 +70,11 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
   return (
     <View style={s.wRow}>
       <TextInput style={[...box, w(52, 40, 64)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
-        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} keyboardType="number-pad"
+        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="number-pad"
         placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' stone'} />
       <Text style={s.unit}>st</Text>
       <TextInput style={[...box, w(64, 52, 84)]} value={txt[1]} onChangeText={v => edit(1, v)}
-        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} keyboardType="decimal-pad"
+        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="decimal-pad"
         placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' pounds'} />
       <Text style={s.unit}>lb</Text>
     </View>
@@ -112,7 +113,7 @@ export function Field({ label, children }: { label: string; children: React.Reac
 }
 
 export const fieldStyles = StyleSheet.create({
-  fIn: { fontFamily: F.body, fontSize: 16, color: C.ink, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.line,
+  fIn: { fontFamily: F.body, fontSize: 16, color: C.ink, backgroundColor: C.bg, borderWidth: 1, borderColor: C.control,
          borderRadius: 10, minHeight: 44, paddingVertical: 9, paddingHorizontal: 10 },
 });
 
@@ -123,7 +124,7 @@ const s = StyleSheet.create({
   segTxt: { fontFamily: F.bodySemi, fontSize: 12.5, color: C.inkSoft },
   segTxtOn: { color: '#fff' },
   wRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  wIn: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.line,
+  wIn: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink, backgroundColor: C.bg, borderWidth: 1, borderColor: C.control,
          borderRadius: 10, minHeight: 44, paddingVertical: 8, paddingHorizontal: 8, textAlign: 'right' },
   wInSmall: { fontSize: 15, paddingVertical: 5, borderRadius: 8 },
   wInBig: { fontFamily: F.display, fontSize: 30, minHeight: 60, borderRadius: 14, textAlign: 'center', paddingHorizontal: 6 },

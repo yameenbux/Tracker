@@ -14,7 +14,7 @@ import { Icon, IconName } from './Icons';
 import { Card } from './ui';
 
 /** Tiny trend line for a tile. Scales to its own min/max so small changes are visible. */
-export function Sparkline({ points, width = 120, height = 34, color = C.coral }: { points: TrendPoint[]; width?: number; height?: number; color?: string }) {
+export function Sparkline({ points, width = 120, height = 34, color = C.graphCoral }: { points: TrendPoint[]; width?: number; height?: number; color?: string }) {
   if (points.length < 2) return <View style={{ height }} />;
   const t0 = points[0].d.getTime(), t1 = points[points.length - 1].d.getTime();
   const vals = points.map(p => p.trend);
@@ -69,7 +69,7 @@ export function WeekDots({ log, ids, today = new Date() }: { log: HabitLog; ids:
 }
 
 /** Trend change over 3, 7, 14 and 30 days (Bevel-style table). */
-export const ChangeTable = memo(function ChangeTable({ series, unit }: { series: TrendPoint[]; unit: Unit }) {
+export const ChangeTable = memo(function ChangeTable({ series, unit }: { series: TrendPoint[]; unit: Unit; today?: string }) {
   const rows = changeTable(series);
   return (
     <Card title="Trend change">
@@ -91,7 +91,7 @@ export const ChangeTable = memo(function ChangeTable({ series, unit }: { series:
 });
 
 /** 30-day dot grid per habit (MacroFactor-style), with the consistency figure beside it. */
-export const HabitGrids = memo(function HabitGrids({ settings, habits }: { settings: Settings; habits: HabitLog }) {
+export const HabitGrids = memo(function HabitGrids({ settings, habits }: { settings: Settings; habits: HabitLog; today?: string }) {
   if (!settings.habits.length) return null;
   return (
     <Card title="Last 30 days">
@@ -158,8 +158,8 @@ const s = StyleSheet.create({
   tileValue: { fontFamily: F.display, fontSize: 24, color: C.ink, marginTop: 10, letterSpacing: -0.3 },
   tileSub: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 2, lineHeight: 17 },
   dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.chip },
-  dotOn: { backgroundColor: C.coral },
-  dotSome: { backgroundColor: '#FFC2B9' },
+  dotOn: { backgroundColor: C.coralInk },
+  dotSome: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.coralInk },
   table: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
   cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
   cellK: { fontFamily: F.bodySemi, fontSize: 11, color: C.inkSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
@@ -171,11 +171,11 @@ const s = StyleSheet.create({
   gridPct: { fontFamily: F.display, fontSize: 14, color: C.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
   cellDot: { width: '8.4%', aspectRatio: 1, borderRadius: 5, backgroundColor: C.chip },
-  cellOn: { backgroundColor: C.coral },
+  cellOn: { backgroundColor: C.coralInk },
   cellOff: { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.line, borderStyle: 'dashed' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 2 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.line },
-  chipOn: { backgroundColor: C.coral, borderColor: C.coral },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.control },
+  chipOn: { backgroundColor: C.coral, borderColor: C.coralInk },
   chipIcon: { fontSize: 16 },
   chipTxt: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink, maxWidth: 150 },
   sess: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginHorizontal: 2, padding: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },

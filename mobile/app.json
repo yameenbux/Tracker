@@ -51,6 +51,12 @@
             ]
           }
         ]
+      },
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {
@@ -91,9 +97,9 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "imageWidth": 180,
+          "imageWidth": 112,
           "resizeMode": "contain",
-          "backgroundColor": "#2A1E45"
+          "backgroundColor": "#FBF7F3"
         }
       ],
       "expo-web-browser",

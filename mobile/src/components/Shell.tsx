@@ -102,7 +102,7 @@ export function Toast({ message, action, onAction, onHide }: { message: string; 
       accessibilityLiveRegion="polite" accessibilityRole="alert">
       <Text style={s.toastTxt}>{message}</Text>
       {action && onAction && (
-        <Pressable onPress={() => { onAction(); onHide(); }} hitSlop={10} accessibilityRole="button" accessibilityLabel={action}>
+        <Pressable onPress={() => { onAction(); onHide(); }} style={s.toastBtn} accessibilityRole="button" accessibilityLabel={action}>
           <Text style={s.toastAct}>{action}</Text>
         </Pressable>
       )}
@@ -127,7 +127,7 @@ export function Notice({ icon, title, body, action, onAction, onDismiss, tone = 
         )}
       </View>
       {onDismiss && (
-        <Pressable onPress={onDismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel={'Dismiss ' + title}>
+        <Pressable onPress={onDismiss} hitSlop={13} accessibilityRole="button" accessibilityLabel={'Dismiss ' + title}>
           <Icon name="close" size={18} color={C.inkSoft} />
         </Pressable>
       )}
@@ -156,7 +156,8 @@ const s = StyleSheet.create({
   toast: { position: 'absolute', left: 16, right: 16, backgroundColor: C.ink, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16,
            flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
   toastTxt: { flex: 1, fontFamily: F.bodySemi, fontSize: 14, color: '#fff' },
-  toastAct: { fontFamily: F.bodyBold, fontSize: 14, color: '#FFB3A8' },
+  toastAct: { fontFamily: F.bodyBold, fontSize: 15, color: '#FFB3A8' },
+  toastBtn: { minHeight: 44, minWidth: 56, alignItems: 'flex-end', justifyContent: 'center', marginVertical: -10 },
   notice: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine, borderRadius: 16, padding: 14, marginBottom: 14 },
   noticeWarn: { backgroundColor: C.warnBg, borderColor: '#F2E0B5' },
   nTitle: { fontFamily: F.bodyBold, fontSize: 14, color: C.ink },

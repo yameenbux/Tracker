@@ -27,6 +27,7 @@ export interface TabProps {
   settings: Settings;
   series: TrendPoint[];
   rate: Rate | null;
+  today: string;                           // changes at midnight, so memoised cards refresh
   scrollTop: number;                       // bumps when the active tab is tapped again
   openSettings: () => void;
   go: (tab: Tab) => void;
@@ -39,7 +40,8 @@ function lengthChange(cm: number, unit: Unit) {
   return sign + showLength(Math.abs(cm), unit);
 }
 
-export function TodayTab({ t, settings, series, rate, scrollTop, openSettings, go, notices }: TabProps & { notices: React.ReactNode }) {
+export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
+  const { t, settings, series, rate, scrollTop, openSettings, go, notices } = props;
   const { state, prefs } = t;
   const unit = state.unit;
   const now = new Date();
@@ -62,7 +64,7 @@ export function TodayTab({ t, settings, series, rate, scrollTop, openSettings, g
       {quarter > prefs.milestone && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter })} />
       )}
-      <Hero settings={settings} weights={state.weights} unit={unit} />
+      <Hero settings={settings} weights={state.weights} unit={unit} today={props.today} />
       <View style={s.tiles}>
         <Tile icon="trend" label="Trend" onPress={() => go('trend')}
           value={last ? showWeight(last.trend, unit) : '—'}
@@ -104,28 +106,28 @@ export function TodayTab({ t, settings, series, rate, scrollTop, openSettings, g
   );
 }
 
-export function TrendTab({ t, settings, series, scrollTop, openSettings, onReplan, onEdit }: TabProps & {
+export function TrendTab({ t, settings, series, today, scrollTop, openSettings, onReplan, onEdit }: TabProps & {
   onReplan: (next: Settings['plan']) => void; onEdit: (k: string) => void;
 }) {
   const { state } = t;
   return (
     <TabScreen eyebrow={`${settings.plan.targets.length}-week plan`} title="Trend" onSettings={openSettings} scrollTop={scrollTop}>
-      <TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} />
-      {series.length >= 2 && <ChangeTable series={series} unit={state.unit} />}
-      <ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} />
+      <TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} today={today} />
+      {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} />}
+      <ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} />
       <SectionLabel>History</SectionLabel>
       <EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} />
     </TabScreen>
   );
 }
 
-export function HabitsTab({ t, settings, series, scrollTop, openSettings, onLogSession }: TabProps & { onLogSession: (k: string, dow: number) => void }) {
+export function HabitsTab({ t, settings, series, today, scrollTop, openSettings, onLogSession }: TabProps & { onLogSession: (k: string, dow: number) => void }) {
   const { state } = t;
   return (
     <TabScreen eyebrow="Consistency, not streaks" title="Habits" onSettings={openSettings} scrollTop={scrollTop}>
-      <HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} onLogSession={onLogSession} />
-      <HabitGrids settings={settings} habits={state.habits} />
-      <PatternsCard settings={settings} weights={state.weights} habits={state.habits} unit={state.unit} trend={series} />
+      <HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} onLogSession={onLogSession} today={today} />
+      <HabitGrids settings={settings} habits={state.habits} today={today} />
+      <PatternsCard settings={settings} weights={state.weights} habits={state.habits} unit={state.unit} trend={series} today={today} />
     </TabScreen>
   );
 }
@@ -146,9 +148,10 @@ export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: 
 }
 
 /** Notices shown at the top of Today: unreadable data, failing saves, a lock that switched itself off, backups. */
-export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onBackupHide, onExport, onRestore, onExportRescued }: {
+export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onBackupHide, onExport, onRestore, onExportRescued, pendingPlan, onSavePending, onDiscardPending }: {
   t: Tracker; lockLost: boolean; onLockLostDismiss: () => void; backupHidden: boolean; onBackupHide: () => void;
   onExport: () => void; onRestore: () => void; onExportRescued: () => void;
+  pendingPlan: Settings['plan'] | null; onSavePending: () => void; onDiscardPending: () => void;
 }) {
   const { prefs, state } = t;
   const lastBackupDays = daysSince(prefs.lastBackup);
@@ -163,6 +166,11 @@ export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onB
       {t.recovered && (
         <Notice icon="download" title="Export the saved copy" body="Shares the unreadable data as a file, exactly as it was found."
           action="Export copy" onAction={onExportRescued} />
+      )}
+      {pendingPlan && (
+        <Notice icon="target" title="Unsaved plan changes"
+          body={`You left Settings with a new plan (goal ${showWeight(pendingPlan.goalKg, state.unit)} by ${longDate(pendingPlan.goalDate)}) that wasn’t saved.`}
+          action="Save the new plan" onAction={onSavePending} onDismiss={onDiscardPending} />
       )}
       {lockLost && (
         <Notice tone="warn" icon="lock" title="The lock has been turned off"

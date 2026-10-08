@@ -8,8 +8,12 @@ export function fmt(n: number, d = 1): string { return Number(n).toFixed(d); }
 export function plausible(kg: unknown): kg is number {
   return typeof kg === 'number' && isFinite(kg) && kg >= MIN_KG && kg <= MAX_KG;
 }
+/** parseFloat that accepts a decimal comma ("82,4"), which the iOS decimal pad types in many regions. */
+export function num(t: string): number {
+  return parseFloat(String(t).trim().replace(',', '.'));
+}
 export function numOrNull(v: unknown): number | null {
-  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  const n = typeof v === 'number' ? v : num(String(v));
   return isFinite(n) ? n : null;
 }
 // Stones/pounds split at a given number of decimal places for the pounds, rolling up to the next stone when the
@@ -40,8 +44,8 @@ export function showDiff(kg: number, unit: Unit): string {
 
 /** Parse what the user typed. kg: one field. imp: stone + pounds fields. Returns kg, null for empty, NaN for junk. */
 export function parseWeightInput(unit: Unit, a: string, b = ''): number | null {
-  if (unit === 'kg') return a.trim() === '' ? null : parseFloat(a);
-  const st = parseFloat(a), lb = parseFloat(b);
+  if (unit === 'kg') return a.trim() === '' ? null : num(a);
+  const st = num(a), lb = num(b);
   if (isNaN(st) && isNaN(lb)) return null;
   return stLbToKg(isNaN(st) ? 0 : st, isNaN(lb) ? 0 : lb);
 }

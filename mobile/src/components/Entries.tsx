@@ -114,7 +114,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
         <Text style={s.dateLabel}>Date</Text>
         <DateInput value={key} onChange={setKey} label="Weigh-in date" min={minKey} max={today} />
       </View>
-      {kg != null && !ok && <Text style={s.err}>Enter a weight between {unit === 'kg' ? `${MIN_KG} and ${MAX_KG} kg` : 'about 4 and 55 stone'}.</Text>}
+      {kg != null && !ok && (kg > MAX_KG || kg >= 10) && <Text style={s.err}>Enter a weight between {unit === 'kg' ? `${MIN_KG} and ${MAX_KG} kg` : 'about 4 and 55 stone'}.</Text>}
       {future && <Text style={s.err}>That date is in the future.</Text>}
       {early && <Text style={s.err}>That’s before your plan started ({longDate(minKey)}). Change the start date in Settings to log earlier days.</Text>}
       {clash && <Text style={s.hint}>You already logged {showWeight(weights[key], unit)} on {longDate(key)}. Saving replaces it.</Text>}

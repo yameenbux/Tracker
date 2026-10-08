@@ -97,7 +97,7 @@ describe('reading the plan', () => {
       .toEqual({ count: 1, kcal: 300, p: 30, c: 0, f: 5 });
   });
   test('chart range snaps to a tidy step', () => {
-    expect(chartRange([95, 88, 93.4])).toEqual({ min: 86, max: 96, step: 2 });
+    expect(chartRange([95, 88, 93.4])).toEqual({ min: 87, max: 96, step: 1 });
     expect(chartRange([120, 90])).toEqual({ min: 85, max: 125, step: 5 });
   });
 });

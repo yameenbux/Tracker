@@ -14,6 +14,7 @@ import type { Settings } from './core/types';
 import { CoverContext, CoverOverlay } from './components/Cover';
 import { LogSheet } from './components/Entries';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { KeyboardDone } from './components/KeyboardDone';
 import { LiftSheet } from './components/Extras';
 import { Tab, TabBar, Toast } from './components/Shell';
 import { confirm, notify } from './dialogs';
@@ -52,7 +53,8 @@ function Main() {
   const { state, prefs } = t;
   const today = useToday();
   const [tab, setTab] = useState<Tab>('today');
-  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollTop, setScrollTop] = useState<Record<Tab, number>>({ today: 0, trend: 0, habits: 0, body: 0 });   // per tab
+  const [pendingPlan, setPendingPlan] = useState<Settings['plan'] | null>(null);   // plan edits left unsaved
   const [showSettings, setShowSettings] = useState(false);
   const [lift, setLift] = useState<{ k: string; dow: number } | null>(null);
   const [log, setLog] = useState<{ key: string | null; n: number } | null>(null);
@@ -85,7 +87,8 @@ function Main() {
       notify(`${lock.lockName} wasn't turned on`, `You can switch the lock on any time in Settings.`);
     }
     t.setSettings(s);
-    if (parseKey(s.plan.start) <= startOfDay()) t.setWeight(s.plan.start, s.plan.startKg);   // baseline at week 1
+    // The starting weight counts as today's weigh-in (never back-dated to the plan's Monday)
+    if (parseKey(s.plan.start) <= startOfDay()) t.setWeight(dateKey(new Date()), s.plan.startKg);
     setTab('today');
   };
 
@@ -112,8 +115,8 @@ function Main() {
     const ok = await confirm('Start a new line from here?', `Your goal date moves to ${longDate(next.goalDate)}. Past weeks and every weigh-in stay as they are.`, 'Re-plan', false);
     if (ok) { t.setSettings({ ...settings, plan: next }); success(); show({ message: 'New line from today' }); }
   };
-  const props: TabProps = { t, settings, series, rate, scrollTop: 0, openSettings: () => setShowSettings(true), go: setTab, show };
-  const top = (id: Tab) => (tab === id ? scrollTop : 0);
+  const props: TabProps = { t, settings, series, rate, today, scrollTop: 0, openSettings: () => setShowSettings(true), go: setTab, show };
+  const top = (id: Tab) => scrollTop[id];
 
   // All four tabs stay mounted (only the active one is shown), so scroll position and open panels survive switching
   const pane = (id: Tab, el: React.ReactNode) => (
@@ -126,13 +129,15 @@ function Main() {
       <View style={s.fill}>
         {pane('today', <TodayTab {...props} scrollTop={top('today')} notices={
           <TodayNotices t={t} lockLost={lock.lockLost} onLockLostDismiss={lock.dismissLockLost} backupHidden={backupHidden}
-            onBackupHide={() => setBackupHidden(true)} onExport={data.exportData} onRestore={data.restore} onExportRescued={data.exportRescued} />} />)}
+            onBackupHide={() => setBackupHidden(true)} onExport={data.exportData} onRestore={data.restore} onExportRescued={data.exportRescued}
+            pendingPlan={pendingPlan} onSavePending={() => { if (pendingPlan) { t.setSettings({ ...settings, plan: pendingPlan }); success(); show({ message: 'Plan saved' }); } setPendingPlan(null); }}
+            onDiscardPending={() => setPendingPlan(null)} />} />)}
         {pane('trend', <TrendTab {...props} scrollTop={top('trend')} onReplan={replan} onEdit={k => setLog({ key: k, n: Date.now() })} />)}
         {pane('habits', <HabitsTab {...props} scrollTop={top('habits')} onLogSession={(k, dow) => setLift({ k, dow })} />)}
         {pane('body', <BodyTab {...props} scrollTop={top('body')} />)}
 
         {toast && <Toast key={toast.id} message={toast.message} action={toast.action} onAction={toast.onAction} onHide={hideToast} />}
-        <TabBar tab={tab} onTab={setTab} onReselect={() => setScrollTop(n => n + 1)} onLog={() => setLog({ key: null, n: Date.now() })} />
+        <TabBar tab={tab} onTab={setTab} onReselect={() => setScrollTop(st => ({ ...st, [tab]: st[tab] + 1 }))} onLog={() => setLog({ key: null, n: Date.now() })} />
 
         {lift && (
           <LiftSheet dateK={lift.k} session={settings.sessions[lift.dow]} lifts={state.lifts} unit={state.unit} onClose={() => setLift(null)}
@@ -162,7 +167,7 @@ function Main() {
             <SettingsScreen settings={settings} unit={state.unit} setUnit={t.setUnit}
               lock={prefs.lock} lockAvailable={lock.lockAvailable} lockName={lock.lockName} onLockChange={on => lock.setLock(on, lock.lockName)}
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
-              weighIns={Object.keys(state.weights).length} weights={state.weights}
+              weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               onSave={t.setSettings} onClose={closeSettings}
               onExport={data.exportData} onExportCsv={data.exportCsv} onRestore={data.restore} onReset={data.reset}
               onEraseAll={async () => { await data.eraseAll(); setTab('today'); }} />
@@ -170,6 +175,7 @@ function Main() {
           </View>
         </Modal>
 
+        <KeyboardDone />
         <CoverOverlay />
       </View>
     </CoverContext.Provider>

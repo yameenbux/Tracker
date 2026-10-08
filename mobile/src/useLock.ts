@@ -50,11 +50,18 @@ export function useLock(ready: boolean, prefs: Prefs, setPrefs: (p: Partial<Pref
   }, [ready, prefs.lock, tryUnlock]);
 
   useEffect(() => {
+    let wasBackground = false;
     const sub = AppState.addEventListener('change', st => {
       // iOS takes the app-switcher snapshot while 'inactive', so cover the screen then; lock fully on 'background'
       if (st === 'inactive' && lockRef.current) setCovered(true);
-      if (st === 'background' && lockRef.current) { lockedRef.current = true; setLocked(true); }
-      if (st === 'active') { setCovered(false); if (lockRef.current) tryUnlock(); }
+      if (st === 'background') { wasBackground = true; if (lockRef.current) { lockedRef.current = true; setLocked(true); } }
+      if (st === 'active') {
+        setCovered(false);
+        // Only ask on a real return from the background. The Face ID sheet itself makes the app briefly inactive,
+        // so asking on every 'active' would re-prompt straight after a Cancel.
+        if (wasBackground && lockRef.current) tryUnlock();
+        wasBackground = false;
+      }
     });
     return () => sub.remove();
   }, [tryUnlock]);

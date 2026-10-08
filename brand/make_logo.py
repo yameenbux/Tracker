@@ -109,7 +109,7 @@ assets = {
     'icon.svg': icon('g'),                                        # iOS light: full-bleed, iOS rounds it; no transparency
     'icon-dark.svg': svg(defs('m') + '<rect width="1024" height="1024" fill="#0E0B14"/>' + mark('m')),
     'icon-tinted.svg': svg('<rect width="1024" height="1024" fill="#000000"/>' + mark('n', mono='#FFFFFF')),  # greyscale; iOS tints it
-    'splash-icon.svg': mark_only('h', scale=0.9),
+    'splash-icon.svg': icon('h', rounded=True),                # the app icon tile, on the app's paper background
     'android-icon-foreground.svg': mark_only('i', scale=0.6),     # inside the adaptive-icon safe zone
     'android-icon-monochrome.svg': mark_only('j', scale=0.6, mono='#FFFFFF'),
     'android-icon-background.svg': svg(defs('k') + bg('k')),

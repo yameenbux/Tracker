@@ -6,6 +6,7 @@ import { assessPlan, buildTargets, defaultSettings, goalDateForPace, PACES, Pace
 import { fmt, lbPart, parseWeightInput, plausible, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
+import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
 import { ProgressChart } from '../components/ProgressChart';
 import { Icon, IconName } from '../components/Icons';
 import { PlumbIcon } from '../components/Logo';
@@ -28,7 +29,7 @@ function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onCh
   };
   const box = (i: 0 | 1, w: number, label: string, suffix: string) => (
     <View style={s.bigBox}>
-      <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'}
+      <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'} inputAccessoryViewID={DONE_ID}
         placeholder="0" placeholderTextColor={C.placeholder} autoFocus={i === 0} accessibilityLabel={label} />
       <Text style={s.bigUnit}>{suffix}</Text>
     </View>
@@ -212,6 +213,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           <Pressable onPress={() => finish(false)} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Not now</Text></Pressable>
         </>}
       </View>
+      <KeyboardDone />
     </KeyboardAvoidingView>
   );
 }
@@ -231,7 +233,7 @@ const s = StyleSheet.create({
   promiseIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: C.panel, alignItems: 'center', justifyContent: 'center' },
   promiseTxt: { flex: 1, fontFamily: F.bodyMed, fontSize: 15, color: C.ink, lineHeight: 21 },
   bigRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 40, marginBottom: 24 },
-  bigBox: { flexDirection: 'row', alignItems: 'baseline', borderBottomWidth: 2, borderBottomColor: C.line, paddingBottom: 6 },
+  bigBox: { flexDirection: 'row', alignItems: 'baseline', borderBottomWidth: 2, borderBottomColor: C.control, paddingBottom: 6 },
   bigIn: { fontFamily: F.display, fontSize: 56, color: C.ink, textAlign: 'center', padding: 0 },
   bigUnit: { fontFamily: F.bodySemi, fontSize: 18, color: C.inkSoft, marginLeft: 4 },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, textAlign: 'center', marginBottom: 10, lineHeight: 19 },
@@ -242,7 +244,7 @@ const s = StyleSheet.create({
   paceMeta: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 3 },
   rec: { backgroundColor: C.mintBg, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
   recTxt: { fontFamily: F.bodyBold, fontSize: 11.5, color: C.mintInk },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: C.line },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: C.control },
   radioOn: { borderColor: C.plum2, borderWidth: 7 },
   startRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14 },
   link: { fontFamily: F.bodyBold, fontSize: 15, color: C.coralInk },

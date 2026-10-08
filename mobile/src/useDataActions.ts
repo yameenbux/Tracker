@@ -44,7 +44,11 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
     if (!state.settings) return;
     try {
       await shareBackup('plumb-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings }));
-      t.setPrefs({ lastBackup: new Date().toISOString() });
+      // The share sheet closes the same way whether the file was saved or the sheet was cancelled, so ask
+      if (await confirm('Did you save the backup?', 'Only say yes if the file went somewhere safe: Files, iCloud Drive, email or a computer.', 'Yes, it’s saved', false)) {
+        t.setPrefs({ lastBackup: new Date().toISOString() });
+        show({ message: 'Backup saved' });
+      }
     } catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
 

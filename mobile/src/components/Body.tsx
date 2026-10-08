@@ -4,13 +4,14 @@ import { cmToUnit, lengthToCm, MEASURES, measureSummary, photoDates, plausibleCm
 import { dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { weightSeries } from '../core/plan';
 import { trendSeries, TrendPoint } from '../core/trend';
-import { showWeight } from '../core/units';
+import { num, showWeight } from '../core/units';
 import type { MeasureKey, Measurements, PhotoLog, Pose, Settings, Unit, Weights } from '../core/types';
 import { confirm } from '../dialogs';
 import { addPhoto, deletePhoto, photoUri } from '../photos';
 import { C, F } from '../theme';
 import { DateInput, Field, fieldStyles } from './Fields';
 import { Icon } from './Icons';
+import { DONE_ID } from './KeyboardDone';
 import { Sheet } from './Sheet';
 import { Button, Card, Tabs } from './ui';
 
@@ -132,7 +133,7 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
   let bad = false;
   for (const m of MEASURES) {
     if (!txt[m.key].trim()) continue;
-    const cm = lengthToCm(parseFloat(txt[m.key]), unit);
+    const cm = lengthToCm(num(txt[m.key]), unit);
     if (plausibleCm(cm)) values[m.key] = cm; else bad = true;
   }
   const today = dateKey(new Date());
@@ -151,7 +152,7 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
           <View key={m.key} style={s.mCell}>
             <Field label={`${m.label} (${unit === 'kg' ? 'cm' : 'in'})`}>
               <TextInput style={[fieldStyles.fIn, { fontFamily: F.displaySemi }]} value={txt[m.key]} keyboardType="decimal-pad"
-                onChangeText={v => setTxt(t => ({ ...t, [m.key]: v }))} placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={m.label} />
+                onChangeText={v => setTxt(t => ({ ...t, [m.key]: v }))} inputAccessoryViewID={DONE_ID} placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={m.label} />
             </Field>
             <Text style={s.mHint}>{m.hint}</Text>
           </View>

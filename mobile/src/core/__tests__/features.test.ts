@@ -146,6 +146,17 @@ describe('progression and CSV', () => {
     expect(suggestNext({ kg: 8, done: true })).toEqual({ kg: 9, reason: 'increase' });
     expect(suggestNext(null)).toBeNull();
   });
+  test('imperial lifters get plate-sized pound steps, and pound entries survive a reload exactly', () => {
+    const lb = (n: number) => n * 0.45359237;
+    const next = suggestNext({ kg: lb(100), done: true }, 'imp')!;
+    expect(Math.round(next.kg / 0.45359237 * 2) / 2).toBe(105);
+    const small = suggestNext({ kg: lb(30), done: true }, 'imp')!;
+    expect(Math.round(small.kg / 0.45359237 * 2) / 2).toBe(32.5);
+    for (const v of [35, 67.5, 105, 142.5]) {
+      const kept = cleanSessionLog({ '2026-10-01': { Squat: { kg: lb(v), done: true } } })['2026-10-01'].Squat.kg;
+      expect(Math.round(kept / 0.45359237 * 2) / 2).toBe(v);
+    }
+  });
   test('CSV has one row per date with blanks where nothing was logged', () => {
     expect(toCsv({ '2026-10-01': 90.5 }, { '2026-10-02': { waist: 95 } }, { '2026-10-01': 1900 }))
       .toBe('date,weight_kg,waist_cm,hips_cm,chest_cm,arm_cm,kcal\n2026-10-01,90.5,,,,,1900\n2026-10-02,,95,,,,\n');

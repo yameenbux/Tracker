@@ -107,3 +107,20 @@ describe('stone and pounds rounding', () => {
     expect(toStLb(88.9, 1)).toBe('14 st 0.0 lb');
   });
 });
+
+describe('decimal comma', () => {
+  const { parseWeightInput, num } = jest.requireActual('../units');
+  test('82,4 is 82.4, not 82', () => {
+    expect(num('82,4')).toBe(82.4);
+    expect(parseWeightInput('kg', '82,4')).toBe(82.4);
+    expect(parseWeightInput('imp', '13', '1,5')).toBeCloseTo((13 * 14 + 1.5) * 0.45359237, 6);
+  });
+});
+
+describe('chart grid', () => {
+  const { chartRange } = jest.requireActual('../plan');
+  test('a short range (4-week view) gets finer lines instead of looking flat', () => {
+    expect(chartRange([92.1, 91.4, 92.6]).step).toBe(0.5);
+    expect(chartRange([92, 87]).step).toBe(1);
+  });
+});

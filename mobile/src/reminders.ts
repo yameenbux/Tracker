@@ -4,11 +4,11 @@ import { addDays, dateKey, startOfDay } from './core/dates';
 import type { Reminder } from './core/storage';
 
 // Daily weigh-in reminder, scheduled on the device (local notifications only: nothing is sent to a server).
-// Instead of one repeating notification, the next two weeks are scheduled one day at a time, so a day you've
+// Instead of one repeating notification, the next two months are scheduled one day at a time, so a day you've
 // already logged gets no reminder. It's rescheduled whenever the app opens or a weigh-in is saved.
 
 const PREFIX = 'weigh-in-';
-const DAYS_AHEAD = 14;
+const DAYS_AHEAD = 60;   // iOS allows 64 pending local notifications; this covers two months away from the app
 
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({

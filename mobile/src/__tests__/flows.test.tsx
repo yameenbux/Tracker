@@ -10,7 +10,7 @@ import { useLock } from '../useLock';
 const settings = defaultSettings({ start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: buildTargets(90, 80, '2026-01-05', '2026-06-01') });
 const props = (over: Partial<SettingsProps> = {}): SettingsProps => ({
   settings, unit: 'kg', setUnit: jest.fn(), lock: false, lockAvailable: true, lockName: 'Face ID', onLockChange: jest.fn(),
-  reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), lastBackup: null, weighIns: 3, weights: {},
+  reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), lastBackup: null, weighIns: 3, weights: {}, onPlanLeftUnsaved: jest.fn(),
   onSave: jest.fn(), onClose: jest.fn(), onExport: jest.fn(), onExportCsv: jest.fn(), onRestore: jest.fn(), onReset: jest.fn(), onEraseAll: jest.fn(), ...over,
 });
 
@@ -43,13 +43,17 @@ describe('settings sub-pages save however you leave', () => {
     expect(calls[0][0].event).toBeNull();
   });
 
-  test('a plan left unsaved asks before dropping it', () => {
+  test('a plan left unsaved is handed back (to offer saving it later), never silently dropped or saved', () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    const view = render(<SettingsScreen {...props()} />);
+    const p = props();
+    const view = render(<SettingsScreen {...p} />);
     fireEvent.press(screen.getByLabelText(/^Goal,/));
     fireEvent.changeText(screen.getByLabelText('Goal weight in kilograms'), '78');
     view.unmount();
-    expect(alert).toHaveBeenCalledWith('Save your plan changes?', expect.any(String), expect.any(Array), expect.any(Object));
+    expect(p.onPlanLeftUnsaved).toHaveBeenCalledTimes(1);
+    expect((p.onPlanLeftUnsaved as jest.Mock).mock.calls[0][0].goalKg).toBe(78);
+    expect(p.onSave).not.toHaveBeenCalled();
+    expect(alert).not.toHaveBeenCalled();   // no dialog popping up over the lock screen
     alert.mockRestore();
   });
 });
@@ -67,9 +71,9 @@ describe('undo toast', () => {
 
 describe('smart reminders', () => {
   const r = { on: true, hour: 7, minute: 30 };
-  test('two weeks ahead, starting today when it is still before the reminder time', () => {
+  test('two months ahead (within iOS’s 64-notification limit), starting today when it is still before the reminder time', () => {
     const days = reminderDays(r, false, new Date(2026, 9, 8, 6, 0));
-    expect(days).toHaveLength(14);
+    expect(days).toHaveLength(60);
     expect(days[0].getDate()).toBe(8);
     expect(days[0].getHours()).toBe(7);
   });

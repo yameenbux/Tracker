@@ -22,7 +22,7 @@ function HabitBox({ on, label, onPress, disabled }: { on: boolean; label: string
   return (
     <Pressable onPress={() => { tick(); onPress(); }} hitSlop={7} disabled={disabled} style={[s.cb, on && s.cbOn, disabled && { opacity: 0.35 }]}
       accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled }} accessibilityLabel={label}>
-      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color={C.ink} strokeWidth={2.8} /></Animated.View> : null}
+      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color="#fff" strokeWidth={2.8} /></Animated.View> : null}
     </Pressable>
   );
 }
@@ -71,7 +71,7 @@ function MealsPanel({ meals }: { meals: Settings['meals'] }) {
 }
 
 export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange, onLogSession }: {
-  settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void;
+  settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void; today?: string;
 }) {
   const [open, setOpen] = useState<{ key: string; kind: 'sess' | 'meals' } | null>(null);
   // Page back through earlier weeks (to fix a missed tick), never past the plan's first week or into the future
@@ -177,8 +177,8 @@ const s = StyleSheet.create({
   sessTitle: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 1 },
   link: { fontFamily: F.bodyBold, fontSize: 13, color: C.coralInk },
   linkBtn: { minHeight: 36, justifyContent: 'center', paddingRight: 10 },
-  cb: { width: 30, height: 30, borderWidth: 1.5, borderColor: C.line, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
-  cbOn: { backgroundColor: C.coral, borderColor: C.coral },
+  cb: { width: 30, height: 30, borderWidth: 1.5, borderColor: C.control, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
+  cbOn: { backgroundColor: C.coralInk, borderColor: C.coralInk },
   pager: { flexDirection: 'row', gap: 4 },
   pageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
   panel: { backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine, borderRadius: 12, padding: 12, marginHorizontal: 6, marginVertical: 6 },
@@ -195,7 +195,7 @@ const s = StyleSheet.create({
   empty: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, padding: 6, paddingTop: 10, lineHeight: 17 },
   sumItem: { minWidth: '45%', flexGrow: 1 },
   bar: { height: 5, borderRadius: 3, backgroundColor: C.line, marginTop: 5, overflow: 'hidden' },
-  barFill: { height: 5, borderRadius: 3, backgroundColor: C.coral },
+  barFill: { height: 5, borderRadius: 3, backgroundColor: C.coralInk },
   sumPct: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, marginTop: 3 },
   logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.plum2, borderRadius: 12, minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
   logBtnTxt: { fontFamily: F.bodyBold, fontSize: 14, color: '#fff' },

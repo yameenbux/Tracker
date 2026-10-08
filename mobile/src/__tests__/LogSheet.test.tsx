@@ -25,7 +25,9 @@ describe('log weight sheet', () => {
   test('explains an implausible weight instead of silently disabling Save', () => {
     const onSave = jest.fn();
     render(<LogSheet initialKey={null} weights={{}} unit="kg" minKey="2026-01-01" onSave={onSave} onDelete={jest.fn()} onClose={jest.fn()} />);
-    fireEvent.changeText(screen.getByLabelText('Weight in kilograms'), '9');
+    fireEvent.changeText(screen.getByLabelText('Weight in kilograms'), '9');          // still typing "92…": no nagging yet
+    expect(screen.queryByText(/Enter a weight between/)).toBeNull();
+    fireEvent.changeText(screen.getByLabelText('Weight in kilograms'), '400');
     expect(screen.getByText(/Enter a weight between/)).toBeTruthy();
     fireEvent.press(screen.getByText('Save'));
     expect(onSave).not.toHaveBeenCalled();

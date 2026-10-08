@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from '../motion';
 import { C, F } from '../theme';
 import { CoverOverlay } from './Cover';
+import { KeyboardDone } from './KeyboardDone';
 import { Icon } from './Icons';
 
 /**
@@ -17,6 +18,7 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
   closing?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const reduced = useReducedMotion();
   const [anim] = useState(() => new Animated.Value(0));       // 0 hidden, 1 shown
   const [drag] = useState(() => new Animated.Value(0));
@@ -43,14 +45,16 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
     },
   }));
 
-  const translateY = Animated.add(anim.interpolate({ inputRange: [0, 1], outputRange: [600, 0] }), drag);
+  // Slide by the full window height, so even a tall sheet starts and ends fully off screen
+  const translateY = Animated.add(anim.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }), drag);
   return (
     <Modal visible transparent animationType="none" onRequestClose={close} statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, s.backdrop, { opacity: anim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel="Close" />
       </Animated.View>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={s.holder} pointerEvents="box-none">
-        <Animated.View style={[s.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY }] }]} accessibilityViewIsModal>
+        <Animated.View style={[s.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY }] }]} accessibilityViewIsModal
+          onAccessibilityEscape={close}>
           <View {...pan.panHandlers} style={s.handleZone}>
             <View style={s.grab} />
             <View style={s.head}>
@@ -67,6 +71,7 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
           {footer ? <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>{footer}</View> : null}
         </Animated.View>
       </KeyboardAvoidingView>
+      <KeyboardDone />
       <CoverOverlay />
     </Modal>
   );

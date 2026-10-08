@@ -15,7 +15,7 @@ const change = (kg: number, unit: Unit, dp = 2) => showChange(kg, unit, dp);
  * the honest weekly rate, and why a sudden jump on the scale isn't fat.
  */
 export const TrendCard = memo(function TrendCard({ settings, weights, unit, onReplan, trend }: {
-  settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void; trend?: TrendPoint[];
+  settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void; trend?: TrendPoint[]; today?: string;
 }) {
   const plan = settings.plan;
   const series = trend ?? trendSeries(weightSeries(plan, weights));

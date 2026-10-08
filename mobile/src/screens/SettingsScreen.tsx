@@ -1,8 +1,9 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Application from 'expo-application';
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { addDays, dateKey, DAY_FULL, DAY_ORDER, longDate, mondayOf, validKey } from '../core/dates';
 import { assessPlan, buildTargets, cleanBreaks, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
 import { daysSince } from '../core/summary';
@@ -11,6 +12,7 @@ import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/ty
 import type { Reminder } from '../core/storage';
 import { DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
+import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
 import { Button } from '../components/ui';
 import { confirm } from '../dialogs';
 import { success } from '../feel';
@@ -38,7 +40,9 @@ function Row({ icon, label, value, onPress, right, destructive, last, hint }: {
   const body = (
     <>
       {icon ? <View style={[s.rowIcon, destructive && { backgroundColor: C.coralBg }]}><Icon name={icon} size={18} color={destructive ? C.danger : C.plum2} /></View> : null}
-      <Text style={[s.rowLabel, destructive && { color: C.danger }]} numberOfLines={2}>{label}</Text>
+      {/* With a control on the right (switch, toggle), the control carries the label, so VoiceOver reads it once */}
+      <Text style={[s.rowLabel, destructive && { color: C.danger }]} numberOfLines={2}
+        accessibilityElementsHidden={!!right} importantForAccessibility={right ? 'no' : 'auto'}>{label}</Text>
       {value ? <Text style={s.rowValue} numberOfLines={1}>{value}</Text> : null}
       {right}
       {onPress && !right ? <Icon name="chevron" size={18} color={C.inkSoft} /> : null}
@@ -59,7 +63,7 @@ function SwitchRow({ icon, label, value, onChange, disabled, last }: {
 }) {
   return (
     <Row icon={icon} label={label} last={last} right={
-      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: C.mintInk, false: C.line }} accessibilityLabel={label} />
+      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: C.mintInk, false: C.control }} accessibilityLabel={label} />
     } />
   );
 }
@@ -78,7 +82,8 @@ function PageHeader({ title, onBack, right }: { title: string; onBack: () => voi
 }
 
 function Input(props: React.ComponentProps<typeof TextInput>) {
-  return <TextInput placeholderTextColor={C.placeholder} maxFontSizeMultiplier={1.5} {...props} style={[fieldStyles.fIn, props.style]} />;
+  const numeric = props.keyboardType === 'number-pad' || props.keyboardType === 'decimal-pad';
+  return <TextInput placeholderTextColor={C.placeholder} maxFontSizeMultiplier={1.5} inputAccessoryViewID={numeric ? DONE_ID : undefined} {...props} style={[fieldStyles.fIn, props.style]} />;
 }
 const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
@@ -92,6 +97,7 @@ export interface SettingsProps {
   lock: boolean; lockAvailable: boolean; lockName: string; onLockChange: (on: boolean) => void;
   reminder: Reminder; onReminderChange: (r: Reminder) => void;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
+  onPlanLeftUnsaved: (plan: Settings['plan']) => void;
   onSave: (s: Settings) => void; onClose: () => void;
   onExport: () => void; onExportCsv: () => void; onRestore: () => void; onReset: () => void; onEraseAll: () => void;
 }
@@ -104,13 +110,14 @@ export function SettingsScreen(p: SettingsProps) {
     const next = normalizeSettings({ ...settings, ...patch });
     if (next) { p.onSave(next); success(); }
   };
-  const back = () => setPage('root');
+  const [leaving, setLeaving] = useState(false);
+  const back = () => setLeaving(true);                       // Pushed animates out, then the page is removed
+  const gone = useCallback(() => { setPage('root'); setLeaving(false); }, []);
 
   // Sub-pages save when you leave them, however you leave (Back, swiping the sheet away, or the app locking)
   const keep = <T,>(key: keyof Settings) => (v: T) => { if (JSON.stringify(v) !== JSON.stringify(settings[key])) commit({ [key]: v } as Partial<Settings>); };
-  if (page !== 'root') return <Pushed onBack={back}>{subPage()}</Pushed>;
   function subPage() {
-  if (page === 'plan') return <PlanPage settings={settings} unit={unit} weights={p.weights} onSave={plan => { commit({ plan }); back(); }} onBack={back} onLeaveUnsaved={plan => commit({ plan })} />;
+  if (page === 'plan') return <PlanPage settings={settings} unit={unit} weights={p.weights} onSave={plan => { commit({ plan }); back(); }} onBack={back} onLeaveUnsaved={p.onPlanLeftUnsaved} />;
   if (page === 'event') return <EventPage settings={settings} onSave={keep<Settings['event']>('event')} onBack={back} />;
   if (page === 'habits') return <HabitsPage settings={settings} onSave={keep<Habit[]>('habits')} onBack={back} />;
   if (page === 'sessions') return <SessionsPage settings={settings} onSave={keep<Settings['sessions']>('sessions')} onBack={back} />;
@@ -120,11 +127,13 @@ export function SettingsScreen(p: SettingsProps) {
   const plan = settings.plan;
   const sessionDays = DAY_ORDER.filter(d => settings.sessions[d].title || settings.sessions[d].items.length).length;
   const backupDays = daysSince(p.lastBackup);
-  const version = Constants.expoConfig?.version ?? '1.0.0';
-  const build = Constants.expoConfig?.ios?.buildNumber;
+  const version = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
+  const build = Application.nativeBuildVersion ?? Constants.expoConfig?.ios?.buildNumber;
 
+  // The root list stays mounted underneath a pushed page (keeps its scroll position, and the page can slide back over it)
   return (
-    <View style={s.wrap}>
+    <View style={{ flex: 1 }}>
+    <View style={s.wrap} importantForAccessibility={page === 'root' ? 'auto' : 'no-hide-descendants'} accessibilityElementsHidden={page !== 'root'}>
       <View style={s.bar}>
         <View style={s.barRight} />
         <Text style={s.barTitle} accessibilityRole="header">Settings</Text>
@@ -177,6 +186,9 @@ export function SettingsScreen(p: SettingsProps) {
         <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Plumb · a weight tracker that stays yours</Text>
       </ScrollView>
     </View>
+    {page !== 'root' && <Pushed key={page} onBack={back} leaving={leaving} onGone={gone}>{subPage()}</Pushed>}
+    <KeyboardDone />
+    </View>
   );
 }
 
@@ -194,13 +206,17 @@ function TimeInput({ hour, minute, onChange }: { hour: number; minute: number; o
 // ---------- sub-pages ----------
 
 /** iOS-style push: the page slides in from the right, and a swipe from the left edge goes back. */
-function Pushed({ onBack, children }: { onBack: () => void; children: React.ReactNode }) {
+function Pushed({ onBack, leaving, onGone, children }: { onBack: () => void; leaving: boolean; onGone: () => void; children: React.ReactNode }) {
   const { width } = useWindowDimensions();
   const reduced = useReducedMotion();
   const [x] = useState(() => new Animated.Value(reduced ? 0 : width));
   const [swipedBack, setSwipedBack] = useState(false);
   useEffect(() => { Animated.timing(x, { toValue: 0, duration: reduced ? 0 : 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(); }, [x, reduced]);
-  useEffect(() => { if (swipedBack) onBack(); }, [swipedBack, onBack]);
+  // Pop: slide back out to the right, then remove the page
+  useEffect(() => {
+    if (leaving) Animated.timing(x, { toValue: width, duration: reduced ? 0 : 240, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => onGone());
+  }, [leaving, x, width, reduced, onGone]);
+  useEffect(() => { if (swipedBack) onGone(); }, [swipedBack, onGone]);
   const [pan] = useState(() => PanResponder.create({
     onMoveShouldSetPanResponder: (e, g) => g.x0 < 28 && g.dx > 8 && Math.abs(g.dy) < g.dx,
     onPanResponderMove: (_, g) => x.setValue(Math.max(0, g.dx)),
@@ -209,7 +225,8 @@ function Pushed({ onBack, children }: { onBack: () => void; children: React.Reac
       else Animated.spring(x, { toValue: 0, useNativeDriver: true }).start();
     },
   }));
-  return <Animated.View style={{ flex: 1, backgroundColor: C.bg, transform: [{ translateX: x }] }} {...pan.panHandlers}>{children}</Animated.View>;
+  return <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: C.bg, transform: [{ translateX: x }], shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12 }]}
+    {...pan.panHandlers} accessibilityViewIsModal>{children}</Animated.View>;
 }
 
 /**
@@ -243,9 +260,8 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
   };
   // Swiped away (or locked) with a valid, unsaved plan: ask rather than silently dropping it
   const pending = changed ? build() : null;
-  const skip = useSaveOnLeave(pending, next => {
-    if (next) confirm('Save your plan changes?', 'You left the plan page without saving.', 'Save', false).then(ok => { if (ok) onLeaveUnsaved(next); });
-  });
+  // Left without saving (sheet swiped away, app locked): hand the draft back so Today can offer to save it later
+  const skip = useSaveOnLeave(pending, next => { if (next) onLeaveUnsaved(next); });
   const save = () => { const next = build(); if (next) { skip(); onSave(next); } };
   const leave = async () => {
     if (!changed || await confirm('Discard plan changes?', 'Your current plan stays as it is.', 'Discard')) { skip(); onBack(); }
@@ -254,6 +270,13 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
   const hidden = Object.keys(weights).filter(k => k < plan.start).length;
   const hiddenBefore = Object.keys(weights).filter(k => k < settings.plan.start).length;
   const rate = verdict.ok ? (unit === 'kg' ? fmt(verdict.perWeek, 2) + ' kg' : toLbNum(verdict.perWeek).toFixed(1) + ' lb') : '';
+  // VoiceOver doesn't read changes on its own: announce the plan check when it changes (after typing settles)
+  const verdictText = !verdict.ok ? verdict.error : `${verdict.weeks + 1} weeks, about ${rate} a week`;
+  useEffect(() => {
+    if (!changed) return;
+    const id = setTimeout(() => AccessibilityInfo.announceForAccessibility(verdictText), 900);
+    return () => clearTimeout(id);
+  }, [verdictText, changed]);
   return (
     <View style={s.wrap}>
       <PageHeader title="Plan" onBack={leave} right={<Button label="Save" kind="coral" small disabled={!changed || !verdict.ok} onPress={save} />} />
@@ -267,7 +290,7 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
             <Field label="Start date"><DateInput value={plan.start} onChange={v => setPlan(x => ({ ...x, start: v }))} label="Start date" /></Field>
             <Field label="Goal date"><DateInput value={plan.goalDate} onChange={v => setPlan(x => ({ ...x, goalDate: v }))} label="Goal date" /></Field>
           </View>
-          <View style={[s.preview, !verdict.ok ? s.prevErr : verdict.warn ? s.prevWarn : null]} accessibilityLiveRegion="polite">
+          <View style={[s.preview, !verdict.ok ? s.prevErr : verdict.warn ? s.prevWarn : null]}>
             <Text style={[s.prevTxt, !verdict.ok ? { color: C.danger } : verdict.warn ? { color: C.warnInk } : null]}>
               {!verdict.ok ? verdict.error : `${verdict.weeks + 1} weeks · about ${rate} a week (${fmt(verdict.pct, 2)}% of body weight).` +
                 (verdict.warn ? "\nThat's faster than ~1% a week, which most people find hard to sustain." : '')}

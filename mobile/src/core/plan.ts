@@ -274,8 +274,9 @@ export function behindBy(plan: Plan, trendNow: number, today: Date = new Date())
 export function chartRange(values: number[]): { min: number; max: number; step: number } {
   const lo = Math.min(...values), hi = Math.max(...values);
   const span = hi - lo;
-  const step = span <= 16 ? 2 : span <= 40 ? 5 : 10;
-  return { min: Math.floor((lo - 1) / step) * step, max: Math.ceil((hi + 1) / step) * step, step };
+  const step = span <= 3 ? 0.5 : span <= 7 ? 1 : span <= 16 ? 2 : span <= 40 ? 5 : 10;
+  const pad = step < 1 ? step : 1;   // short ranges (the 4-week view) get finer lines instead of looking flat
+  return { min: Math.floor((lo - pad) / step) * step, max: Math.ceil((hi + pad) / step) * step, step };
 }
 
 export { WEEK_MS };
