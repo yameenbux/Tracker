@@ -310,11 +310,12 @@ and the privacy policy, and nowhere else needs changing if it moves.
 ## Before a release
 
 > [!WARNING]
-> **The privacy policy doesn't yet name who runs the app.** UK GDPR requires the
-> notice to name the organisation, and the Companies Act requires the company's
-> full name, number and registered office on its website. Add YSB Ventures Ltd's
-> number and registered office to `privacy.html` before the App Store listing
-> goes live.
+> **The website doesn't show the registered office address yet.** The Companies
+> Act requires a company's website to show its name, number and registered
+> office. The name and number are on the site and in the privacy policy. The
+> registered office is the owner's home, so it stays off this public repo until
+> the company moves to a registered office service; then add that address to
+> the site footer and the policy.
 
 In App Store Connect, once the developer account is approved:
 
