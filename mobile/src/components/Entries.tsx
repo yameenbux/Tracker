@@ -1,3 +1,4 @@
+import { EmptyState } from './States';
 import { FadeIn, Tap } from './Motion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
@@ -44,7 +45,7 @@ export function EntriesList({ settings, weights, unit, onEdit }: {
   const shown = all ? list : list.slice(0, 6);
   return (
     <Card title="Weigh-ins" right={<Text style={s.count}>{list.length} logged</Text>}>
-      {!list.length && <Text style={s.empty}>Nothing logged yet. Tap the + button after your next weigh-in.</Text>}
+      {!list.length && <EmptyState icon="scale" title="No weigh-ins yet" body="Tap + after your next weigh-in. Mornings, before breakfast, give the steadiest numbers." />}
       {shown.map((p, i) => {
         const diff = p.kg - targetAt(plan, p.d);
         const wk = Math.floor(weekFraction(plan, p.d)) + 1;

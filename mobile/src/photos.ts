@@ -47,7 +47,7 @@ export function deletePhoto(ref: string): void {
   try { const f = new File(photoDir(), ref); if (f.exists) f.delete(); } catch { /* already gone */ }
 }
 
-/** Deletes every stored progress photo (used by "Erase everything"). */
+/** Deletes every stored progress photo (used by "Delete all my data"). */
 export function deleteAllPhotos(): void {
   if (Platform.OS === 'web') return;
   try { const dir = new Directory(Paths.document, 'photos'); if (dir.exists) dir.delete(); } catch { /* nothing to delete */ }

@@ -71,8 +71,8 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   };
 
   const eraseAll = async () => {
-    if (!(await confirm('Erase everything?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
-    if (!(await confirm('Are you sure?', 'Plumb will start again from setup.', 'Erase everything'))) return;
+    if (!(await confirm('Delete all your data?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
+    if (!(await confirm('Are you sure?', 'Plumb will start again from setup.', 'Delete everything'))) return;
     if (!(await eraseStorage())) { notify('Couldn’t erase', 'Nothing was deleted. Try again.'); return; }
     for (const day of Object.values(state.photos)) for (const ref of Object.values(day)) if (ref) deletePhoto(ref);
     deleteAllPhotos();

@@ -20,7 +20,7 @@ const P: Record<IconName, (c: string) => React.ReactNode> = {
   water: c => <Path d="M12 3.8c3 3.6 5.5 6.8 5.5 10a5.5 5.5 0 0 1-11 0c0-3.2 2.5-6.4 5.5-10z" stroke={c} />,
   steps: c => <><Path d="M8 3.8c1.7 0 2.6 1.9 2.4 4.2-.2 2-1 3.3-2.4 3.3S5.8 10 5.6 8C5.4 5.7 6.3 3.8 8 3.8zM6.6 13.8h2.8v1.4a1.4 1.4 0 0 1-2.8 0z" stroke={c} />
     <Path d="M16 8.3c1.7 0 2.6 1.9 2.4 4.2-.2 2-1 3.3-2.4 3.3s-2.2-1.3-2.4-3.3c-.2-2.3.7-4.2 2.4-4.2zM14.6 18.3h2.8v1.4a1.4 1.4 0 0 1-2.8 0z" stroke={c} /></>,
-  dumbbell: c => <Path d="M6.5 7.5v9M17.5 7.5v9M3.8 10v4M20.2 10v4M6.5 12h11" stroke={c} />,
+  dumbbell: c => <><Rect x={5} y={6.5} width={3.4} height={11} rx={1.2} stroke={c} /><Rect x={15.6} y={6.5} width={3.4} height={11} rx={1.2} stroke={c} /><Path d="M8.4 12h7.2M2.8 9.8v4.4M21.2 9.8v4.4" stroke={c} /></>,
   run: c => <><Circle cx={15} cy={4.8} r={1.8} stroke={c} /><Path d="m7.5 20.5 3.2-5 3 2.2 1.2-5M6 10.5l3.2-2.6 4.3 1.1 2 3.1 3 .6" stroke={c} /></>,
   bike: c => <><Circle cx={6} cy={16} r={3.5} stroke={c} /><Circle cx={18} cy={16} r={3.5} stroke={c} /><Path d="m6 16 3.8-7h5.2L18 16M9.8 9l2.6 7H6M13.5 6h2.6" stroke={c} /></>,
   stretch: c => <><Circle cx={12} cy={4.8} r={1.8} stroke={c} /><Path d="m4.5 10 7.5 1.6 7.5-1.6M12 11.6v3.9l-3.6 5M12 15.5l3.6 5" stroke={c} /></>,

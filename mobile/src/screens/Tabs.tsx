@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { CardBoundary } from '../components/States';
+import { useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { measureSummary, showLength } from '../core/body';
 import { estimateExpenditure } from '../core/calories';
@@ -31,7 +32,7 @@ export interface TabProps {
   rate: Rate | null;
   today: string;                           // changes at midnight, so memoised cards refresh
   scrollTop: number;                       // bumps when the active tab is tapped again
-  openSettings: () => void;
+  openSettings: (page?: 'habits') => void;
   go: (tab: Tab) => void;
   show: (m: { message: string; action?: string; onAction?: () => void }) => void;
 }
@@ -67,12 +68,12 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const d = sign(direction(settings.plan));
 
   return (
-    <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={openSettings} scrollTop={scrollTop}>
+    <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={() => openSettings()} scrollTop={scrollTop}>
       {notices}
       {quarter > celebrated && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter, milestoneFor: planKey })} />
       )}
-      <Hero settings={settings} weights={state.weights} unit={unit} today={props.today} />
+      <CardBoundary name="Your weight"><Hero settings={settings} weights={state.weights} unit={unit} today={props.today} /></CardBoundary>
       <View style={s.tiles}>
         <Tile icon="trend" label="Trend" onPress={() => go('trend')}
           value={last ? showWeight(last.trend, unit) : '—'}
@@ -84,9 +85,9 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
           valueColor={rate ? (d === 0 ? C.ink : rate.perWeek * d > 0.05 ? C.mintInk : rate.perWeek * d < -0.05 ? C.coralInk : C.ink) : C.inkSoft}
           sub={rate ? (eta ? `a week · goal around ${shortDate(parseKey(eta))}` : 'a week') : '4 weigh-ins over 10 days'}
           a11y={(rate ? `Pace ${showChange(rate.perWeek, unit, 2)} a week${eta ? ', goal around ' + longDate(eta) : ''}` : 'Pace, not enough data yet')
-            + (behind > (d === 0 ? 1 : 0.3) ? `, ${showAmount(behind, unit)} ${d === 0 ? 'off your weight' : 'behind the line'}` : last ? ', on the line' : '')}>
+            + (behind > (d === 0 ? 1 : 0.3) ? `, ${showAmount(behind, unit)} ${d === 0 ? 'off your weight' : 'behind the line'}` : rate && last ? ', on the line' : '')}>
           {behind > (d === 0 ? 1 : 0.3) ? <Text style={s.tileNote}>{showAmount(behind, unit)} {d === 0 ? 'off your weight' : 'behind the line'}</Text>
-            : last ? <Text style={[s.tileNote, { color: C.mintInk }]}>On the line</Text> : null}
+            : rate && last ? <Text style={[s.tileNote, { color: C.mintInk }]}>On the line</Text> : null}
         </Tile>
       </View>
       <View style={s.tiles}>
@@ -109,8 +110,8 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
             a11y={waist ? `Waist ${showLength(waist.latest.cm, unit)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, unit)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
         )}
       </View>
-      <TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')} />
-      <EventCard settings={settings} />
+      <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')} /></CardBoundary>
+      <CardBoundary name="Your event"><EventCard settings={settings} /></CardBoundary>
     </TabScreen>
   );
 }
@@ -120,23 +121,24 @@ export function TrendTab({ t, settings, series, today, scrollTop, openSettings, 
 }) {
   const { state } = t;
   return (
-    <TabScreen eyebrow={`${settings.plan.targets.length - 1}-week plan`} title="Trend" onSettings={openSettings} scrollTop={scrollTop}>
-      <TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} today={today} />
+    <TabScreen eyebrow={`${settings.plan.targets.length - 1}-week plan`} title="Trend" onSettings={() => openSettings()} scrollTop={scrollTop}>
+      <CardBoundary name="Your trend"><TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} today={today} /></CardBoundary>
       {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} d={sign(direction(settings.plan)) as -1 | 0 | 1} />}
-      <ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} />
+      <CardBoundary name="The chart"><ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} /></CardBoundary>
       <SectionLabel>History</SectionLabel>
-      <EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} />
+      <CardBoundary name="Weigh-ins"><EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} /></CardBoundary>
     </TabScreen>
   );
 }
 
 export function HabitsTab({ t, settings, series, today, scrollTop, openSettings, onLogSession }: TabProps & { onLogSession: (k: string, dow: number) => void }) {
+  const addHabits = useCallback(() => openSettings('habits'), [openSettings]);
   const { state } = t;
   return (
-    <TabScreen eyebrow="Consistency, not streaks" title="Habits" onSettings={openSettings} scrollTop={scrollTop}>
-      <HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} onLogSession={onLogSession} today={today} />
-      <HabitGrids settings={settings} habits={state.habits} today={today} />
-      <PatternsCard settings={settings} weights={state.weights} habits={state.habits} unit={state.unit} trend={series} today={today} />
+    <TabScreen eyebrow="Consistency, not streaks" title="Habits" onSettings={() => openSettings()} scrollTop={scrollTop}>
+      <CardBoundary name="This week"><HabitsCard settings={settings} habits={state.habits} onChange={t.setHabits} onLogSession={onLogSession} today={today} onAddHabits={addHabits} /></CardBoundary>
+      <CardBoundary name="Last 30 days"><HabitGrids settings={settings} habits={state.habits} today={today} /></CardBoundary>
+      <CardBoundary name="Patterns"><PatternsCard settings={settings} weights={state.weights} habits={state.habits} unit={state.unit} trend={series} today={today} /></CardBoundary>
     </TabScreen>
   );
 }
@@ -144,11 +146,11 @@ export function HabitsTab({ t, settings, series, today, scrollTop, openSettings,
 export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: TabProps) {
   const { state } = t;
   return (
-    <TabScreen eyebrow="Beyond the scale" title="Body" onSettings={openSettings} scrollTop={scrollTop}>
-      <BodyCard settings={settings} weights={state.weights} unit={state.unit} measurements={state.measurements} photos={state.photos}
-        onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} />
+    <TabScreen eyebrow="Beyond the scale" title="Body" onSettings={() => openSettings()} scrollTop={scrollTop}>
+      <CardBoundary name="Measurements & photos"><BodyCard settings={settings} weights={state.weights} unit={state.unit} measurements={state.measurements} photos={state.photos}
+        onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} /></CardBoundary>
       {settings.trackCalories
-        ? <CaloriesCard settings={settings} weights={state.weights} intake={state.intake} onChange={t.setIntake} trend={series} />
+        ? <CardBoundary name="Calories"><CaloriesCard settings={settings} weights={state.weights} intake={state.intake} onChange={t.setIntake} trend={series} /></CardBoundary>
         : <Notice icon="flame" title="Calorie estimate (optional)"
             body="Log one number a day and after two weeks Plumb works out what you really burn, from your own trend rather than a formula."
             action="Turn on" onAction={() => { t.setSettings({ ...settings, trackCalories: true }); show({ message: 'Calorie logging on' }); }} />}

@@ -1,3 +1,4 @@
+import { EmptyState } from './States';
 import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -56,7 +57,7 @@ export const PatternsCard = memo(function PatternsCard({ settings, weights, habi
   const found = settings.habits.map(h => ({ h, ins: habitInsight(settings.plan, series, habits, h.id) })).filter(x => x.ins);
   return (
     <Card title="Patterns">
-      {found.length === 0 && <Text style={s.muted}>No clear pattern yet. Each habit needs at least 3 weeks done 5+ days and 3 weeks not.</Text>}
+      {found.length === 0 && <EmptyState compact icon="mind" title="No clear pattern yet" body="Each habit needs at least 3 weeks done 5+ days and 3 weeks not." />}
       {found.map(({ h, ins }) => (
         <View key={h.id} style={s.pat}>
           <View style={s.patHead}><Icon name={habitIcon(h.icon, h.name)} size={16} color={C.plum2} /><Text style={s.patTitle}>{h.name}</Text></View>

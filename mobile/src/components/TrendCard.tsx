@@ -1,3 +1,4 @@
+import { EmptyState } from './States';
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
@@ -23,7 +24,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
   if (series.length < 2) {
     return (
       <Card title="Your trend">
-        <Text style={s.empty}>Your trend appears after a couple of weigh-ins. Weighing in most days gives the clearest picture. Daily ups and downs get smoothed out.</Text>
+        <EmptyState icon="trend" title="Your trend starts after two weigh-ins" body="Weighing in most mornings gives the clearest picture. Daily ups and downs get smoothed out." />
       </Card>
     );
   }

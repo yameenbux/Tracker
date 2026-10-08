@@ -139,3 +139,25 @@ describe('appearance', () => {
     expect(p.onAppearanceChange).toHaveBeenCalledWith('dark');
   });
 });
+
+describe('error and empty states', () => {
+  const { CardBoundary, EmptyState } = jest.requireActual('../components/States');
+  const { Text } = jest.requireActual('react-native');
+  test('a card that crashes is replaced by a small notice; the rest of the screen keeps working', () => {
+    const Boom = () => { throw new Error('bad data'); };
+    const err = jest.spyOn(console, 'error').mockImplementation(() => {});
+    render(<>
+      <CardBoundary name="The chart"><Boom /></CardBoundary>
+      <CardBoundary name="Weigh-ins"><Text>still here</Text></CardBoundary>
+    </>);
+    expect(screen.getByText('The chart couldn’t be shown')).toBeTruthy();
+    expect(screen.getByText('still here')).toBeTruthy();
+    err.mockRestore();
+  });
+  test('an empty state offers its next step', () => {
+    const go = jest.fn();
+    render(<EmptyState icon="habits" title="No daily habits yet" action="Choose habits" onAction={go} />);
+    fireEvent.press(screen.getByText('Choose habits'));
+    expect(go).toHaveBeenCalled();
+  });
+});
