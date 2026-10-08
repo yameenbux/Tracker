@@ -41,6 +41,21 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
   the lock hides everything (including the app-switcher preview).
 - **Backups** use the same format as the web app, so a `.txt` exported from the website restores here, and the other way round.
 
+## Security
+
+- **No network surface.** Plumb has no server, account, analytics or third-party SDKs; production builds have no App Transport
+  Security exceptions at all (`plugins/withProductionATS.js` strips local networking outside development builds).
+- **Encrypted at rest.** `NSFileProtectionComplete` (data protection entitlement): the app's files can't be read while the phone is locked.
+- **Lock and privacy cover.** Optional Face ID / passcode lock on every return; the app switcher always shows a blank cover.
+- **Untrusted input.** Restored backups are size-limited (10 MB), parsed defensively and cleaned field by field; nothing is ever
+  evaluated. A snapshot is kept before any restore.
+- **Notifications** carry no data (just "Weigh-in"); no push entitlement.
+- **Dependencies.** `npm audit --omit=dev` reports advisories only in build-time tooling (Metro's `braces`, the Expo CLI's
+  `node-forge`, the Jest preset's `sprintf-js`, the Xcode project editor's `uuid`). None of these ship in the app binary.
+  Re-check after each Expo SDK upgrade.
+- **Not done (by design):** jailbreak detection (easily bypassed, and a jailbroken owner already has their own data) and
+  certificate pinning (no network calls to pin).
+
 ## Not in this version yet
 
 - **Apple Health sync** — Expo Go can't use HealthKit. Needs the Apple Developer Program (£79/year)

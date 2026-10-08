@@ -33,11 +33,19 @@ export function useTracker() {
   const [saveFailed, setSaveFailed] = useState(false);
   const loaded = useRef(false);
 
+  const [loadFailed, setLoadFailed] = useState(false);   // storage couldn't be read at all: nothing may be written
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     (async () => {
       let raw: string | null = null, rawPrefs: string | null = null;
       try { [raw, rawPrefs] = await Promise.all([AsyncStorage.getItem(STORAGE_KEY), AsyncStorage.getItem(PREFS_KEY)]); }
-      catch { /* storage itself unavailable: carry on with an empty app */ }
+      catch {
+        // Reading failed (not "nothing saved"): starting empty would let setup overwrite real data, so stop here
+        setLoadFailed(true);
+        setReady(true);
+        return;
+      }
+      setLoadFailed(false);
       try { if (rawPrefs) setPrefsState(cleanPrefs(JSON.parse(rawPrefs))); } catch { /* bad prefs just reset */ }
       if (raw) {
         try {
@@ -57,7 +65,8 @@ export function useTracker() {
       loaded.current = true;
       setReady(true);
     })();
-  }, []);
+  }, [attempt]);
+  const retryLoad = useCallback(() => { setReady(false); setAttempt(a => a + 1); }, []);
 
   // Writes go one after another, so a slow earlier write can never land after a newer one
   const writes = useRef<Promise<void>>(Promise.resolve());
@@ -99,7 +108,7 @@ export function useTracker() {
   }, [prefs]);
   const dismissRecovered = useCallback(() => setRecovered(false), []);
 
-  return { state, prefs, ready, recovered, saveFailed, dismissRecovered,
+  return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
            setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs };
 }
 export type Tracker = ReturnType<typeof useTracker>;

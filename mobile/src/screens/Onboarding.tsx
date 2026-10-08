@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, mondayOf, parseKey } from '../core/dates';
 import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, PACES } from '../core/plan';
 import { fmt, lbPart, parseWeightInput, plausible, rangeText, showAmount, showRangeError, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
-import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
+import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { ProgressChart } from '../components/ProgressChart';
 import { Icon, IconName } from '../components/Icons';
 import { PlumbIcon } from '../components/Logo';
@@ -36,7 +36,7 @@ function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onCh
   };
   const box = (i: 0 | 1, w: number, label: string, suffix: string) => (
     <View style={s.bigBox}>
-      <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'} inputAccessoryViewID={DONE_ID}
+      <DoneInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'}
         placeholder="0" placeholderTextColor={C.placeholder} autoFocus={i === 0} accessibilityLabel={label} />
       <Text style={s.bigUnit}>{suffix}</Text>
     </View>
@@ -91,6 +91,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   };
 
   return (
+    <DoneWindow>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[s.wrap, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 16 }]}>
       {step !== 'welcome' && (
         <View style={s.top}>
@@ -237,8 +238,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           <Pressable onPress={() => finish(false)} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Not now</Text></Pressable>
         </>}
       </View>
-      <KeyboardDone />
     </KeyboardAvoidingView>
+    </DoneWindow>
   );
 }
 

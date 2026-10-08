@@ -164,7 +164,9 @@ export function TodayNotices({ t, lockLost, onLockLostDismiss, backupHidden, onB
 }) {
   const { prefs, state } = t;
   const lastBackupDays = daysSince(prefs.lastBackup);
-  const showBackup = !backupHidden && backupDue(prefs.lastBackup, Object.keys(state.weights).length);
+  // The backup nudge waits while anything more urgent is showing, so Today never opens on a stack of cards
+  const urgent = t.recovered || !!pendingPlan || lockLost || t.saveFailed;
+  const showBackup = !urgent && !backupHidden && backupDue(prefs.lastBackup, Object.keys(state.weights).length);
   return (
     <>
       {t.recovered && (

@@ -33,7 +33,6 @@
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
             "NSPrivacyAccessedAPITypeReasons": [
               "C617.1",
-              "0A2A.1",
               "3B52.1"
             ]
           },
@@ -46,8 +45,7 @@
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
             "NSPrivacyAccessedAPITypeReasons": [
-              "E174.1",
-              "85F4.1"
+              "E174.1"
             ]
           }
         ]
@@ -57,6 +55,9 @@
           "NSAllowsArbitraryLoads": false,
           "NSAllowsLocalNetworking": true
         }
+      },
+      "entitlements": {
+        "com.apple.developer.default-data-protection": "NSFileProtectionComplete"
       }
     },
     "android": {
@@ -76,6 +77,7 @@
     },
     "plugins": [
       "./plugins/withoutPushEntitlement.js",
+      "./plugins/withProductionATS.js",
       "expo-sharing",
       "expo-font",
       "@react-native-community/datetimepicker",

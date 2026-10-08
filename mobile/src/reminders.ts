@@ -40,6 +40,12 @@ export function reminderDays(r: Reminder, loggedToday: boolean, now: Date = new 
   return out;
 }
 
+/** True when reminders are on in Plumb but notifications are switched off for it in iOS Settings. */
+export async function remindersBlocked(): Promise<boolean> {
+  if (Platform.OS === 'web') return false;
+  try { return !(await Notifications.getPermissionsAsync()).granted; } catch { return false; }
+}
+
 // Calls run one after another, so quick changes (spinning the time picker) can't leave duplicate reminders
 let queue: Promise<void> = Promise.resolve();
 
@@ -48,12 +54,17 @@ export function applyReminder(r: Reminder, loggedToday = false): Promise<void> {
   if (Platform.OS === 'web') return Promise.resolve();
   queue = queue.then(async () => {
     try {
-      const existing = await Notifications.getAllScheduledNotificationsAsync();
-      await Promise.all(existing.filter(n => n.identifier.startsWith(PREFIX)).map(n => Notifications.cancelScheduledNotificationAsync(n.identifier)));
-      for (const at of reminderDays(r, loggedToday)) {
+      const ours = (await Notifications.getAllScheduledNotificationsAsync()).filter(n => n.identifier.startsWith(PREFIX));
+      const want = reminderDays(r, loggedToday);
+      // Nothing to do if exactly these reminders are already scheduled (the usual case on every launch)
+      const key = (at: Date) => PREFIX + dateKey(at) + '@' + at.getHours() + ':' + at.getMinutes();
+      const have = new Set(ours.map(n => n.identifier + '@' + (n.content.data?.at ?? '')));
+      if (ours.length === want.length && want.every(at => have.has(key(at)))) return;
+      await Promise.all(ours.map(n => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+      for (const at of want) {
         await Notifications.scheduleNotificationAsync({
           identifier: PREFIX + dateKey(at),
-          content: { title: 'Weigh-in', body: 'Step on the scale before breakfast. One number, ten seconds.', data: { action: 'log' } },
+          content: { title: 'Weigh-in', body: 'Step on the scale before breakfast. One number, ten seconds.', data: { action: 'log', at: at.getHours() + ':' + at.getMinutes() } },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
         });
       }

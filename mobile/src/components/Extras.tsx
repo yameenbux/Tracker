@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { estimateExpenditure, intakeForPace, CAL_MIN_DAYS, CAL_WINDOW } from '../core/calories';
 import { addDays, dateKey, DAY_ABBR, longDate, parseKey, startOfDay } from '../core/dates';
 import { habitInsight, INSIGHT_MIN_WEEKS, MILESTONE_TEXT, weeksOfData } from '../core/insights';
@@ -11,7 +11,7 @@ import type { HabitLog, Session, Settings, TrackerState, Unit, Weights } from '.
 import { C, F, themed, useScheme } from '../theme';
 import { fieldStyles } from './Fields';
 import { Icon } from './Icons';
-import { DONE_ID } from './KeyboardDone';
+import { DoneInput } from './KeyboardDone';
 import { Sheet } from './Sheet';
 import { Button, Card } from './ui';
 
@@ -111,7 +111,7 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
             </Pressable>
           ))}
         </View>
-        <TextInput key={day} value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal" inputAccessoryViewID={DONE_ID}
+        <DoneInput key={day} value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal"
           returnKeyType="done" maxFontSizeMultiplier={1.4}
           placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.calIn]} accessibilityLabel={`Calories eaten, ${which}`} />
       </View>
@@ -126,7 +126,7 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
           ? <>From what you ate and how your trend moved over {est.window} days, you burn about <Text style={s.b}>{est.tdee.toLocaleString()} kcal a day</Text>. Your plan’s pace means eating around <Text style={s.b}>{intakeForPace(est.tdee, pace).toLocaleString()} kcal</Text>.</>
           : <>Log {CAL_MIN_DAYS} of the last {CAL_WINDOW} days and Plumb estimates what you really burn, from your own data rather than a formula.</>}
       </Text>
-      {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low.</Text>}
+      {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low. An estimate, not medical advice: talk to a GP or dietitian before big changes.</Text>}
     </Card>
   );
 }
@@ -178,7 +178,7 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
                 {sug ? (sug.reason === 'increase' ? ` · try ${toU(sug.kg)} ${L}` : ' · repeat until every rep is done') : ''}
               </Text>
             </View>
-            <TextInput value={rows[n].txt} onChangeText={v => setRows(r => ({ ...r, [n]: { ...r[n], txt: v } }))} keyboardType="decimal-pad" inputAccessoryViewID={DONE_ID}
+            <DoneInput value={rows[n].txt} onChangeText={v => setRows(r => ({ ...r, [n]: { ...r[n], txt: v } }))} keyboardType="decimal-pad"
               placeholder={L} placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.liftIn, bad.includes(n) && { borderColor: C.danger }]}
               maxFontSizeMultiplier={1.4} accessibilityLabel={`${n} weight in ${unit === 'kg' ? 'kilograms' : 'pounds'}`} />
             <Pressable onPress={() => setRows(r => ({ ...r, [n]: { ...r[n], done: !r[n].done } }))} style={[s.liftDone, rows[n].done && s.liftDoneOn]}

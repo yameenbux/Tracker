@@ -12,14 +12,15 @@ import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/ty
 import type { Reminder } from '../core/storage';
 import { AppearanceToggle, DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
-import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
+import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { Button } from '../components/ui';
-import { confirm } from '../dialogs';
+import { confirm, notify } from '../dialogs';
 import { success } from '../feel';
 import { useReducedMotion } from '../motion';
 import { timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
+export const SUPPORT_EMAIL = 'yameen@ysbdesigns.uk';
 export const PRIVACY_URL = 'https://yameenbux.github.io/Tracker/privacy.html';
 
 // ---------- building blocks: iOS grouped list ----------
@@ -34,9 +35,13 @@ function Group({ title, footer, children }: { title?: string; footer?: string; c
   );
 }
 
-function Row({ icon, label, value, onPress, right, destructive, last, hint }: {
+function Row({ icon, label, value, onPress, right, destructive, last, hint, wide }: {
   icon?: IconName; label: string; value?: string; onPress?: () => void; right?: React.ReactNode; destructive?: boolean; last?: boolean; hint?: string;
+  wide?: boolean;   // the control is a wide segmented picker
 }) {
+  // At the largest text sizes a segmented picker can't share a line with its label: it moves underneath
+  const { fontScale } = useWindowDimensions();
+  const stack = wide && fontScale > 1.3;
   const body = (
     <>
       {icon ? <View style={[s.rowIcon, destructive && { backgroundColor: C.coralBg }]}><Icon name={icon} size={18} color={destructive ? C.danger : C.plum2} /></View> : null}
@@ -44,11 +49,11 @@ function Row({ icon, label, value, onPress, right, destructive, last, hint }: {
       <Text style={[s.rowLabel, destructive && { color: C.danger }]} numberOfLines={2}
         accessibilityElementsHidden={!!right} importantForAccessibility={right ? 'no' : 'auto'}>{label}</Text>
       {value ? <Text style={s.rowValue} numberOfLines={1}>{value}</Text> : null}
-      {right}
+      {stack ? <View style={s.rowStacked}>{right}</View> : right}
       {onPress && !right ? <Icon name="chevron" size={18} color={C.inkSoft} /> : null}
     </>
   );
-  const style = [s.row, !last && s.rowLine];
+  const style = [s.row, !last && s.rowLine, stack && s.rowWrap];
   if (!onPress) return <View style={style} accessible={!right} accessibilityLabel={value ? `${label}, ${value}` : label}>{body}</View>;
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [...style, pressed && { backgroundColor: C.chip }]}
@@ -83,7 +88,9 @@ function PageHeader({ title, onBack, right }: { title: string; onBack: () => voi
 
 function Input(props: React.ComponentProps<typeof TextInput>) {
   const numeric = props.keyboardType === 'number-pad' || props.keyboardType === 'decimal-pad';
-  return <TextInput placeholderTextColor={C.placeholder} maxFontSizeMultiplier={1.5} inputAccessoryViewID={numeric ? DONE_ID : undefined} {...props} style={[fieldStyles.fIn, props.style]} />;
+  return numeric
+    ? <DoneInput placeholderTextColor={C.placeholder} maxFontSizeMultiplier={1.5} {...props} style={[fieldStyles.fIn, props.style]} />
+    : <TextInput placeholderTextColor={C.placeholder} maxFontSizeMultiplier={1.5} {...props} style={[fieldStyles.fIn, props.style]} />;
 }
 const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
@@ -96,7 +103,7 @@ export interface SettingsProps {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
   lock: boolean; lockAvailable: boolean; lockName: string; onLockChange: (on: boolean) => void;
   reminder: Reminder; onReminderChange: (r: Reminder) => void;
-  appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void;
+  appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void; reminderBlocked?: boolean;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   onPlanLeftUnsaved: (plan: Settings['plan']) => void;
   onSave: (s: Settings) => void; onClose: () => void;
@@ -133,6 +140,7 @@ export function SettingsScreen(p: SettingsProps) {
 
   // The root list stays mounted underneath a pushed page (keeps its scroll position, and the page can slide back over it)
   return (
+    <DoneWindow>
     <View style={{ flex: 1 }}>
     <View style={s.wrap} importantForAccessibility={page === 'root' ? 'auto' : 'no-hide-descendants'} accessibilityElementsHidden={page !== 'root'}>
       <View style={s.bar}>
@@ -152,7 +160,7 @@ export function SettingsScreen(p: SettingsProps) {
         </Group>
 
         <Group title="Tracking">
-          <Row icon="ruler" label="Units" right={<UnitToggle unit={unit} onChange={p.setUnit} />} />
+          <Row icon="ruler" label="Units" wide right={<UnitToggle unit={unit} onChange={p.setUnit} />} />
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
@@ -161,11 +169,13 @@ export function SettingsScreen(p: SettingsProps) {
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Plumb works out what you really burn from your trend.</Text>
 
         <Group title="Display">
-          <Row icon="moon" label="Appearance" right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} last />
+          <Row icon="moon" label="Appearance" wide right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} last />
         </Group>
 
-        <Group title="Reminder" footer="A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.">
+        <Group title="Reminder" footer={p.reminderBlocked ? 'Notifications for Plumb are switched off in iOS Settings, so no reminder will appear until they’re allowed again.'
+          : 'A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.'}>
           <SwitchRow icon="bell" label="Daily weigh-in reminder" value={p.reminder.on} onChange={on => p.onReminderChange({ ...p.reminder, on })} last={!p.reminder.on} />
+          {p.reminderBlocked && <Row icon="info" label="Allow notifications" value="iOS Settings" onPress={() => Linking.openSettings().catch(() => {})} hint="Opens Plumb’s page in iOS Settings" />}
           {p.reminder.on && <Row icon="calendar" label="Time" last right={<TimeInput hour={p.reminder.hour} minute={p.reminder.minute}
             onChange={(hour, minute) => p.onReminderChange({ ...p.reminder, hour, minute })} />} />}
         </Group>
@@ -184,16 +194,18 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="trash" label="Erase everything" destructive onPress={p.onEraseAll} last hint="Deletes all data and photos from this phone" />
         </Group>
 
-        <Group title="About">
+        <Group title="About" footer={`Support: ${SUPPORT_EMAIL}`}>
           <Row icon="shield" label="Privacy policy" onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL, { controlsColor: C.coralInk }).catch(() => Linking.openURL(PRIVACY_URL).catch(() => {}))} hint="Opens the policy" />
+          <Row icon="mail" label="Contact support" hint={`Opens Mail to ${SUPPORT_EMAIL}`}
+            onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Plumb ${version}`)}`).catch(() => notify('No mail app', `Email ${SUPPORT_EMAIL} from any device.`))} />
           <Row icon="info" label="Version" value={build ? `${version} (${build})` : version} last />
         </Group>
-        <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Plumb · a weight tracker that stays yours</Text>
+        <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Plumb · a weight tracker that stays yours{'\n'}Targets and estimates are guidance, not medical advice.</Text>
       </ScrollView>
     </View>
     {page !== 'root' && <Pushed key={page} onBack={back} leaving={leaving} onGone={gone}>{subPage()}</Pushed>}
-    <KeyboardDone />
     </View>
+    </DoneWindow>
   );
 }
 
@@ -312,7 +324,7 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
         <View style={s.form}>
           <Text style={[s.hint, { marginTop: 0 }]}>Weeks where the target holds steady: holidays, Christmas, a hard month. Long plans with planned breaks are easier to stick to.</Text>
           {plan.breaks.map((b, i) => (
-            <View key={b.start + i} style={s.breakRow}>
+            <View key={i} style={s.breakRow}>{/* by position: keying on the date remounted the row (closing the picker) on every edit */}
               <View style={{ flex: 1 }}><DateInput value={b.start} onChange={v => setBreak(i, { start: v })} label={`Break ${i + 1} start`} /></View>
               <View style={s.stepper}>
                 <Pressable onPress={() => setBreak(i, { weeks: Math.max(1, b.weeks - 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel={`Break ${i + 1}: fewer weeks`}><Text style={s.stepTxt}>−</Text></Pressable>
@@ -487,6 +499,8 @@ const s = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 8, paddingHorizontal: 14 },
   rowLine: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line },
   rowIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: C.panel, alignItems: 'center', justifyContent: 'center' },
+  rowWrap: { flexWrap: 'wrap' },
+  rowStacked: { width: '100%', alignItems: 'flex-end', paddingBottom: 4 },
   rowLabel: { flex: 1, fontFamily: F.bodyMed, fontSize: 16, color: C.ink },
   rowValue: { fontFamily: F.body, fontSize: 15, color: C.inkSoft, maxWidth: '55%', textAlign: 'right' },
   lead: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 20, marginBottom: 14, marginHorizontal: 4 },

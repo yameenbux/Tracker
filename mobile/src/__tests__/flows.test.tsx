@@ -3,7 +3,8 @@ import { Alert } from 'react-native';
 import { defaultSettings, buildTargets } from '../core/plan';
 import { DEFAULT_PREFS } from '../core/storage';
 import { Toast } from '../components/Shell';
-import { reminderDays } from '../reminders';
+import * as Notifications from 'expo-notifications';
+import { applyReminder, reminderDays, remindersBlocked } from '../reminders';
 import { SettingsScreen, SettingsProps } from '../screens/SettingsScreen';
 import { useLock } from '../useLock';
 
@@ -83,6 +84,26 @@ describe('smart reminders', () => {
   });
   test('off means nothing scheduled', () => {
     expect(reminderDays({ ...r, on: false }, false)).toEqual([]);
+  });
+  test('opening the app again doesn’t reschedule identical reminders; a new time does', async () => {
+    const N = Notifications as unknown as Record<string, jest.Mock>;
+    N.scheduleNotificationAsync.mockClear();
+    await applyReminder(r, false);
+    const first = N.scheduleNotificationAsync.mock.calls.map(c => ({ identifier: c[0].identifier, content: c[0].content }));
+    expect(first.length).toBeGreaterThan(50);
+    N.getAllScheduledNotificationsAsync.mockResolvedValue(first);
+    N.scheduleNotificationAsync.mockClear();
+    await applyReminder(r, false);
+    expect(N.scheduleNotificationAsync).not.toHaveBeenCalled();
+    await applyReminder({ ...r, minute: 45 }, false);
+    expect(N.scheduleNotificationAsync).toHaveBeenCalled();
+    N.getAllScheduledNotificationsAsync.mockResolvedValue([]);
+  });
+  test('notifications switched off in iOS Settings are detected', async () => {
+    const N = Notifications as unknown as Record<string, jest.Mock>;
+    N.getPermissionsAsync.mockResolvedValueOnce({ granted: false });
+    expect(await remindersBlocked()).toBe(true);
+    expect(await remindersBlocked()).toBe(false);
   });
 });
 

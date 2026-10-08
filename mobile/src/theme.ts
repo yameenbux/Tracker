@@ -15,7 +15,7 @@ const light = {
   mint: '#12B886',
   mintInk: '#06704F',     // mint for text: passes WCAG AA on white and on mintBg
   danger: '#B2392A',      // destructive text, AA on white and coralBg
-  placeholder: '#857B8F',
+  placeholder: '#73697E',      // 4.9:1 on paper (iOS's own placeholders are fainter, but these hint at units)
   control: '#8F8276',          // borders of inputs, checkboxes, radios, switch tracks: 3:1 on white
   graphAmber: '#D9701F',       // chart / mark colours that keep 3:1 against white
   graphCoral: '#E8553F',
@@ -50,6 +50,7 @@ const light = {
   warnLine: '#F2E0B5', mintLine: '#BFEBD8', panelEdge: '#E4DAF2', paceOn: '#F7F3FB',
   backdrop: 'rgba(36,27,51,0.38)', scrim: 'rgba(36,27,51,0.72)',
   keyBar: '#F2EDE8', keyBarLine: '#CFC5BB',
+  sheetEdge: 'transparent',
 };
 
 /** Dark palette: plum-black surfaces, light ink, and accents lifted to keep WCAG AA (text 4.5:1, marks 3:1). */
@@ -93,13 +94,14 @@ const dark: typeof light = {
   fill: '#EDE7F4', onFill: '#1A1622',
   onAccent: '#1A1622',
   onCoral: '#241B33',
-  toastAct: '#B2392A',
+  toastAct: '#5A3896',         // plum, not red: Undo isn't destructive
   tipTrend: '#B2392A',
+  sheetEdge: '#3A3348',        // a hairline so a sheet's top edge reads against the dimmed screen
   raised: '#1C1925',
   bar: 'rgba(18,16,25,0.96)', barLine: '#2E2938',
   warnLine: '#4A3B1C', mintLine: '#22473A', panelEdge: '#3A3150', paceOn: '#251E36',
   backdrop: 'rgba(0,0,0,0.55)', scrim: 'rgba(0,0,0,0.6)',
-  keyBar: '#1C1925', keyBarLine: '#2E2938',
+  keyBar: '#2C2C2E', keyBarLine: '#3A3A3C',   // matches the iOS dark keyboard
 };
 
 export type Scheme = 'light' | 'dark';

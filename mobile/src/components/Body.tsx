@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { cmToUnit, lengthToCm, MEASURES, measureSummary, photoDates, plausibleCm, POSES, setMeasureDay, setPhotoRef, showLength } from '../core/body';
 import { dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { weightSeries } from '../core/plan';
@@ -11,7 +11,7 @@ import { addPhoto, deletePhoto, photoUri } from '../photos';
 import { C, F, themed, useScheme } from '../theme';
 import { DateInput, Field, fieldStyles } from './Fields';
 import { Icon } from './Icons';
-import { DONE_ID } from './KeyboardDone';
+import { DoneInput } from './KeyboardDone';
 import { Sheet } from './Sheet';
 import { Button, Card, Tabs } from './ui';
 
@@ -152,8 +152,8 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
         {MEASURES.map(m => (
           <View key={m.key} style={s.mCell}>
             <Field label={`${m.label} (${unit === 'kg' ? 'cm' : 'in'})`}>
-              <TextInput style={[fieldStyles.fIn, { fontFamily: F.displaySemi }]} value={txt[m.key]} keyboardType="decimal-pad"
-                onChangeText={v => setTxt(t => ({ ...t, [m.key]: v }))} inputAccessoryViewID={DONE_ID} placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={m.label} />
+              <DoneInput style={[fieldStyles.fIn, { fontFamily: F.displaySemi }]} value={txt[m.key]} keyboardType="decimal-pad"
+                onChangeText={v => setTxt(t => ({ ...t, [m.key]: v }))} placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={m.label} />
             </Field>
             <Text style={s.mHint}>{m.hint}</Text>
           </View>

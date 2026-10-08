@@ -4,7 +4,7 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, TextStyle, View } fro
 import { dateKey, parseKey, validKey } from '../core/dates';
 import { fmt, lbPart, parseWeightInput, stPart, toLbNum } from '../core/units';
 import type { Unit } from '../core/types';
-import { DONE_ID } from './KeyboardDone';
+import { DoneInput } from './KeyboardDone';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
 /** kg / st-lb toggle */
@@ -15,7 +15,7 @@ export function UnitToggle({ unit, onChange }: { unit: Unit; onChange: (u: Unit)
         <Pressable key={u} onPress={() => onChange(u)} style={[s.segBtn, unit === u && s.segOn]}
           accessibilityRole="radio" accessibilityState={{ checked: unit === u }}
           accessibilityLabel={u === 'kg' ? 'Kilograms' : u === 'imp' ? 'Stones and pounds' : 'Pounds'}>
-          <Text style={[s.segTxt, unit === u && s.segTxtOn]}>{u === 'kg' ? 'kg' : u === 'imp' ? 'st / lb' : 'lb'}</Text>
+          <Text maxFontSizeMultiplier={1.4} style={[s.segTxt, unit === u && s.segTxtOn]}>{u === 'kg' ? 'kg' : u === 'imp' ? 'st / lb' : 'lb'}</Text>
         </Pressable>
       ))}
     </View>
@@ -31,7 +31,7 @@ export function AppearanceToggle({ value, onChange }: { value: AppearancePref; o
         <Pressable key={id} onPress={() => onChange(id)} style={[s.segBtn, value === id && s.segOn]}
           accessibilityRole="radio" accessibilityState={{ checked: value === id }}
           accessibilityLabel={id === 'system' ? 'Match iPhone setting' : label}>
-          <Text style={[s.segTxt, value === id && s.segTxtOn]}>{label}</Text>
+          <Text maxFontSizeMultiplier={1.4} style={[s.segTxt, value === id && s.segTxtOn]}>{label}</Text>
         </Pressable>
       ))}
     </View>
@@ -77,8 +77,8 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
   if (unit === 'kg' || unit === 'lb') {
     return (
       <View style={s.wRow}>
-        <TextInput style={[...box, w(84, 66, 132)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
-          maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="decimal-pad"
+        <DoneInput style={[...box, w(84, 66, 132)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
+          maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus keyboardType="decimal-pad"
           placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + (unit === 'kg' ? ' in kilograms' : ' in pounds')} />
         <Text style={s.unit}>{unit}</Text>
       </View>
@@ -86,12 +86,12 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
   }
   return (
     <View style={s.wRow}>
-      <TextInput style={[...box, w(52, 40, 64)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
-        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="number-pad"
+      <DoneInput style={[...box, w(52, 40, 64)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
+        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus keyboardType="number-pad"
         placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' stone'} />
       <Text style={s.unit}>st</Text>
-      <TextInput style={[...box, w(64, 52, 84)]} value={txt[1]} onChangeText={v => edit(1, v)}
-        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="decimal-pad"
+      <DoneInput style={[...box, w(64, 52, 84)]} value={txt[1]} onChangeText={v => edit(1, v)}
+        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus keyboardType="decimal-pad"
         placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' pounds'} />
       <Text style={s.unit}>lb</Text>
     </View>
