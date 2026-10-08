@@ -77,7 +77,7 @@
     },
     "plugins": [
       "./plugins/withoutPushEntitlement.js",
-      "./plugins/withProductionATS.js",
+      "./plugins/withProductionHardening.js",
       "expo-sharing",
       "expo-font",
       "@react-native-community/datetimepicker",

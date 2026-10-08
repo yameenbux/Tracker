@@ -1,3 +1,4 @@
+import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { estimateExpenditure, intakeForPace, CAL_MIN_DAYS, CAL_WINDOW } from '../core/calories';
@@ -58,7 +59,7 @@ export const PatternsCard = memo(function PatternsCard({ settings, weights, habi
       {found.length === 0 && <Text style={s.muted}>No clear pattern yet. Each habit needs at least 3 weeks done 5+ days and 3 weeks not.</Text>}
       {found.map(({ h, ins }) => (
         <View key={h.id} style={s.pat}>
-          <Text style={s.patTitle}>{h.icon} {h.name}</Text>
+          <View style={s.patHead}><Icon name={habitIcon(h.icon, h.name)} size={16} color={C.plum2} /><Text style={s.patTitle}>{h.name}</Text></View>
           <Text style={s.patTxt}>
             Weeks with {ins!.threshold}+ days: <Text style={s.b}>{change(ins!.withRate, unit)}/week</Text> ({ins!.withWeeks} weeks).{'\n'}
             Other weeks: <Text style={s.b}>{change(ins!.withoutRate, unit)}/week</Text> ({ins!.withoutWeeks} weeks).
@@ -201,7 +202,8 @@ const s = themed(() => StyleSheet.create({
   mileTxt: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19, marginTop: 3 },
   muted: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, lineHeight: 18, paddingHorizontal: 4 },
   pat: { paddingHorizontal: 4, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
-  patTitle: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink, marginBottom: 3 },
+  patHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
+  patTitle: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink },
   patTxt: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19 },
   b: { fontFamily: F.bodyBold, color: C.ink },
   foot: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 16, paddingHorizontal: 4, marginTop: 8 },

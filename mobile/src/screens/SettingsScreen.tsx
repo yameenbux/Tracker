@@ -10,6 +10,7 @@ import { daysSince } from '../core/summary';
 import { fmt, numOrNull, showWeight, toLbNum } from '../core/units';
 import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/types';
 import type { Reminder } from '../core/storage';
+import { HABIT_ICONS, habitIcon } from '../core/habitIcons';
 import { AppearanceToggle, DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
@@ -327,16 +328,16 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
             <View key={i} style={s.breakRow}>{/* by position: keying on the date remounted the row (closing the picker) on every edit */}
               <View style={{ flex: 1 }}><DateInput value={b.start} onChange={v => setBreak(i, { start: v })} label={`Break ${i + 1} start`} /></View>
               <View style={s.stepper}>
-                <Pressable onPress={() => setBreak(i, { weeks: Math.max(1, b.weeks - 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel={`Break ${i + 1}: fewer weeks`}><Text style={s.stepTxt}>−</Text></Pressable>
+                <Pressable onPress={() => setBreak(i, { weeks: Math.max(1, b.weeks - 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel={`Break ${i + 1}: fewer weeks`}><Icon name="minus" size={18} color={C.ink} strokeWidth={2.4} /></Pressable>
                 <Text style={s.stepVal} accessibilityLabel={`${b.weeks} weeks`}>{b.weeks} wk</Text>
-                <Pressable onPress={() => setBreak(i, { weeks: Math.min(MAX_BREAK_WEEKS, b.weeks + 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel={`Break ${i + 1}: more weeks`}><Text style={s.stepTxt}>+</Text></Pressable>
+                <Pressable onPress={() => setBreak(i, { weeks: Math.min(MAX_BREAK_WEEKS, b.weeks + 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel={`Break ${i + 1}: more weeks`}><Icon name="plus" size={18} color={C.ink} strokeWidth={2.4} /></Pressable>
               </View>
               <Pressable onPress={() => setPlan(x => ({ ...x, breaks: x.breaks.filter((_, j) => j !== i) }))} style={s.x} accessibilityRole="button" accessibilityLabel={`Remove break ${i + 1}`}>
                 <Icon name="close" size={16} color={C.danger} strokeWidth={2.4} />
               </Pressable>
             </View>
           ))}
-          <Button label="+ Add break" kind="ghost" small style={{ alignSelf: 'flex-start' }}
+          <Button icon="plus" label="Add break" kind="ghost" small style={{ alignSelf: 'flex-start' }}
             onPress={() => setPlan(x => ({ ...x, breaks: [...x.breaks, { start: dateKey(addDays(mondayOf(new Date()), 28)), weeks: 1 }] }))} />
         </View>
       </ScrollView>
@@ -368,25 +369,45 @@ function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: 
   const [habits, setHabits] = useState<Habit[]>(settings.habits.map(h => ({ ...h })));
   const setHabit = (i: number, patch: Partial<Habit>) => setHabits(hs => hs.map((h, j) => (j === i ? { ...h, ...patch } : h)));
   useSaveOnLeave(habits.filter(h => h.short.trim() || h.name.trim()), onSave);
+  const [picking, setPicking] = useState<string | null>(null);   // habit whose icon grid is open
   return (
     <View style={s.wrap}>
       <PageHeader title="Daily habits" onBack={onBack} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
-        <Text style={s.lead}>Up to {MAX_HABITS}. An emoji, a short label (5 letters) and a name. Removing a habit hides it; past ticks are kept.</Text>
+        <Text style={s.lead}>Up to {MAX_HABITS}. An icon, a short label (5 letters) and a name. Removing a habit hides it; past ticks are kept.</Text>
         <View style={s.form}>
           {habits.map((h, i) => (
-            <View key={h.id} style={s.habitRow}>
-              <Input value={h.icon} onChangeText={v => setHabit(i, { icon: v })} style={{ width: 54, textAlign: 'center' }} maxLength={4} accessibilityLabel={`Habit ${i + 1} emoji`} />
+            <View key={h.id}>
+            <View style={s.habitRow}>
+              <Pressable onPress={() => setPicking(p => (p === h.id ? null : h.id))} style={[s.iconBtn, picking === h.id && s.iconBtnOn]}
+                accessibilityRole="button" accessibilityState={{ expanded: picking === h.id }}
+                accessibilityLabel={`Habit ${i + 1} icon: ${HABIT_ICONS.find(([n]) => n === habitIcon(h.icon, h.name))?.[1]}`} accessibilityHint="Choose a different icon">
+                <Icon name={habitIcon(h.icon, h.name)} size={22} color={C.plum2} />
+              </Pressable>
               <Input value={h.short} onChangeText={v => setHabit(i, { short: v })} style={{ width: 72, textAlign: 'center' }} maxLength={5} placeholder="Label" accessibilityLabel={`Habit ${i + 1} short label`} />
               <Input value={h.name} onChangeText={v => setHabit(i, { name: v })} style={{ flex: 1, minWidth: 0 }} placeholder="Name" accessibilityLabel={`Habit ${i + 1} name`} />
               <Pressable onPress={() => setHabits(hs => hs.filter((_, j) => j !== i))} style={s.x} accessibilityRole="button" accessibilityLabel={'Remove ' + (h.name || `habit ${i + 1}`)}>
                 <Icon name="close" size={16} color={C.danger} strokeWidth={2.4} />
               </Pressable>
             </View>
+            {picking === h.id && (
+              <View style={s.iconGrid} accessibilityRole="radiogroup" accessibilityLabel={`Icon for ${h.name || `habit ${i + 1}`}`}>
+                {HABIT_ICONS.map(([name, label]) => {
+                  const on = habitIcon(h.icon, h.name) === name;
+                  return (
+                    <Pressable key={name} onPress={() => { setHabit(i, { icon: name }); setPicking(null); }} style={[s.iconCell, on && s.iconCellOn]}
+                      accessibilityRole="radio" accessibilityState={{ checked: on }} accessibilityLabel={label}>
+                      <Icon name={name} size={22} color={on ? C.onFill : C.ink} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+            </View>
           ))}
           {habits.length < MAX_HABITS && (
-            <Button label="+ Add habit" kind="ghost" small style={{ alignSelf: 'flex-start' }}
-              onPress={() => setHabits(hs => [...hs, { id: 'h' + Date.now().toString(36), icon: '✓', short: '', name: '' }])} />
+            <Button icon="plus" label="Add habit" kind="ghost" small style={{ alignSelf: 'flex-start' }}
+              onPress={() => setHabits(hs => [...hs, { id: 'h' + Date.now().toString(36), icon: 'check', short: '', name: '' }])} />
           )}
         </View>
       </ScrollView>
@@ -465,7 +486,7 @@ function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (
             </View>
           </View>
         ))}
-        <Button label="+ Add meal" kind="ghost" small style={{ alignSelf: 'flex-start', marginBottom: 18 }}
+        <Button icon="plus" label="Add meal" kind="ghost" small style={{ alignSelf: 'flex-start', marginBottom: 18 }}
           onPress={() => setMeals(ms => [...ms, { id: 'm' + Date.now().toString(36), when: '', text: '', kcal: null, p: null, c: null, f: null }])} />
         <Text style={s.groupTitle} accessibilityRole="header">Daily target (optional)</Text>
         <View style={s.form}>
@@ -514,9 +535,13 @@ const s = themed(() => StyleSheet.create({
   breakRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   stepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.chip, borderRadius: 10 },
   stepBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  stepTxt: { fontFamily: F.bodyBold, fontSize: 20, color: C.ink },
   stepVal: { fontFamily: F.displaySemi, fontSize: 14, color: C.ink, minWidth: 44, textAlign: 'center' },
   habitRow: { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 10 },
+  iconBtn: { width: 54, height: 44, borderRadius: 10, borderWidth: 1, borderColor: C.control, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
+  iconBtnOn: { borderColor: C.plum2, borderWidth: 2 },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, padding: 8, marginTop: -2, marginBottom: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },
+  iconCell: { width: 44, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  iconCellOn: { backgroundColor: C.fill },
   x: { width: 44, height: 44, borderRadius: 10, backgroundColor: C.coralBg, alignItems: 'center', justifyContent: 'center' },
   macros: { flexDirection: 'row', gap: 6, marginTop: 8 },
 }));

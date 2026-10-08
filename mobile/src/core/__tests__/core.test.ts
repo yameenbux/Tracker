@@ -53,7 +53,7 @@ describe('cleaning stored data', () => {
     expect(normalizeSettings({ plan: { start: 'x' } })).toBeNull();
     const s = normalizeSettings({ plan: { ...plan(), targets: 'nope' }, habits: [{ id: 'a' }, { id: 'a' }, null], sessions: { 1: { title: 'Legs', items: ['Squat'] } } })!;
     expect(s.plan.targets).toHaveLength(17);
-    expect(s.habits).toEqual([{ id: 'a', icon: '✓', short: '', name: 'Habit' }]);
+    expect(s.habits).toEqual([{ id: 'a', icon: 'check', short: '', name: 'Habit' }]);
     expect(s.sessions[1]).toEqual({ title: 'Legs', items: ['Squat'], note: '' });
     expect(s.sessions[0].items).toEqual([]);
     expect(s.event).toBeNull();
@@ -179,4 +179,48 @@ test('targetAt interpolates between weeks and holds flat outside the plan', () =
   expect(targetAt(p, new Date(2026, 9, 15))).toBeCloseTo(93.57, 2);   // halfway through week 2 (day 10 of 14)
   expect(targetAt(p, new Date(2026, 8, 1))).toBe(95);
   expect(targetAt(p, new Date(2027, 5, 1))).toBe(93);
+});
+
+describe('habit icons', () => {
+  const { habitIcon, HABIT_ICONS } = jest.requireActual('../habitIcons');
+  test('icon names pass through; emoji from older saves and backups become icons', () => {
+    expect(habitIcon('water')).toBe('water');
+    expect(habitIcon('💧')).toBe('water');
+    expect(habitIcon('🏋️‍♂️')).toBe('dumbbell');          // variation selectors and ZWJ sequences
+    expect(habitIcon('🦄', 'Read 10 pages')).toBe('book');  // unknown emoji: guessed from the name
+    expect(habitIcon(undefined, 'Something')).toBe('check');
+    expect(HABIT_ICONS.length).toBeGreaterThan(15);
+  });
+});
+
+describe('hostile backups', () => {
+  const P = jest.requireActual('../plan');
+  const { parseBackup } = jest.requireActual('../backup');
+  const base = { start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01' };
+  test('plans the app could never draw are refused or rebuilt, not saved', () => {
+    expect(P.normalizeSettings({ plan: { ...base, goalDate: '9999-12-31' } })).toBeNull();      // date out of range
+    expect(P.normalizeSettings({ plan: { ...base, goalDate: '2026-01-05' } })).toBeNull();      // zero weeks
+    expect(P.normalizeSettings({ plan: { ...base, goalDate: '2060-01-05' } })).toBeNull();      // over ten years
+    const huge = P.normalizeSettings({ plan: { ...base, targets: Array(300000).fill(85) } });
+    expect(huge.plan.targets.length).toBe(22);                                                  // one per week, rebuilt
+  });
+  test('very long arrays never overflow the stack', () => {
+    const r = P.chartRange(Array.from({ length: 400000 }, (_, i) => 80 + (i % 10)));
+    expect(r.min).toBeLessThan(80); expect(r.max).toBeGreaterThan(89);
+  });
+  test('strings are capped, odd keys are dropped, and nothing touches prototypes', () => {
+    const s = P.normalizeSettings({ plan: base, habits: [{ id: '__proto__', name: 'x' }, { id: 'a', name: 'n'.repeat(200000), short: 'LONGLABEL' }],
+      event: { name: 'e'.repeat(5000), date: '2026-03-01', detail: 'd'.repeat(5000) }, sessions: { 1: { title: 't'.repeat(999), items: Array(500).fill('i'.repeat(999)) } } });
+    expect(s.habits.find((h: { id: string }) => h.id === 'a').name.length).toBe(40);
+    expect(s.habits.find((h: { id: string }) => h.id === 'a').short).toBe('LONGL');
+    expect(s.event.name.length).toBe(60);
+    expect(s.sessions[1].items.length).toBe(40);
+    expect(s.sessions[1].items[0].length).toBe(120);
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    const text = JSON.stringify({ app: 'tracker', version: 2, settings: { plan: base }, weights: { '2026-01-05': 90, '__proto__': 1, '1066-10-14': 80 },
+      habits: {}, lifts: { '2026-01-05': { __proto__: { kg: 1 }, constructor: { kg: 2 }, Squat: { kg: 60, done: true } } } });
+    const b = parseBackup(text, null);
+    expect(Object.keys(b.weights)).toEqual(['2026-01-05']);
+    expect(Object.keys(b.lifts['2026-01-05'])).toEqual(['Squat']);
+  });
 });

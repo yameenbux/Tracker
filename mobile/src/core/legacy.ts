@@ -14,9 +14,9 @@ export function legacySettings(): Settings {
     event: null,
     habits: [
       // Same ids as the old programme so restored ticks line up; names kept generic
-      { id: 'water', icon: '💧', short: 'WATER', name: 'Water' },
-      { id: 'steps', icon: '👟', short: 'STEPS', name: 'Steps' },
-      { id: 'workout', icon: '🏋', short: 'WORK', name: 'Workout' },
+      { id: 'water', icon: 'water', short: 'WATER', name: 'Water' },
+      { id: 'steps', icon: 'steps', short: 'STEPS', name: 'Steps' },
+      { id: 'workout', icon: 'dumbbell', short: 'WORK', name: 'Workout' },
     ],
     sessions: { 0: { title: '', items: [], note: '' }, 1: { title: '', items: [], note: '' }, 2: { title: '', items: [], note: '' },
                 3: { title: '', items: [], note: '' }, 4: { title: '', items: [], note: '' }, 5: { title: '', items: [], note: '' },

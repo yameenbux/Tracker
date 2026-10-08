@@ -1,3 +1,4 @@
+import { habitIcon } from '../core/habitIcons';
 import { memo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { addDays, DAY_ABBR, dateKey, MON } from '../core/dates';
@@ -101,7 +102,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
         <View style={{ flex: 1 }} />
         {H.map(h => (
           <View key={h.id} style={s.icCol} accessible accessibilityLabel={h.name}>
-            <Text style={s.icon}>{h.icon}</Text>
+            <Icon name={habitIcon(h.icon, h.name)} size={18} color={C.plum2} />
             <Text style={s.icSmall}>{h.short.toUpperCase()}</Text>
           </View>
         ))}
@@ -153,7 +154,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
             const pct = m.of ? Math.round(m.done / m.of * 100) : 0;
             return (
               <View key={h.id} style={s.sumItem} accessible accessibilityLabel={`${h.name}: ${w.done} of the last ${w.of} days, ${pct}% over ${m.of} days`}>
-                <Text style={s.sumTxt}>{h.icon} <Text style={s.sumB}>{w.done}/{w.of}</Text> last 7 days</Text>
+                <View style={s.sumHead}><Icon name={habitIcon(h.icon, h.name)} size={15} color={C.plum2} /><Text style={s.sumTxt}><Text style={s.sumB}>{w.done}/{w.of}</Text> last 7 days</Text></View>
                 <View style={s.bar}><View style={[s.barFill, { width: `${pct}%` }]} /></View>
                 <Text style={s.sumPct}>{pct}% of {m.of} days</Text>
               </View>
@@ -169,7 +170,6 @@ const s = themed(() => StyleSheet.create({
   cap: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, paddingHorizontal: 4, marginTop: -4, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 },
   icCol: { width: 30, alignItems: 'center' },
-  icon: { fontSize: 15 },
   icSmall: { fontFamily: F.bodyBold, fontSize: 10, color: C.inkSoft, marginTop: 3 },
   dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line },
   today: { backgroundColor: C.todayBg, borderLeftWidth: 3, borderLeftColor: C.coral, borderRadius: 10, borderBottomColor: 'transparent' },   // rounded highlight; plain rows keep straight dividers
@@ -201,6 +201,7 @@ const s = themed(() => StyleSheet.create({
   logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.primary, borderRadius: 12, minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
   logBtnTxt: { fontFamily: F.bodyBold, fontSize: 14, color: '#fff' },
   summary: { marginTop: 12, padding: 10, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6 },
+  sumHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   sumTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   sumB: { fontFamily: F.display, color: C.ink },
 }));

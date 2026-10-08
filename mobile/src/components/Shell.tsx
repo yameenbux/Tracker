@@ -1,3 +1,4 @@
+import { FadeList, Tap, useReturnFade } from './Motion';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +25,7 @@ export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
   const ref = useRef<ScrollView>(null);
   useEffect(() => { if (scrollTop) ref.current?.scrollTo({ y: 0, animated: true }); }, [scrollTop]);
   const barOpacity = y.interpolate({ inputRange: [30, 70], outputRange: [0, 1], extrapolate: 'clamp' });
+  const back = useReturnFade(active);   // a quick 180 ms settle when you switch back to this tab
   return (
     <View style={{ flex: 1 }}>
     <Animated.ScrollView ref={ref} contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16 }}
@@ -34,12 +36,12 @@ export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
           {eyebrow ? <Text style={s.eyebrow} maxFontSizeMultiplier={1.4}>{eyebrow}</Text> : null}
           <Text style={s.title} accessibilityRole="header" maxFontSizeMultiplier={1.3}>{title}</Text>
         </View>
-        <Pressable onPress={onSettings} style={({ pressed }) => [s.round, pressed && { opacity: 0.6 }]} hitSlop={4}
+        <Tap onPress={onSettings} style={s.round} hitSlop={4}
           accessibilityRole="button" accessibilityLabel="Settings">
           <Icon name="settings" size={22} color={C.ink} />
-        </Pressable>
+        </Tap>
       </View>
-      {children}
+      <Animated.View style={{ opacity: back }}><FadeList>{children}</FadeList></Animated.View>
     </Animated.ScrollView>
     <Animated.View pointerEvents="none" style={[s.compact, { height: insets.top + 40, paddingTop: insets.top, opacity: barOpacity }]}
       importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
@@ -73,10 +75,10 @@ export function TabBar({ tab, onTab, onLog, onReselect }: { tab: Tab; onTab: (t:
     <View style={[s.bar, { paddingBottom: insets.bottom, height: TAB_BAR_H + insets.bottom }]} accessibilityRole="tablist">
       {item(TABS[0])}{item(TABS[1])}
       <View style={s.tab}>
-        <Pressable onPress={onLog} style={({ pressed }) => [s.log, pressed && { transform: [{ scale: 0.95 }] }]}
+        <Tap onPress={onLog} style={s.log}
           accessibilityRole="button" accessibilityLabel="Log weight" accessibilityHint="Opens the weigh-in sheet">
           <Icon name="plus" size={26} color={C.onCoral} strokeWidth={2.6} />
-        </Pressable>
+        </Tap>
       </View>
       {item(TABS[2])}{item(TABS[3])}
     </View>

@@ -22,6 +22,45 @@ export async function latestRescue(): Promise<string | null> {
     .filter(k => k.startsWith(RESCUE_KEY) || k.startsWith('tracker_snapshot_')).sort();
   return keys.length ? AsyncStorage.getItem(keys[keys.length - 1]).catch(() => null) : null;
 }
+const SET_ASIDE_FLAG = 'tracker_set_aside';
+const SNAPSHOT_DAYS = 30;
+
+/** The pre-restore snapshot is there for "undo that restore", not forever: replaced data shouldn't linger. */
+async function expireSnapshots(now = Date.now()) {
+  const keys = (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[])).filter(k => k.startsWith('tracker_snapshot_'));
+  for (const k of keys) {
+    try {
+      const at = Date.parse(JSON.parse((await AsyncStorage.getItem(k)) ?? '{}').at);
+      if (!(at > now - SNAPSHOT_DAYS * 864e5)) await AsyncStorage.removeItem(k);
+    } catch { await AsyncStorage.removeItem(k).catch(() => {}); }
+  }
+}
+
+/** The saved data exactly as stored, for the crash screen's export (even when it can't be parsed or drawn). */
+export async function rawSaved(): Promise<string | null> {
+  return AsyncStorage.getItem(STORAGE_KEY).catch(() => null);
+}
+
+/** For screens outside the normal lock (the crash screen): is the Face ID lock switched on? Errs towards yes. */
+export async function lockIsOn(): Promise<boolean> {
+  try { const raw = await AsyncStorage.getItem(PREFS_KEY); return raw ? cleanPrefs(JSON.parse(raw)).lock : false; }
+  catch { return true; }
+}
+
+/**
+ * Escape hatch for saved data that crashes the app: keep an exact copy aside (never deleted), then start empty.
+ * The next launch says so and offers the copy for export, and a backup can be restored as normal.
+ */
+export async function setAsideSaved(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (raw) await rescue(raw);
+    await AsyncStorage.setItem(SET_ASIDE_FLAG, '1');
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    return true;
+  } catch { return false; }
+}
+
 const EMPTY: TrackerState = { settings: null, weights: {}, habits: {}, unit: 'kg', measurements: {}, photos: {}, intake: {}, lifts: {} };
 
 /** Everything lives on the device in one JSON blob — the data is tiny, and one write keeps it consistent. */
@@ -46,6 +85,10 @@ export function useTracker() {
         return;
       }
       setLoadFailed(false);
+      if (!raw && (await AsyncStorage.getItem(SET_ASIDE_FLAG).catch(() => null))) {   // after the crash screen's "set aside"
+        setRecovered(true);
+        AsyncStorage.removeItem(SET_ASIDE_FLAG).catch(() => {});
+      }
       try { if (rawPrefs) setPrefsState(cleanPrefs(JSON.parse(rawPrefs))); } catch { /* bad prefs just reset */ }
       if (raw) {
         try {
@@ -64,6 +107,7 @@ export function useTracker() {
       }
       loaded.current = true;
       setReady(true);
+      expireSnapshots().catch(() => {});
     })();
   }, [attempt]);
   const retryLoad = useCallback(() => { setReady(false); setAttempt(a => a + 1); }, []);

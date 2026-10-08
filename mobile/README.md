@@ -44,7 +44,7 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
 ## Security
 
 - **No network surface.** Plumb has no server, account, analytics or third-party SDKs; production builds have no App Transport
-  Security exceptions at all (`plugins/withProductionATS.js` strips local networking outside development builds).
+  Security exceptions at all (`plugins/withProductionHardening.js` strips local networking outside development builds).
 - **Encrypted at rest.** `NSFileProtectionComplete` (data protection entitlement): the app's files can't be read while the phone is locked.
 - **Lock and privacy cover.** Optional Face ID / passcode lock on every return; the app switcher always shows a blank cover.
 - **Untrusted input.** Restored backups are size-limited (10 MB), parsed defensively and cleaned field by field; nothing is ever

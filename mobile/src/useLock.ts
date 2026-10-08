@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { biometricName, canLock, unlock } from './lock';
+import { biometricName, canLock, lockAvailability, unlock } from './lock';
 import type { Prefs } from './core/storage';
 
 /**
@@ -30,7 +30,9 @@ export function useLock(ready: boolean, prefs: Prefs, setPrefs: (p: Partial<Pref
     if (asking.current || !lockedRef.current) return;
     asking.current = true;
     try {
-      if (!(await canLock())) {          // passcode removed in iOS Settings: authentication can never succeed
+      const avail = await lockAvailability();
+      if (avail === 'unknown') return;   // couldn't check: fail closed (stay locked; the Unlock button tries again)
+      if (avail === 'none') {            // passcode removed in iOS Settings: authentication can never succeed
         setPrefs({ lock: false });
         setLockAvailable(false);
         setLockLost(true);
