@@ -113,7 +113,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-iap"
     ]
   }
 }

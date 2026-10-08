@@ -22,12 +22,13 @@ import { HabitAmount } from '../components/HabitAmount';
 import { choose, confirm, notify } from '../dialogs';
 import { success, tap } from '../feel';
 import { FEATURES } from '../features';
-import { SUPPORT_EMAIL } from '../support';
+import { PRIVACY_URL, SUPPORT_EMAIL } from '../support';
+import { PaywallSlot, usePlus } from '../plus';
+import { FREE_HABITS, PLUS_PRODUCTS } from '../core/plus';
 import { useReducedMotion } from '../motion';
 import { allowReminders, DOSE_HOUR, timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
-export const PRIVACY_URL = 'https://yameenbux.github.io/Tracker/privacy.html';
 
 // ---------- building blocks: iOS grouped list ----------
 
@@ -122,6 +123,8 @@ export interface SettingsProps {
 /** Settings as an iOS grouped list: every row shows its current value, and changes apply as you make them. */
 export function SettingsScreen(p: SettingsProps) {
   const [page, setPage] = useState<Page>(p.initialPage ?? 'root');
+  const plusApi = usePlus();
+  const { plus, openPaywall } = plusApi;
   const { settings, unit } = p;
   const commit = (patch: Partial<Settings>) => {
     const next = normalizeSettings({ ...settings, ...patch });
@@ -153,6 +156,7 @@ export function SettingsScreen(p: SettingsProps) {
   return (
     <DoneWindow>
     <View style={{ flex: 1 }}>
+    <PaywallSlot />
     <View style={s.wrap} importantForAccessibility={page === 'root' ? 'auto' : 'no-hide-descendants'} accessibilityElementsHidden={page !== 'root'}>
       <View style={s.bar}>
         <View style={s.barRight} />
@@ -164,6 +168,19 @@ export function SettingsScreen(p: SettingsProps) {
         </View>
       </View>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <Group title="Tidemark Plus">
+          {plus ? <>
+            <Row icon="check" label="Plus" value={plusApi.status?.productId === PLUS_PRODUCTS.lifetime ? 'Lifetime' : plusApi.status?.productId === PLUS_PRODUCTS.yearly ? 'Yearly' : plusApi.status?.productId === PLUS_PRODUCTS.monthly ? 'Monthly' : 'Active'}
+              last={plusApi.status?.productId === PLUS_PRODUCTS.lifetime || !plusApi.storeAvailable} />
+            {plusApi.storeAvailable && plusApi.status?.productId !== PLUS_PRODUCTS.lifetime &&
+              <Row icon="calendar" label="Manage subscription" onPress={plusApi.manage} hint="Opens your App Store subscriptions" last />}
+          </> : <>
+            <Row icon="flag" label="Get Plus" value="See plans" onPress={() => openPaywall()} hint="Medication log, 6 habits, measurements, photos, calories"
+              last={!plusApi.storeAvailable} />
+            {plusApi.storeAvailable && <Row icon="download" label="Restore purchases" onPress={() => { plusApi.restore(); }} hint="If you’ve bought Plus before" last />}
+          </>}
+        </Group>
+
         <Group title="Plan">
           <Row icon="target" label="Goal" value={`${showWeight(plan.goalKg, unit)} · ${longDate(plan.goalDate)}`} onPress={() => setPage('plan')} hint="Edit your plan" />
           <Row icon="calendar" label="Planned breaks" value={plan.breaks?.length ? String(plan.breaks.length) : 'None'} onPress={() => setPage('plan')} />
@@ -176,9 +193,9 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
-{FEATURES.medication &&           <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
-            onPress={() => setPage('medication')} />}
-          <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
+{FEATURES.medication &&           <Row icon="pill" label="Medication" value={!plus ? 'Plus' : settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
+            onPress={() => (plus ? setPage('medication') : openPaywall('medication'))} />}
+          <SwitchRow icon="flame" label="Calorie estimate" value={plus && settings.trackCalories === true} onChange={v => (plus ? commit({ trackCalories: v }) : openPaywall('calories'))} last />
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
 
@@ -380,6 +397,7 @@ function EventPage({ settings, onSave, onBack }: { settings: Settings; onSave: (
 }
 
 function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (h: Habit[]) => void; onBack: () => void }) {
+  const { plus, openPaywall } = usePlus();
   const [habits, setHabits] = useState<Habit[]>(settings.habits.map(h => ({ ...h })));
   const setHabit = (i: number, patch: Partial<Habit>) => setHabits(hs => hs.map((h, j) => (j === i ? { ...h, ...patch } : h)));
   useSaveOnLeave(habits.filter(h => h.short.trim() || h.name.trim()), onSave);
@@ -405,6 +423,7 @@ function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: 
               </Pressable>
             </View>
             <HabitAmount habit={h} onChange={nh => setHabit(i, { name: nh.name })} />
+            {!plus && i >= FREE_HABITS && <Text style={s.hint}>Hidden on the free version (its ticks are kept). Shows again with Plus.</Text>}
             {picking === h.id && (
               <View style={s.iconGrid} accessibilityRole="radiogroup" accessibilityLabel={`Icon for ${h.name || `habit ${i + 1}`}`}>
                 {HABIT_ICONS.map(([name, label]) => {
@@ -420,10 +439,12 @@ function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: 
             )}
             </View>
           ))}
-          {habits.length < MAX_HABITS && (
+          {habits.length < MAX_HABITS && (plus || habits.length < FREE_HABITS ? (
             <Button icon="plus" label="Add habit" kind="ghost" small style={{ alignSelf: 'flex-start' }}
               onPress={() => setHabits(hs => [...hs, { id: 'h' + Date.now().toString(36), icon: 'check', short: '', name: '' }])} />
-          )}
+          ) : (
+            <Button icon="plus" label={`More than ${FREE_HABITS} habits: Plus`} kind="ghost" small style={{ alignSelf: 'flex-start' }} onPress={() => openPaywall('habits')} />
+          ))}
         </View>
       </ScrollView>
     </View>

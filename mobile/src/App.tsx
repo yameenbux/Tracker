@@ -8,6 +8,8 @@ import { AppState, Modal, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { lengthUnitFor } from './core/body';
 import { FEATURES } from './features';
+import { PlusProvider } from './plus';
+import { plusActive, type PlusStatus } from './core/plus';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
@@ -56,7 +58,10 @@ function useToday(): string {
 
 function Main() {
   const t = useTracker();
+  const { setPrefs } = t;
+  const onPlusStatus = useCallback((plus: PlusStatus) => setPrefs({ plus }), [setPrefs]);
   const { state, prefs } = t;
+  const plusOn = plusActive(prefs.plus);   // Tidemark Plus, as Apple last confirmed it
   const today = useToday();
   useAppearance(prefs.appearance);
   const [tab, setTab] = useState<Tab>('today');
@@ -73,7 +78,7 @@ function Main() {
   const show = useCallback((m: Omit<ToastMsg, 'id'>) => setToast({ ...m, id: Date.now() }), []);
   const hideToast = useCallback(() => setToast(null), []);
   const closeSettings = useCallback(() => setShowSettings(false), []);
-  const data = useDataActions(t, show, closeSettings);
+  const data = useDataActions(t, show, closeSettings, plusOn);
 
   // Hide the splash two frames after loading, so the saved appearance (e.g. Dark) is already painted underneath
   useEffect(() => {
@@ -87,7 +92,7 @@ function Main() {
   // Reminders: skip today once it's logged, and keep the window rolling (re-run each day and on changes)
   const loggedToday = state.weights[today] != null;
   useEffect(() => { if (t.ready) applyReminder(prefs.reminder, loggedToday); }, [t.ready, prefs.reminder, loggedToday, today]);
-  const med = FEATURES.medication ? state.settings?.medication : null, doses = state.doses;
+  const med = FEATURES.medication && plusOn ? state.settings?.medication : null, doses = state.doses;
   useEffect(() => { if (t.ready) applyDoseReminders(med, doses ?? {}); }, [t.ready, med, doses, today]);
   // Tapping a reminder opens the log sheet. It waits for Face ID when the lock is on, then opens straight after unlock.
   const [pendingLog, setPendingLog] = useState<number | null>(null);
@@ -140,12 +145,14 @@ function Main() {
   if (!settings) {
     const kept = Object.keys(state.weights).length;
     return (
+      <PlusProvider status={prefs.plus} onStatus={onPlusStatus}>
       <CoverContext.Provider value={lock.covered}>
       <Onboarding unit={state.unit} setUnit={t.setUnit} lockAvailable={lock.lockAvailable} lockName={lock.lockName}
         onDone={finishSetup} onRestore={data.restore}
         notice={t.recovered ? `Your saved plan couldn’t be read, so Tidemark kept a copy on this phone${kept ? ` and kept your ${kept} weigh-in${kept === 1 ? '' : 's'}` : ''}. Set your plan up again, or restore a backup.` : undefined} />
       <CoverOverlay />
       </CoverContext.Provider>
+      </PlusProvider>
     );
   }
 
@@ -166,7 +173,8 @@ function Main() {
   );
 
   return (
-    <CoverContext.Provider value={lock.covered}>
+    <PlusProvider status={prefs.plus} onStatus={onPlusStatus}>
+      <CoverContext.Provider value={lock.covered}>
       <DoneWindow>
       <View style={s.fill}>
         {pane('today', <TodayTab {...props} scrollTop={top('today')} notices={
@@ -229,6 +237,7 @@ function Main() {
       </View>
       </DoneWindow>
     </CoverContext.Provider>
+      </PlusProvider>
   );
 }
 

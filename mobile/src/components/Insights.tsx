@@ -1,3 +1,5 @@
+import { usePlus } from '../plus';
+import { usableHabits } from '../core/plus';
 import { Tap } from './Motion';
 import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
@@ -97,10 +99,12 @@ export const ChangeTable = memo(function ChangeTable({ series, unit, d = -1 }: {
 /** 30-day dot grid per habit (MacroFactor-style), with the consistency figure beside it. */
 export const HabitGrids = memo(function HabitGrids({ settings, habits }: { settings: Settings; habits: HabitLog; today?: string }) {
   useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
-  if (!settings.habits.length) return null;
+  const { plus } = usePlus();
+  const habitsShown = (x: Settings) => usableHabits(x.habits, plus);   // free: the first few; the rest are kept
+  if (!habitsShown(settings).length) return null;
   return (
     <Card title="Last 30 days">
-      {settings.habits.map(h => {
+      {habitsShown(settings).map(h => {
         const grid = habitGrid(habits, h.id, 30, new Date(), settings.plan.start);
         const m = consistency(habits, h.id, 30, new Date(), settings.plan.start);
         const pct = m.of ? Math.round(m.done / m.of * 100) : 0;
@@ -125,13 +129,15 @@ export const HabitGrids = memo(function HabitGrids({ settings, habits }: { setti
 export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
   settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onOpenSession?: () => void;
 }) {
+  const { plus } = usePlus();
+  const habitsShown = (x: Settings) => usableHabits(x.habits, plus);   // free: the first few; the rest are kept
   const key = dateKey(new Date());
   const sess = settings.sessions[new Date().getDay()];
-  if (!settings.habits.length && !sess.title && !sess.items.length) return null;
+  if (!habitsShown(settings).length && !sess.title && !sess.items.length) return null;
   return (
     <Card title={`Today · ${DAY_ABBR[parseKey(key).getDay()]}`}>
       <View style={s.chips}>
-        {settings.habits.map(h => {
+        {habitsShown(settings).map(h => {
           const on = !!habits[key]?.[h.id];
           return (
             <Tap key={h.id} onPress={() => { tick(); onChange(toggleHabit(habits, key, h.id)); }} style={[s.chip, on && s.chipOn]}
