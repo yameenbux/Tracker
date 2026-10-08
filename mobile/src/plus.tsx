@@ -33,7 +33,8 @@ export function PaywallSlot({ root }: { root?: boolean }) {
   return <Paywall reason={ctx.reason === 'any' ? null : ctx.reason} onClose={ctx.close} onRestore={ctx.onRestore} />;
 }
 
-export function PlusProvider({ status, onStatus, children }: { status: PlusStatus; onStatus: (s: PlusStatus) => void; children: ReactNode }) {
+// Also mounted behind the lock screen (`locked`), so a purchase that completes while locked is still finished with Apple
+export function PlusProvider({ status, onStatus, locked, children }: { status: PlusStatus; onStatus: (s: PlusStatus) => void; locked?: boolean; children: ReactNode }) {
   const [paywall, setPaywall] = useState<PlusFeature | 'any' | null>(null);
   const slots = useRef(new Set<number>());
   const [top, setTop] = useState(0);
@@ -49,7 +50,10 @@ export function PlusProvider({ status, onStatus, children }: { status: PlusStatu
     const sub = AppState.addEventListener('change', st => { if (st === 'active') refresh(); });
     const off = onStoreUpdates(
       s => { onStatus(s); if (s.active) { setPaywall(null); success(); } },
-      (message, cancelled) => { if (!cancelled) notify('Purchase didn’t complete', message); },
+      (message, kind) => {
+        if (kind === 'pending') notify('Waiting for approval', 'Plus will unlock once the purchase is approved.');
+        else if (kind === 'failed') notify('Purchase didn’t complete', message);
+      },
     );
     return () => { sub.remove(); off(); };
   }, [onStatus]);
@@ -71,8 +75,9 @@ export function PlusProvider({ status, onStatus, children }: { status: PlusStatu
   }), [plus, status, restore]);
 
   const close = useCallback(() => setPaywall(null), []);
-  const slotApi = useMemo<SlotApi>(() => ({ top, add: addSlot, remove: removeSlot, reason: paywall, close, onRestore: restore }),
-    [top, addSlot, removeSlot, paywall, close, restore]);
+  // Nothing shows over the lock screen; an open paywall comes back after unlocking
+  const slotApi = useMemo<SlotApi>(() => ({ top, add: addSlot, remove: removeSlot, reason: locked ? null : paywall, close, onRestore: restore }),
+    [top, addSlot, removeSlot, locked, paywall, close, restore]);
   return (
     <Ctx.Provider value={api}>
       <SlotCtx.Provider value={slotApi}>

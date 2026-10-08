@@ -9,7 +9,7 @@ import { PlusProvider, usePlus } from '../plus';
 import { SettingsScreen, SettingsProps } from '../screens/SettingsScreen';
 
 const N = Iap as unknown as Record<string, jest.Mock>;
-const product = (id: string, price: string, trial = false) => ({ id, displayPrice: price, price: Number(price.slice(1)), currency: 'GBP', ...(trial ? {
+const product = (id: string, price: string, trial = false) => ({ id, displayPrice: price, price: Number(price.slice(1)), currency: 'GBP', subscriptionGroupIdIOS: 'plus', ...(trial ? {
   introductoryPricePaymentModeIOS: 'free-trial', introductoryPriceNumberOfPeriodsIOS: '1', introductoryPriceSubscriptionPeriodIOS: 'week' } : {}) });
 beforeEach(() => {
   jest.clearAllMocks();
@@ -17,6 +17,7 @@ beforeEach(() => {
     ? [product(PLUS_PRODUCTS.monthly, '£1.99', true), product(PLUS_PRODUCTS.yearly, '£11.99', true)]
     : [product(PLUS_PRODUCTS.lifetime, '£19.99')]);
   N.getAvailablePurchases.mockResolvedValue([]);
+  N.isEligibleForIntroOfferIOS.mockResolvedValue(true);
 });
 
 /** Holds the status the way the app's preferences do. */
@@ -72,6 +73,46 @@ describe('buying Plus', () => {
     expect(N.finishTransaction).toHaveBeenCalledWith({ purchase, isConsumable: false });
     expect(screen.getByText('PLUS ON')).toBeTruthy();
   });
+  test('someone who’s had the free trial is offered the plain price', async () => {
+    N.isEligibleForIntroOfferIOS.mockResolvedValue(false);
+    render(<Harness><Probe /></Harness>);
+    fireEvent.press(screen.getByText('open'));
+    expect(await screen.findByText('Subscribe for £11.99 a year')).toBeTruthy();
+    expect(screen.queryByText(/Try free/)).toBeNull();
+    expect(N.isEligibleForIntroOfferIOS).toHaveBeenCalledWith('plus');
+    expect(N.isEligibleForIntroOfferIOS).toHaveBeenCalledTimes(1);           // asked once for the group, not per plan
+  });
+  test('no trial is promised when Apple can’t say whether it’s allowed', async () => {
+    N.isEligibleForIntroOfferIOS.mockRejectedValue(new Error('offline'));
+    render(<Harness><Probe /></Harness>);
+    fireEvent.press(screen.getByText('open'));
+    expect(await screen.findByText('Subscribe for £11.99 a year')).toBeTruthy();
+  });
+  test('the trial length comes from the offer’s own period', async () => {
+    const offer = { type: 'introductory', paymentMode: 'free-trial', period: { unit: 'day', value: 3 }, periodCount: 1 };
+    N.fetchProducts.mockImplementation(async ({ type }: { type: string }) => type === 'subs'
+      ? [{ ...product(PLUS_PRODUCTS.monthly, '£1.99'), subscriptionOffers: [offer] }, { ...product(PLUS_PRODUCTS.yearly, '£11.99'), subscriptionOffers: [offer] }]
+      : [product(PLUS_PRODUCTS.lifetime, '£19.99')]);
+    render(<Harness><Probe /></Harness>);
+    fireEvent.press(screen.getByText('open'));
+    expect(await screen.findByText('Try free for 3 days')).toBeTruthy();
+  });
+  test('Ask to Buy says the purchase is waiting for approval, not that it failed', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<Harness><Probe /></Harness>);
+    await waitFor(() => expect(N.purchaseErrorListener).toHaveBeenCalled());
+    const onError = N.purchaseErrorListener.mock.calls.at(-1)[0];
+    act(() => { onError({ code: 'deferred-payment', message: 'Deferred' }); });
+    expect(alert).toHaveBeenLastCalledWith('Waiting for approval', 'Plus will unlock once the purchase is approved.');
+    N.getUserFriendlyErrorMessage.mockReturnValueOnce('Payment declined');
+    act(() => { onError({ code: 'purchase-error', message: 'Declined' }); });
+    expect(alert).toHaveBeenLastCalledWith('Purchase didn’t complete', 'Payment declined');
+    alert.mockClear();
+    N.isUserCancelledError.mockReturnValueOnce(true);
+    act(() => { onError({ code: 'user-cancelled', message: 'Cancelled' }); });
+    expect(alert).not.toHaveBeenCalled();
+    alert.mockRestore();
+  });
   test('restore says plainly when there’s nothing to restore', async () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     render(<Harness><Probe /></Harness>);
@@ -102,5 +143,24 @@ describe('the free version', () => {
     unmount();
     render(<Harness initial={{ active: true, productId: PLUS_PRODUCTS.lifetime, expires: null, checkedAt: 1 }}><SettingsScreen {...props()} initialPage="habits" /></Harness>);
     expect(screen.getByText('Add habit')).toBeTruthy();
+  });
+});
+
+describe('without the store module (Expo Go)', () => {
+  test('loading it fails quietly and every store call does nothing', async () => {
+    jest.resetModules();                                                     // drop the cached store mock
+    jest.doMock('expo-iap', () => { throw new Error('Cannot find native module \'ExpoIap\''); });
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const P: typeof import('../purchases') = require('../purchases');
+    expect(P.storeAvailable).toBe(false);
+    expect(await P.connect()).toBe(false);
+    expect(await P.loadOffers()).toEqual([]);
+    expect(await P.checkPlus()).toBeNull();
+    expect(await P.restore()).toBeNull();
+    await expect(P.manageSubscription()).resolves.toBeUndefined();
+    await expect(P.buy('yearly')).rejects.toThrow(/isn’t available/);
+    const off = P.onStoreUpdates(jest.fn(), jest.fn());
+    expect(() => off()).not.toThrow();
+    jest.dontMock('expo-iap');
   });
 });
