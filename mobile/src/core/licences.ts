@@ -16,6 +16,7 @@ export const LIBRARIES: { name: string; by: string }[] = [
   { name: 'AsyncStorage', by: 'React Native Community' },
   { name: 'DateTimePicker', by: 'React Native Community' },
   { name: 'Expo Google Fonts packages', by: 'Expo' },
+  { name: 'noble-ciphers and noble-hashes', by: 'Paul Miller (paulmillr.com)' },
 ];
 export const MIT = 'These libraries are licensed under the MIT License: permission is granted, free of charge, to use, copy, modify, '
   + 'merge, publish, distribute, sublicense and sell copies, provided the copyright notice and this permission notice are included. '

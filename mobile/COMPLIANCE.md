@@ -35,6 +35,8 @@ the Expo CLI) aren't in the app binary and aren't listed.
 | `expo-image-picker` | Progress photos | No | No | The photo is copied into the app's private folder. The picker's temp copy is deleted right after, and the cache is swept on every launch as a backstop. |
 | `expo-document-picker`, `expo-file-system`, `expo-sharing` | Restore and export backups | No | No | The person chooses where an export goes. Temp files are deleted. |
 | `expo-haptics` | Taps and success feedback | No | No | |
+| `expo-crypto` | Secure random bytes for backup encryption | No | No | |
+| `@noble/ciphers`, `@noble/hashes` | Password-protected backups (XChaCha20-Poly1305, scrypt) | No | No | Audited, pure JavaScript, MIT. |
 | `expo-web-browser` | Opens the privacy policy | Only when tapped | No | Opens one fixed https URL in Safari View Controller. |
 
 No analytics, crash reporting, advertising, attribution or social SDKs are included. `npm audit --omit=dev`

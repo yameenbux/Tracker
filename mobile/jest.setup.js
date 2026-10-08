@@ -16,3 +16,4 @@ jest.mock('expo-notifications', () => ({
 }));
 jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn() }));
 jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.0.0', ios: { buildNumber: '1' } } } }));
+jest.mock('expo-crypto', () => ({ getRandomBytes: n => new Uint8Array(require('crypto').randomBytes(n)) }));
