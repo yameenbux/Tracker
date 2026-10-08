@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import App from '../App';
 import { dateKey } from '../core/dates';
 import { buildTargets, defaultSettings, SUGGESTED_HABITS } from '../core/plan';
+import { PLUS_PRODUCTS } from '../core/plus';
 
 // Whole-app flows: real screens, real store, mocked native modules only.
 jest.mock('../lock', () => ({
@@ -80,6 +81,38 @@ test('with the lock on, nothing shows until Face ID passes', async () => {
   L.lockAvailability.mockResolvedValue('none'); L.canLock.mockResolvedValue(false);
 });
 
+test('a tapped weigh-in reminder waits for Face ID, then opens the log sheet', async () => {
+  const L = jest.requireMock('../lock');
+  const N = jest.requireMock('expo-notifications') as Record<string, jest.Mock>;
+  L.lockAvailability.mockResolvedValue('available'); L.canLock.mockResolvedValue(true);
+  L.unlock.mockResolvedValueOnce(false);
+  N.getLastNotificationResponseAsync.mockResolvedValueOnce({ notification: { request: { identifier: 'weigh-in-' + day(0) } } });
+  await seeded({ lock: true });
+  render(<App />);
+  fireEvent.press(await screen.findByText('Unlock with Face ID'));
+  expect(await screen.findByLabelText('Increase by 0.1 kilograms')).toBeTruthy();
+  L.lockAvailability.mockResolvedValue('none'); L.canLock.mockResolvedValue(false);
+});
+
+test('a purchase that completes while locked is still finished with Apple and unlocks Plus', async () => {
+  const L = jest.requireMock('../lock');
+  const N = jest.requireMock('expo-iap') as Record<string, jest.Mock>;
+  L.lockAvailability.mockResolvedValue('available'); L.canLock.mockResolvedValue(true);
+  L.unlock.mockResolvedValueOnce(false);                                   // stays locked
+  N.purchaseUpdatedListener.mockClear();
+  await seeded({ lock: true });
+  render(<App />);
+  expect(await screen.findByText('Unlock with Face ID')).toBeTruthy();
+  await waitFor(() => expect(N.purchaseUpdatedListener).toHaveBeenCalled());
+  const purchase = { productId: PLUS_PRODUCTS.lifetime, purchaseState: 'purchased' };
+  N.getAvailablePurchases.mockResolvedValueOnce([purchase]);
+  await act(async () => { await N.purchaseUpdatedListener.mock.calls.at(-1)[0](purchase); });
+  expect(N.finishTransaction).toHaveBeenCalledWith({ purchase, isConsumable: false });
+  await waitFor(async () => expect(JSON.parse((await AsyncStorage.getItem('tracker_prefs_v1'))!).plus.active).toBe(true));
+  expect(screen.getByText('Unlock with Face ID')).toBeTruthy();           // still locked
+  L.lockAvailability.mockResolvedValue('none'); L.canLock.mockResolvedValue(false);
+});
+
 test('Delete all my data asks twice, then wipes everything and returns to setup', async () => {
   const { Alert } = jest.requireActual('react-native');
   const alert = jest.spyOn(Alert, 'alert').mockImplementation((...args: unknown[]) => {
@@ -93,5 +126,24 @@ test('Delete all my data asks twice, then wipes everything and returns to setup'
   expect(await screen.findByText('Set up my plan')).toBeTruthy();
   expect(alert).toHaveBeenCalledTimes(2);
   await waitFor(async () => expect(await AsyncStorage.getItem('tracker_state_v1')).toBeNull());
+  alert.mockRestore();
+});
+
+test('erasing everything keeps Plus: it belongs to the Apple ID, not the data', async () => {
+  const { Alert } = jest.requireActual('react-native');
+  const alert = jest.spyOn(Alert, 'alert').mockImplementation((...args: unknown[]) => {
+    (args[2] as { text: string; onPress?: () => void }[] | undefined)?.find(b => b.text !== 'Cancel')?.onPress?.();
+  });
+  const N = jest.requireMock('expo-iap') as Record<string, jest.Mock>;
+  N.getAvailablePurchases.mockResolvedValueOnce([{ productId: PLUS_PRODUCTS.lifetime, purchaseState: 'purchased' }]);
+  await seeded();
+  render(<App />);
+  await waitFor(async () => expect(JSON.parse((await AsyncStorage.getItem('tracker_prefs_v1'))!).plus.active).toBe(true));
+  fireEvent.press(await screen.findByLabelText('Settings'));
+  fireEvent.press(await screen.findByLabelText(/^Delete all my data/));
+  expect(await screen.findByText('Set up my plan')).toBeTruthy();
+  await waitFor(async () => expect(await AsyncStorage.getItem('tracker_state_v1')).toBeNull());
+  const prefs = JSON.parse((await AsyncStorage.getItem('tracker_prefs_v1'))!);
+  expect(prefs.plus).toMatchObject({ active: true, productId: PLUS_PRODUCTS.lifetime });
   alert.mockRestore();
 });

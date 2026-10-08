@@ -21,6 +21,7 @@ jest.mock('expo-iap', () => ({
   requestPurchase: jest.fn(async () => null), finishTransaction: jest.fn(async () => {}), restorePurchases: jest.fn(async () => {}),
   deepLinkToSubscriptions: jest.fn(async () => {}), purchaseUpdatedListener: jest.fn(() => ({ remove: jest.fn() })),
   purchaseErrorListener: jest.fn(() => ({ remove: jest.fn() })), isUserCancelledError: jest.fn(() => false), getUserFriendlyErrorMessage: jest.fn(() => ''),
+  isEligibleForIntroOfferIOS: jest.fn(async () => true), ErrorCode: { DeferredPayment: 'deferred-payment', Pending: 'pending' },
 }));
 jest.mock('expo-constants', () => ({ __esModule: true, default: { expoConfig: { version: '1.0.0', ios: { buildNumber: '1' } } } }));
 jest.mock('expo-crypto', () => ({ getRandomBytes: n => new Uint8Array(require('crypto').randomBytes(n)) }));

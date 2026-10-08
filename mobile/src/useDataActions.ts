@@ -107,7 +107,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void, plus = 
     await applyDoseReminders(null, {});
     done();
     t.replaceAll({ settings: null, weights: {}, habits: {}, unit: state.unit, measurements: {}, photos: {}, intake: {}, lifts: {} });
-    t.setPrefs({ ...DEFAULT_PREFS });
+    t.setPrefs({ ...DEFAULT_PREFS, plus: prefs.plus });   // Plus belongs to the Apple ID, not the data
   };
 
   return { restore, exportCsv, exportData, exportRescued, reset, eraseAll };
