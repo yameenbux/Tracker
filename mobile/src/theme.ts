@@ -39,6 +39,7 @@ const light = {
   warnInk: '#8A5A1F',
   // Added for dark mode: roles that used to borrow another colour or a hard-coded hex
   primary: '#4B2E73',          // filled buttons (white text)
+  done: '#5B3D8F', onDone: '#FFFFFF',   // a ticked habit: plum, never coral (coral means "off track")
   heroA: '#2A1E45', heroB: '#4B2E73',   // the hero card's gradient
   fill: '#241B33', onFill: '#FFFFFF',   // selected segments, tooltips, toasts: an inverted chip
   onAccent: '#FFFFFF',         // ticks and icons on coralInk / mintInk fills
@@ -90,6 +91,7 @@ const dark: typeof light = {
   warnBg: '#2E2513',
   warnInk: '#F0C27C',
   primary: '#7652B8',
+  done: '#8060C4', onDone: '#FFFFFF',   // 4.8:1 with white, 3.6:1 against the card
   heroA: '#2B1F4A', heroB: '#553384',
   fill: '#EDE7F4', onFill: '#1A1622',
   onAccent: '#1A1622',

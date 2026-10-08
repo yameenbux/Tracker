@@ -2,21 +2,26 @@ import { memo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
-import { direction, latestWeight, sign, targetAt } from '../core/plan';
-import { fmt, lbPart, showWeight, stPart, toLbNum, toStLb } from '../core/units';
+import { direction, latestWeight, lineStatus, sign } from '../core/plan';
+import type { TrendPoint } from '../core/trend';
+import { fmt, lbPart, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
 import { useAnimatedNumber, useAnimatedPercent } from '../motion';
 import { C, F, themed, useScheme } from '../theme';
 
-export const Hero = memo(function Hero({ settings, weights, unit }: { settings: Settings; weights: Weights; unit: Unit; today?: string }) {
+export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
+  settings: Settings; weights: Weights; unit: Unit; today?: string; trend?: TrendPoint[];
+}) {
   useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const plan = settings.plan;
   const lw = latestWeight(plan, weights);
-  const cur = lw ? lw.kg : plan.startKg;
-  const curTarget = lw ? targetAt(plan, lw.d) : null;              // the line on the day it was weighed, not the start of that week
+  // The headline is the trend, not the scale: the app's whole promise is that one salty dinner doesn't move it.
+  // Every figure on this card (and the Pace tile, and the Trend tab) is measured from the same trend number.
+  const last = trend?.length ? trend[trend.length - 1] : null;
+  const cur = last ? last.trend : lw ? lw.kg : plan.startKg;
   const span = plan.startKg - plan.goalKg;
   const pct = span === 0 ? 0 : Math.max(0, Math.min(100, (plan.startKg - cur) / span * 100));   // 0 for a maintenance goal (no bar)
-  // The headline number glides to a new weigh-in, and the bar fills in, instead of jumping
+  // The headline number glides to a new value, and the bar fills in, instead of jumping
   const shownKg = useAnimatedNumber(cur);
   const bar = useAnimatedPercent(pct);
   const barW = bar.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] });
@@ -31,22 +36,23 @@ export const Hero = memo(function Hero({ settings, weights, unit }: { settings: 
     const asKg = (primary ? unit === 'kg' : unit !== 'kg');
     return asKg ? fmt(Math.abs(kg)) + ' kg' : Math.abs(toLbNum(kg)).toFixed(1) + ' lb';
   };
-  const diff = curTarget != null ? cur - curTarget : null;            // + means above the line
-  const onTrack = diff == null ? null : d === 0 ? Math.abs(diff) <= 1 : diff * d >= -0.05;
+  const status = last ? lineStatus(plan, last.trend) : null;
   const short = (kg: number) => showWeight(kg, unit).replace(' kg', '');
-
+  const today = lw?.k === dateKey(new Date());
 
   return (
     <LinearGradient colors={[C.heroA, C.heroB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
-      <Text style={s.label}>Current weight</Text>
-      <View style={s.current} accessible accessibilityLabel={(lw ? 'Current weight ' : 'Starting weight ') + showWeight(cur, unit)}>
+      <Text style={s.label}>{last ? 'Trend weight' : 'Starting weight'}</Text>
+      <View style={s.current} accessible accessibilityLabel={(last ? 'Trend weight ' : 'Starting weight ') + showWeight(cur, unit)}
+        accessibilityHint={last ? 'Your weight with day-to-day water swings smoothed out' : undefined}>
         {unit === 'kg' || unit === 'lb'
           ? <><Text style={s.big} maxFontSizeMultiplier={1.25}>{fmt(unit === 'kg' ? shownKg : toLbNum(shownKg))}</Text><Text style={s.unit} maxFontSizeMultiplier={1.4}>{unit}</Text></>
           : <><Text style={s.big} maxFontSizeMultiplier={1.25}>{stPart(shownKg)}</Text><Text style={s.unit} maxFontSizeMultiplier={1.4}>st</Text>
               <Text style={s.big} maxFontSizeMultiplier={1.25}>{fmt(lbPart(shownKg))}</Text><Text style={s.unit} maxFontSizeMultiplier={1.4}>lb</Text></>}
       </View>
-      <Text style={s.alt}>{unit === 'kg' ? toStLb(cur) : fmt(cur) + ' kg'}</Text>
-      <Text style={s.when}>{lw ? 'Latest · ' + shortDate(lw.d) + (lw.k === dateKey(new Date()) ? ' · today' : '') : 'Not logged yet'}</Text>
+      <Text style={s.when}>{lw
+        ? (today ? 'Weighed in today' : 'Last weigh-in ' + shortDate(lw.d)) + ' · scale ' + showWeight(lw.kg, unit)
+        : 'Not logged yet'}</Text>
 
       {dir !== 'maintain' && <>
       <View style={s.track} accessible accessibilityRole="progressbar" accessibilityLabel="Progress to goal"
@@ -64,7 +70,7 @@ export const Hero = memo(function Hero({ settings, weights, unit }: { settings: 
       <View style={s.pillRow}>
         {dir === 'maintain'
           ? <Text style={s.pillTxt}>Holding · <Text style={s.peachB}>{showWeight(plan.goalKg, unit)}</Text> until <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>
-          : <Text style={s.pillTxt}>Target · <Text style={s.peachB}>{showWeight(plan.goalKg, unit)}</Text> by <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>}
+          : <Text style={s.pillTxt}>Plan ends <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>}
       </View>
 
       <View style={s.chips}>
@@ -78,10 +84,10 @@ export const Hero = memo(function Hero({ settings, weights, unit }: { settings: 
           <Text style={s.chipV} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{kgOrLb(togo, true)}</Text>
           <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(togo, false)}</Text>
         </View>
-        <View style={s.chip} accessible accessibilityLabel={diff == null ? 'Versus target: no weigh-in yet' : onTrack ? 'On track' : `${kgOrLb(diff, true)} ${diff > 0 ? 'above' : 'below'} target`}>
-          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>vs target</Text>
-          <Text style={[s.chipV, { fontSize: 15 }, onTrack == null ? null : onTrack ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
-            {diff == null ? '—' : onTrack ? 'On track' : (diff > 0 ? '+' : '−') + kgOrLb(diff, true)}
+        <View style={s.chip} accessible accessibilityLabel={!status ? 'Versus the line: no weigh-in yet' : status.onLine ? 'On the line' : `${kgOrLb(status.off, true)} ${status.ahead ? 'ahead of' : 'behind'} the line`}>
+          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>vs line</Text>
+          <Text style={[s.chipV, { fontSize: 15 }, !status ? null : status.onLine || status.ahead ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
+            {!status ? '—' : status.onLine ? 'On the line' : (status.ahead ? 'Ahead ' : 'Behind ') + kgOrLb(status.off, true)}
           </Text>
         </View>
       </View>
@@ -95,7 +101,6 @@ const s = themed(() => StyleSheet.create({
   current: { flexDirection: 'row', alignItems: 'baseline', gap: 7, marginTop: 6, flexWrap: 'wrap' },
   big: { fontFamily: F.display, fontSize: 54, color: '#fff', lineHeight: 58 },
   unit: { fontFamily: F.bodyMed, fontSize: 19, color: 'rgba(255,255,255,0.6)' },
-  alt: { fontFamily: F.displaySemi, fontSize: 16, color: '#FFC2A3', marginTop: 4 },
   when: { fontFamily: F.body, fontSize: 14, color: 'rgba(255,255,255,0.78)', marginTop: 3 },
   track: { height: 10, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)', marginTop: 20, justifyContent: 'center' },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999 },

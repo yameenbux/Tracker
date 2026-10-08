@@ -17,8 +17,20 @@ export function emptySessions(): Record<number, Session> {
 }
 const emptyMacros = (): Macros => ({ kcal: null, p: null, c: null, f: null });
 
-export function defaultSettings(plan: Plan): Settings {
-  return { plan, event: null, habits: DEFAULT_HABITS.map(h => ({ ...h })), sessions: emptySessions(),
+/** Habits offered during setup. None are picked for you: only what someone chooses shows up. */
+export const SUGGESTED_HABITS: Habit[] = [
+  { id: 'water', icon: 'water', short: 'WATER', name: 'Water 2–3 L' },
+  { id: 'steps', icon: 'steps', short: 'STEPS', name: 'Steps 8k' },
+  { id: 'workout', icon: 'dumbbell', short: 'TRAIN', name: 'Workout' },
+  { id: 'protein', icon: 'meal', short: 'PROT', name: 'Protein at each meal' },
+  { id: 'sleep', icon: 'moon', short: 'SLEEP', name: 'Sleep 7 h' },
+  { id: 'veg', icon: 'leaf', short: 'VEG', name: '5 portions of veg' },
+  { id: 'noalcohol', icon: 'noAlcohol', short: 'DRY', name: 'No alcohol' },
+  { id: 'stretch', icon: 'stretch', short: 'MOVE', name: 'Stretch or mobility' },
+];
+
+export function defaultSettings(plan: Plan, habits: Habit[] = []): Settings {
+  return { plan, event: null, habits: habits.slice(0, MAX_HABITS).map(h => ({ ...h })), sessions: emptySessions(),
            meals: { items: [], target: emptyMacros() } };
 }
 
@@ -308,6 +320,18 @@ export function behindBy(plan: Plan, trendNow: number, today: Date = new Date())
   const off = trendNow - targetAt(plan, today);
   const d = sign(direction(plan));
   return d === 0 ? Math.abs(off) : -d * off;
+}
+
+/** Within this much of the line counts as "on the line" (kg); a maintenance plan allows a kilo either way. */
+export const ON_LINE_KG = 0.3, HOLD_KG = 1;
+/**
+ * The one answer to "how am I doing against the line?", used by every screen so they can never disagree.
+ * `off` is how far behind (positive) or ahead (negative) the trend is today, in kg.
+ */
+export function lineStatus(plan: Plan, trendNow: number, today: Date = new Date()): { off: number; onLine: boolean; ahead: boolean } {
+  const off = behindBy(plan, trendNow, today);
+  const tol = direction(plan) === 'maintain' ? HOLD_KG : ON_LINE_KG;
+  return { off, onLine: off <= tol, ahead: direction(plan) !== 'maintain' && off < -tol };
 }
 
 /** Chart y-range: fits targets and weights, snapped to a tidy step. */

@@ -24,7 +24,7 @@ function HabitBox({ on, label, onPress, disabled }: { on: boolean; label: string
   return (
     <Pressable onPress={() => { tick(); onPress(); }} hitSlop={7} disabled={disabled} style={[s.cb, on && s.cbOn, disabled && { opacity: 0.35 }]}
       accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled }} accessibilityLabel={label}>
-      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color={C.onAccent} strokeWidth={2.8} /></Animated.View> : null}
+      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color={C.onDone} strokeWidth={2.8} /></Animated.View> : null}
     </Pressable>
   );
 }
@@ -189,7 +189,7 @@ const s = themed(() => StyleSheet.create({
   link: { fontFamily: F.bodyBold, fontSize: 13, color: C.coralInk },
   linkBtn: { minHeight: 36, justifyContent: 'center', paddingRight: 10 },
   cb: { width: 30, height: 30, borderWidth: 1.5, borderColor: C.control, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
-  cbOn: { backgroundColor: C.coralInk, borderColor: C.coralInk },
+  cbOn: { backgroundColor: C.done, borderColor: C.done },   // plum = done; coral is kept for "off track"
   pager: { flexDirection: 'row', gap: 4 },
   pageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
   panel: { backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine, borderRadius: 12, padding: 12, marginHorizontal: 6, marginVertical: 6 },
@@ -206,7 +206,7 @@ const s = themed(() => StyleSheet.create({
   empty: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, padding: 6, paddingTop: 10, lineHeight: 17 },
   sumItem: { minWidth: '45%', flexGrow: 1 },
   bar: { height: 5, borderRadius: 3, backgroundColor: C.line, marginTop: 5, overflow: 'hidden' },
-  barFill: { height: 5, borderRadius: 3, backgroundColor: C.coralInk },
+  barFill: { height: 5, borderRadius: 3, backgroundColor: C.done },
   sumPct: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, marginTop: 3 },
   logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.primary, borderRadius: 12, minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
   logBtnTxt: { fontFamily: F.bodyBold, fontSize: 14, color: '#fff' },

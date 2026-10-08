@@ -2,7 +2,7 @@ import { EmptyState } from './States';
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
-import { behindBy, direction, GAIN_WARN_PCT, replanFromHere, sign, weightSeries } from '../core/plan';
+import { direction, lineStatus, GAIN_WARN_PCT, replanFromHere, sign, weightSeries } from '../core/plan';
 import { latestJump, projectedGoalDate, trendSeries, TrendPoint, weeklyRate } from '../core/trend';
 import { showChange, showAmount, showWeight } from '../core/units';
 import type { Plan, Settings, Unit, Weights } from '../core/types';
@@ -38,7 +38,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
   const atGoal = d === 0 ? Math.abs(last.trend - plan.goalKg) <= 1 : (plan.goalKg - last.trend) * d <= 0;
   const tooFast = dir === 'gain' ? pct > GAIN_WARN_PCT && rate!.perWeek > 0 : dir === 'lose' ? pct > 1 && rate!.perWeek < 0 : false;
   // Well behind the line (over 1 kg and 1% of body weight): offer a fresh line from here instead of a guilt trip
-  const behind = behindBy(plan, last.trend);
+  const behind = lineStatus(plan, last.trend).off;
   const replan = rate && behind > Math.max(1, last.trend * 0.01) ? replanFromHere(plan, last.trend) : null;
 
   return (
