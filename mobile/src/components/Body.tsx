@@ -1,7 +1,7 @@
 import { EmptyState, Skeleton } from './States';
 import { memo, useMemo, useState } from 'react';
 import { ActionSheetIOS, Alert, Image, ImageStyle, Platform, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { cmToUnit, lengthToCm, MEASURES, measureSummary, photoDates, plausibleCm, POSES, setMeasureDay, setPhotoRef, showLength } from '../core/body';
+import { cmToUnit, LengthUnit, lengthToCm, MEASURES, measureSummary, photoDates, plausibleCm, POSES, setMeasureDay, setPhotoRef, showLength } from '../core/body';
 import { dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { weightSeries } from '../core/plan';
 import { trendSeries, TrendPoint } from '../core/trend';
@@ -55,8 +55,8 @@ function LoadingImage({ uri, style, label }: { uri: string; style: ImageStyle; l
   );
 }
 
-export const BodyCard = memo(function BodyCard({ settings, weights, unit, measurements, photos, onMeasurements, onPhotos }: {
-  settings: Settings; weights: Weights; unit: Unit; measurements: Measurements; photos: PhotoLog;
+export const BodyCard = memo(function BodyCard({ settings, weights, unit, lengthUnit, onLengthUnit, measurements, photos, onMeasurements, onPhotos }: {
+  settings: Settings; weights: Weights; unit: Unit; lengthUnit: LengthUnit; onLengthUnit: (u: LengthUnit) => void; measurements: Measurements; photos: PhotoLog;
   onMeasurements: (m: Measurements) => void; onPhotos: (p: PhotoLog) => void;
 }) {
   useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
@@ -88,12 +88,12 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
       {summaries.length > 0 ? (
         <View style={s.chips}>
           {summaries.map(({ m, s: sm }) => (
-            <View key={m.key} style={s.chip} accessible accessibilityLabel={`${m.label} ${showLength(sm!.latest.cm, unit)}`}>
+            <View key={m.key} style={s.chip} accessible accessibilityLabel={`${m.label} ${showLength(sm!.latest.cm, lengthUnit)}`}>
               <Text style={s.chipK}>{m.label}</Text>
-              <Text style={s.chipV}>{showLength(sm!.latest.cm, unit)}</Text>
+              <Text style={s.chipV}>{showLength(sm!.latest.cm, lengthUnit)}</Text>
               {sm!.first.k !== sm!.latest.k && (
                 <Text style={[s.chipD, { color: sm!.change < -0.05 ? C.mintInk : sm!.change > 0.05 ? C.coralInk : C.inkSoft }]}>
-                  {sm!.change > 0 ? '+' : sm!.change < 0 ? '−' : ''}{showLength(Math.abs(sm!.change), unit)} since {shortDate(parseKey(sm!.first.k))}
+                  {sm!.change > 0 ? '+' : sm!.change < 0 ? '−' : ''}{showLength(Math.abs(sm!.change), lengthUnit)} since {shortDate(parseKey(sm!.first.k))}
                 </Text>
               )}
             </View>
@@ -128,15 +128,15 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
         <EmptyState compact icon="body" title="No progress photos yet" body="They stay private on this phone, never in your camera roll. Same spot, same light, every few weeks." action="Add photos" onAction={() => setSheet('photos')} />
       )}
 
-      {sheet === 'measure' && <MeasureSheet unit={unit} measurements={measurements} onClose={() => setSheet(null)}
+      {sheet === 'measure' && <MeasureSheet unit={lengthUnit} onUnit={onLengthUnit} measurements={measurements} onClose={() => setSheet(null)}
         onSave={m => { onMeasurements(m); setSheet(null); }} />}
       {sheet === 'photos' && <PhotoSheet photos={photos} onClose={() => setSheet(null)} onChange={onPhotos} />}
     </Card>
   );
 });
 
-function MeasureSheet({ unit, measurements, onSave, onClose }: {
-  unit: Unit; measurements: Measurements; onSave: (m: Measurements) => void; onClose: () => void;
+function MeasureSheet({ unit, onUnit, measurements, onSave, onClose }: {
+  unit: LengthUnit; onUnit: (u: LengthUnit) => void; measurements: Measurements; onSave: (m: Measurements) => void; onClose: () => void;
 }) {
   const [k, setK] = useState(dateKey(new Date()));
   const toText = (day: string) => Object.fromEntries(MEASURES.map(m => {
@@ -145,6 +145,15 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
   })) as Record<MeasureKey, string>;
   const [txt, setTxt] = useState<Record<MeasureKey, string>>(() => toText(k));
   const changeDate = (d: string) => { setK(d); setTxt(toText(d)); };
+  // Switching cm/in converts whatever is already typed, so nothing is saved in the wrong unit
+  const switchUnit = (u: LengthUnit) => {
+    if (u === unit) return;
+    setTxt(t => Object.fromEntries(MEASURES.map(m => {
+      const v = num(t[m.key]);
+      return [m.key, t[m.key].trim() && isFinite(v) && v > 0 ? cmToUnit(lengthToCm(v, unit), u).toFixed(1) : t[m.key]];
+    })) as Record<MeasureKey, string>);
+    onUnit(u);
+  };
   const values: Partial<Record<MeasureKey, number>> = {};
   let bad = false;
   for (const m of MEASURES) {
@@ -163,10 +172,13 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
         onPress={() => confirmDelete('Delete these measurements?', `Removes everything measured on ${longDate(k)}.`, () => setThen({ run: () => onSave(setMeasureDay(measurements, k, null)) }))} />}
     </>}>
       <View style={s.dateRow}><Text style={s.dateLabel}>Date</Text><DateInput value={k} onChange={changeDate} label="Measurement date" max={today} /></View>
+      <View style={s.dateRow}><Text style={s.dateLabel}>Measure in</Text>
+        <Tabs value={unit} onChange={switchUnit} label="Measure in" options={[{ id: 'cm', label: 'cm' }, { id: 'in', label: 'inches' }]} />
+      </View>
       <View style={s.mGrid}>
         {MEASURES.map(m => (
           <View key={m.key} style={s.mCell}>
-            <Field label={`${m.label} (${unit === 'kg' ? 'cm' : 'in'})`}>
+            <Field label={`${m.label} (${unit})`}>
               <DoneInput style={[fieldStyles.fIn, { fontFamily: F.displaySemi }]} value={txt[m.key]} keyboardType="decimal-pad"
                 onChangeText={v => setTxt(t => ({ ...t, [m.key]: v }))} placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={m.label} />
             </Field>
@@ -174,7 +186,7 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
           </View>
         ))}
       </View>
-      {bad && <Text style={s.err}>One of those numbers doesn’t look right. Check the unit ({unit === 'kg' ? 'cm' : 'inches'}).</Text>}
+      {bad && <Text style={s.err}>One of those numbers doesn’t look right. Check the unit ({unit === 'cm' ? 'cm' : 'inches'}).</Text>}
     </Sheet>
   );
 }

@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { lengthUnitFor } from './core/body';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
@@ -215,6 +216,7 @@ function Main() {
               appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               doses={state.doses ?? {}} onDoses={t.setDoses}
+              lengthUnit={lengthUnitFor(prefs.length, state.unit)} onLengthUnit={length => t.setPrefs({ length })}
               onSave={t.setSettings} onClose={closeSettings}
               onExport={data.exportData} onExportCsv={data.exportCsv} onRestore={data.restore} onReset={data.reset}
               onEraseAll={async () => { await data.eraseAll(); setTab('today'); }} />

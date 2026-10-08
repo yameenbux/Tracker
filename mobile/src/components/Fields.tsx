@@ -22,6 +22,20 @@ export function UnitToggle({ unit, onChange }: { unit: Unit; onChange: (u: Unit)
   );
 }
 
+/** cm or inches for body measurements (separate from the weight unit: plenty of people weigh in kg and measure in inches). */
+export function LengthToggle({ unit, onChange }: { unit: 'cm' | 'in'; onChange: (u: 'cm' | 'in') => void }) {
+  return (
+    <View style={s.seg} accessibilityRole="radiogroup" accessibilityLabel="Measurement unit">
+      {(['cm', 'in'] as const).map(u => (
+        <Pressable key={u} onPress={() => onChange(u)} style={[s.segBtn, unit === u && s.segOn]}
+          accessibilityRole="radio" accessibilityState={{ checked: unit === u }} accessibilityLabel={u === 'cm' ? 'Centimetres' : 'Inches'}>
+          <Text maxFontSizeMultiplier={1.4} style={[s.segTxt, unit === u && s.segTxtOn]}>{u === 'cm' ? 'cm' : 'in'}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 /** System / Light / Dark, the same control as the unit picker. */
 export function AppearanceToggle({ value, onChange }: { value: AppearancePref; onChange: (v: AppearancePref) => void }) {
   const opts: [AppearancePref, string][] = [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark']];

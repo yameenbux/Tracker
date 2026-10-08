@@ -3,7 +3,7 @@ import { MedicationToday, MedicationTrend } from '../components/Medication';
 import { isDue, missedDose } from '../core/medication';
 import { cloneElement, isValidElement, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { measureSummary, showLength } from '../core/body';
+import { LengthUnit, lengthUnitFor, measureSummary, showLength } from '../core/body';
 import { estimateExpenditure } from '../core/calories';
 import { DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { consistency, milestoneQuarter } from '../core/insights';
@@ -12,7 +12,7 @@ import { milestonePlanKey } from '../core/storage';
 import { backupDue, changeTable, daysSince, recentTrend } from '../core/summary';
 import { projectedGoalDate, Rate, TrendPoint } from '../core/trend';
 import { showChange, showAmount, showWeight } from '../core/units';
-import type { Settings, Unit } from '../core/types';
+import type { Settings } from '../core/types';
 import { BodyCard } from '../components/Body';
 import { EntriesList, EventCard } from '../components/Entries';
 import { CaloriesCard, MilestoneBanner, PatternsCard } from '../components/Extras';
@@ -40,7 +40,7 @@ export interface TabProps {
 }
 
 /** Signed length change in the person's unit ("−1.0 in", "+2.5 cm"). */
-function lengthChange(cm: number, unit: Unit) {
+function lengthChange(cm: number, unit: LengthUnit) {
   const sign = Math.abs(cm) < 0.05 ? '' : cm < 0 ? '−' : '+';
   return sign + showLength(Math.abs(cm), unit);
 }
@@ -48,7 +48,7 @@ function lengthChange(cm: number, unit: Unit) {
 export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const { t, settings, series, rate, scrollTop, openSettings, go, notices } = props;
   const { state, prefs } = t;
-  const unit = state.unit;
+  const unit = state.unit, lu = lengthUnitFor(prefs.length, state.unit);
   const now = new Date();
   const todayKey = dateKey(now);
   const last = series.at(-1);
@@ -114,10 +114,10 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
             a11y={tdee ? `Estimated burn ${tdee.tdee} kcal a day` : 'Calories'} />
         ) : (
           <Tile icon="ruler" label="Body" onPress={() => go('body')}
-            value={waist && waist.first.k !== waist.latest.k ? lengthChange(waist.change, unit) : waist ? showLength(waist.latest.cm, unit) : 'Measure'}
-            sub={waist && waist.first.k !== waist.latest.k ? `waist since ${shortDate(parseKey(waist.first.k))} · now ${showLength(waist.latest.cm, unit)}`
+            value={waist && waist.first.k !== waist.latest.k ? lengthChange(waist.change, lu) : waist ? showLength(waist.latest.cm, lu) : 'Measure'}
+            sub={waist && waist.first.k !== waist.latest.k ? `waist since ${shortDate(parseKey(waist.first.k))} · now ${showLength(waist.latest.cm, lu)}`
               : waist ? 'waist · measure again in a few weeks' : 'Waist and photos show what the scale can’t'}
-            a11y={waist ? `Waist ${showLength(waist.latest.cm, unit)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, unit)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
+            a11y={waist ? `Waist ${showLength(waist.latest.cm, lu)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, lu)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
         )}
       </View>
       {settings.medication && !doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
@@ -157,10 +157,11 @@ export function HabitsTab({ t, settings, series, today, scrollTop, openSettings,
 }
 
 export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: TabProps) {
-  const { state } = t;
+  const { state, prefs } = t;
   return (
     <TabScreen eyebrow="Beyond the scale" title="Body" onSettings={() => openSettings()} scrollTop={scrollTop}>
-      <CardBoundary name="Measurements & photos"><BodyCard settings={settings} weights={state.weights} unit={state.unit} measurements={state.measurements} photos={state.photos}
+      <CardBoundary name="Measurements & photos"><BodyCard settings={settings} weights={state.weights} unit={state.unit} lengthUnit={lengthUnitFor(prefs.length, state.unit)}
+        onLengthUnit={length => t.setPrefs({ length })} measurements={state.measurements} photos={state.photos}
         onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} /></CardBoundary>
       {settings.trackCalories
         ? <CardBoundary name="Calories"><CaloriesCard settings={settings} weights={state.weights} intake={state.intake} onChange={t.setIntake} trend={series} /></CardBoundary>
