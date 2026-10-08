@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   mobile:
     runs-on: ubuntu-latest
@@ -11,8 +14,8 @@ jobs:
       run:
         working-directory: mobile
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -35,5 +38,5 @@ jobs:
             if (c.ios.entitlements['aps-environment']) fail('push entitlement present');
             if (c.ios.entitlements['com.apple.developer.default-data-protection'] !== 'NSFileProtectionComplete') fail('data protection missing');
             console.log('production config OK');"
-      - name: Dependency audit (runtime packages)
-        run: npm audit --omit=dev --audit-level=critical
+      - name: Dependency audit (runtime packages, high and above)
+        run: node scripts/audit.js

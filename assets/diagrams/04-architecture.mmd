@@ -21,7 +21,7 @@ flowchart TB
     GHA["<b>GitHub Actions</b><br/>tests every push · deploys main<br/>checks the site every 6 hours"]
     subgraph WEB["GitHub Pages: static files only"]
         direction LR
-        WAPP["<b>Web app</b><br/>the same code,<br/>exported for the web"]
+        WAPP["<b>Web test build</b><br/>private, for the owner<br/>to test with"]
         PRIV["<b>Privacy policy</b>"]
         CLASSIC["<b>/classic</b><br/>the original tracker"]
     end

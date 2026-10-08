@@ -42,7 +42,8 @@ fs.writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify({
   background_color: '#FBF7F3', theme_color: '#2A1E45',
   icons: [{ src: `${base}/apple-touch-icon.png`, sizes: '1024x1024', type: 'image/png' }],
 }, null, 2));
-const head = meta({ title: 'Tidemark · Weight tracker', page: '',
+// The web app is the owner's private test build, not a product: kept out of search results
+const head = meta({ title: 'Tidemark · Weight tracker', page: '', noindex: true,
   description: 'A private weight tracker. Your trend weight, not the daily noise, with a plan, habits and measurements. No account, and your data stays on your phone.' }) + [
   `<link rel="apple-touch-icon" href="${base}/apple-touch-icon.png">`,
   `<link rel="manifest" href="${base}/manifest.webmanifest">`,

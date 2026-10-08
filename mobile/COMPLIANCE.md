@@ -1,7 +1,8 @@
 # Compliance checklist
 
-Checked against what Tidemark actually does on 8 October 2026: local-only, no account, no payments, no network calls,
-no analytics, no ads. Re-check this list if any of those change (an account, a subscription, a server, an SDK).
+Checked against what Tidemark actually does on 8 October 2026: local-only, no account, no server, no analytics, no ads.
+The only network traffic is Apple's own: StoreKit, when someone buys, restores or the app checks Plus. Re-check this list
+if any of that changes (an account, a server, an SDK).
 
 | Item | Needed? | Why | What exists |
 |---|---|---|---|
@@ -17,6 +18,9 @@ no analytics, no ads. Re-check this list if any of those change (an account, a s
 | Don't collect unnecessary data | **Done** | Tidemark stores only what the person enters, on their phone. Optional features (photos, measurements, calories, sessions, meals) stay empty unless used. No device identifiers, no logs, no analytics. | App Privacy answer in App Store Connect: **Data Not Collected**. |
 | Audit third-party SDKs | **Done** (below) | | |
 | Export compliance (encryption) | **Check before the first upload** | `app.json` declares `usesNonExemptEncryption: false`. Since password-protected backups were added, Tidemark ships its own encryption (XChaCha20-Poly1305 and scrypt from @noble) rather than only using Apple's. Encrypting the person's own data is usually exempt, but the App Store Connect questions decide whether you answer No, or Yes and pick an exemption. | Not changed in code. Answer App Store Connect's export questions on the first upload and set the flag to match; if in doubt, ask Apple's export-compliance contact. |
+| In-app purchases submitted with the build | **Yes, on the first submission** | Guideline 2.1: the three Plus products must be attached to the version and "Ready to Submit". If they aren't, the paywall can't load prices and shows "The App Store couldn't be reached", which reviewers reject as incomplete. | Monthly and yearly must be in **one** subscription group, or trial eligibility and switching between them break. Each product needs a review screenshot of the paywall. |
+| Health data and iCloud | **Kept out of scope** | Guideline 5.1.3(ii): an app may not store personal health information in iCloud. | The app never writes to iCloud itself. Backups go wherever the person chooses in the share sheet, and the app's copy only says "Files", never "iCloud". iPhone device backups are the system's, not the app's. |
+| Age rating | **Answer truthfully** | The medication log covers prescription treatment such as GLP-1 injections. | In the age rating questions, answer "Medical/Treatment information" as infrequent. Expect 12+ or higher. The medication placeholder uses no brand names. |
 | Medical-device / medical-claims rules | **Kept out of scope** | The optional medication tracker only records what the person enters (name, dose, schedule, doses taken) and shows trend changes next to it. It never suggests, calculates or changes a dose, so it stays a log rather than a medical device (UK MHRA / EU MDR software guidance; App Store guideline 1.4.1). | Copy on the medication page and card says it's a record, not advice. **Don't add dose suggestions or titration advice** without regulatory advice first. Dose-day reminders don't name the medication on the lock screen. |
 
 ## Third-party SDK audit
@@ -41,6 +45,8 @@ the Expo CLI) aren't in the app binary and aren't listed.
 | `expo-crypto` | Secure random bytes for backup encryption | No | No | |
 | `@noble/ciphers`, `@noble/hashes` | Password-protected backups (XChaCha20-Poly1305, scrypt) | No | No | Audited, pure JavaScript, MIT. |
 | `expo-web-browser` | Opens the privacy policy | Only when tapped | No | Opens one fixed https URL in Safari View Controller. |
+| `expo-iap` | Tidemark Plus purchases (StoreKit 2) | **Yes, to Apple only** | No | Talks to the App Store to load prices, buy, restore and check Plus. Apple learns that a purchase happened, never anything entered in the app. Pinned to an exact version, because its API changes often. |
 
 No analytics, crash reporting, advertising, attribution or social SDKs are included. `npm audit --omit=dev`
-advisories are confined to build tooling (see README → Security).
+advisories are confined to build tooling (see README → Security). CI fails on any new high or critical one
+(`scripts/audit.js`, which lists the reviewed ones and why).
