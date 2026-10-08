@@ -1,3 +1,4 @@
+import { EmptyState } from './States';
 import { habitIcon } from '../core/habitIcons';
 import { memo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -71,8 +72,9 @@ function MealsPanel({ meals }: { meals: Settings['meals'] }) {
   );
 }
 
-export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange, onLogSession }: {
+export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange, onLogSession, onAddHabits }: {
   settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void; today?: string;
+  onAddHabits?: () => void;
 }) {
   useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const [open, setOpen] = useState<{ key: string; kind: 'sess' | 'meals' } | null>(null);
@@ -84,6 +86,14 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   const H = settings.habits;
   const hasMeals = settings.meals.items.length > 0;
   const anySession = days.some(d => { const x = settings.sessions[d.getDay()]; return x.title || x.items.length; });
+  if (!H.length && !anySession) {
+    return (
+      <Card title="This week">
+        <EmptyState icon="habits" title="No daily habits yet" body="Pick up to six small things that help, like water, steps or sleep. Ticking one takes a second."
+          action="Choose habits" onAction={onAddHabits} />
+      </Card>
+    );
+  }
 
   return (
     <Card title={back === 0 ? 'This week' : back === 1 ? 'Last week' : `${back} weeks ago`} right={

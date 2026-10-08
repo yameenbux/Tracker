@@ -98,7 +98,7 @@ const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
 // ---------- screen ----------
 
-type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals';
+export type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals';
 
 export interface SettingsProps {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
@@ -107,13 +107,14 @@ export interface SettingsProps {
   appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void; reminderBlocked?: boolean;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   onPlanLeftUnsaved: (plan: Settings['plan']) => void;
+  initialPage?: Page;   // open straight onto a sub-page (e.g. Habits from an empty Habits tab)
   onSave: (s: Settings) => void; onClose: () => void;
   onExport: () => void; onExportCsv: () => void; onRestore: () => void; onReset: () => void; onEraseAll: () => void;
 }
 
 /** Settings as an iOS grouped list: every row shows its current value, and changes apply as you make them. */
 export function SettingsScreen(p: SettingsProps) {
-  const [page, setPage] = useState<Page>('root');
+  const [page, setPage] = useState<Page>(p.initialPage ?? 'root');
   const { settings, unit } = p;
   const commit = (patch: Partial<Settings>) => {
     const next = normalizeSettings({ ...settings, ...patch });
@@ -192,7 +193,7 @@ export function SettingsScreen(p: SettingsProps) {
 
         <Group>
           <Row icon="trash" label="Clear weigh-ins and habit ticks" destructive onPress={p.onReset} />
-          <Row icon="trash" label="Erase everything" destructive onPress={p.onEraseAll} last hint="Deletes all data and photos from this phone" />
+          <Row icon="trash" label="Delete all my data" destructive onPress={p.onEraseAll} last hint="Deletes all data and photos from this phone" />
         </Group>
 
         <Group title="About" footer={`Support: ${SUPPORT_EMAIL}`}>

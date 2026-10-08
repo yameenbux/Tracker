@@ -1,5 +1,6 @@
+import { EmptyState, Skeleton } from './States';
 import { memo, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, ImageStyle, Platform, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { cmToUnit, lengthToCm, MEASURES, measureSummary, photoDates, plausibleCm, POSES, setMeasureDay, setPhotoRef, showLength } from '../core/body';
 import { dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { weightSeries } from '../core/plan';
@@ -40,6 +41,20 @@ function trendOn(series: TrendPoint[], k: string): number | null {
   return v;
 }
 
+/** A stored photo with a breathing placeholder until it has decoded (large photos take a moment). */
+function LoadingImage({ uri, style, label }: { uri: string; style: ImageStyle; label: string }) {
+  const [state, setState] = useState<'loading' | 'ok' | 'failed'>('loading');
+  return (
+    <View style={[style, { overflow: 'hidden' }]}>
+      {state === 'loading' && <Skeleton style={StyleSheet.absoluteFill as ViewStyle} />}
+      {state === 'failed'
+        ? <View style={[StyleSheet.absoluteFill, s.cmpEmpty]}><Icon name="body" size={22} color={C.inkSoft} /><Text style={s.cmpEmptyTxt}>Photo missing</Text></View>
+        : <Image source={{ uri }} style={StyleSheet.absoluteFill} accessibilityLabel={label}
+            onLoad={() => setState('ok')} onError={() => setState('failed')} />}
+    </View>
+  );
+}
+
 export const BodyCard = memo(function BodyCard({ settings, weights, unit, measurements, photos, onMeasurements, onPhotos }: {
   settings: Settings; weights: Weights; unit: Unit; measurements: Measurements; photos: PhotoLog;
   onMeasurements: (m: Measurements) => void; onPhotos: (p: PhotoLog) => void;
@@ -58,7 +73,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
     const tw = trendOn(series, k);
     return (
       <View style={s.cmpCol}>
-        <Image source={{ uri: photoUri(photos[k][pose]!) }} style={s.cmpImg} accessibilityLabel={`${label} photo, ${longDate(k)}`} />
+        <LoadingImage uri={photoUri(photos[k][pose]!)} style={s.cmpImg} label={`${label} photo, ${longDate(k)}`} />
         <View style={s.cmpBadge}><Text style={s.cmpBadgeTxt}>{label} · {shortDate(parseKey(k))}</Text></View>
         {tw != null && <Text style={s.cmpW}>{showWeight(tw, unit)} trend</Text>}
       </View>
@@ -85,7 +100,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
           ))}
         </View>
       ) : (
-        <Text style={s.empty}>Your waist often keeps shrinking in weeks the scale stalls. Measure every 2–4 weeks, same time of day.</Text>
+        <EmptyState compact icon="ruler" title="No measurements yet" body="Your waist often keeps shrinking in weeks the scale stalls. Measure every 2–4 weeks, same time of day." action="Add a measurement" onAction={() => setSheet('measure')} />
       )}
 
       {dates.length > 0 || photoDates(photos).length > 0 ? (
@@ -96,7 +111,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
           ) : dates.length === 1 ? (
             <View style={s.cmp}>{photoBox(dates[0], 'First')}<View style={[s.cmpCol, s.cmpEmpty]}><Text style={s.cmpEmptyTxt}>Take another {POSES.find(p => p.key === pose)!.label.toLowerCase()} photo in a few weeks to compare</Text></View></View>
           ) : (
-            <Text style={[s.empty, { marginTop: 10 }]}>No {pose} photos yet.</Text>
+            <EmptyState compact icon="body" title={`No ${pose} photos yet`} action="Add photos" onAction={() => setSheet('photos')} />
           )}
           {dates.length > 2 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingTop: 8 }}>
@@ -110,7 +125,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
           )}
         </View>
       ) : (
-        <Text style={[s.empty, { marginTop: 8 }]}>Progress photos stay private on this phone, never in your camera roll. Same spot, same light, every few weeks.</Text>
+        <EmptyState compact icon="body" title="No progress photos yet" body="They stay private on this phone, never in your camera roll. Same spot, same light, every few weeks." action="Add photos" onAction={() => setSheet('photos')} />
       )}
 
       {sheet === 'measure' && <MeasureSheet unit={unit} measurements={measurements} onClose={() => setSheet(null)}

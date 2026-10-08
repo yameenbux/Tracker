@@ -15,6 +15,7 @@ import { CoverContext, CoverOverlay } from './components/Cover';
 import { LogSheet } from './components/Entries';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { DoneWindow } from './components/KeyboardDone';
+import { TodaySkeleton } from './components/States';
 import { LiftSheet } from './components/Extras';
 import { ActivePane, Tab, TabBar, Toast } from './components/Shell';
 import { confirm, notify } from './dialogs';
@@ -59,6 +60,7 @@ function Main() {
   const [scrollTop, setScrollTop] = useState<Record<Tab, number>>({ today: 0, trend: 0, habits: 0, body: 0 });   // per tab
   const [pendingPlan, setPendingPlan] = useState<Settings['plan'] | null>(null);   // plan edits left unsaved
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsPage, setSettingsPage] = useState<'root' | 'habits'>('root');
   const [lift, setLift] = useState<{ k: string; dow: number } | null>(null);
   const [log, setLog] = useState<{ key: string | null; n: number } | null>(null);
   const [toast, setToast] = useState<ToastMsg | null>(null);
@@ -119,7 +121,7 @@ function Main() {
   const series = useMemo(() => (settings ? trendSeries(weightSeries(settings.plan, state.weights)) : []), [settings, state.weights]);
   const rate = useMemo(() => (today ? weeklyRate(series) : null), [series, today]);   // the 28-day window moves with the date
 
-  if (!t.ready) return <View style={s.fill} />;
+  if (!t.ready) return <TodaySkeleton />;
   if (t.loadFailed) return <LoadFailedScreen onRetry={t.retryLoad} />;
 
   // The lock comes before everything else that shows data, onboarding included (a recovered setup shows weigh-in counts).
@@ -146,7 +148,7 @@ function Main() {
     const ok = await confirm('Start a new line from here?', `Your goal date moves to ${longDate(next.goalDate)}. Past weeks and every weigh-in stay as they are.`, 'Re-plan', false);
     if (ok) { t.setSettings({ ...settings, plan: next }); success(); show({ message: 'New line from today' }); }
   };
-  const props: TabProps = { t, settings, series, rate, today, scrollTop: 0, openSettings: () => setShowSettings(true), go: setTab, show };
+  const props: TabProps = { t, settings, series, rate, today, scrollTop: 0, openSettings: page => { setSettingsPage(page ?? 'root'); setShowSettings(true); }, go: setTab, show };
   const top = (id: Tab) => scrollTop[id];
 
   // All four tabs stay mounted (only the active one is shown), so scroll position and open panels survive switching
@@ -198,7 +200,7 @@ function Main() {
 
         <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={closeSettings}>
           <View style={s.fill}>
-            <SettingsScreen settings={settings} unit={state.unit} setUnit={t.setUnit}
+            <SettingsScreen initialPage={settingsPage} settings={settings} unit={state.unit} setUnit={t.setUnit}
               lock={prefs.lock} lockAvailable={lock.lockAvailable} lockName={lock.lockName} onLockChange={on => lock.setLock(on, lock.lockName)}
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
               appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })} reminderBlocked={prefs.reminder.on && notifBlocked}
