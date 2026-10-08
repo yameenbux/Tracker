@@ -6,7 +6,7 @@ import { mealTotals, toggleHabit, weekDays } from '../core/plan';
 import type { HabitLog, Session, Settings } from '../core/types';
 import { tick } from '../feel';
 import { useReducedMotion } from '../motion';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { Icon } from './Icons';
 import { Card } from './ui';
 
@@ -22,7 +22,7 @@ function HabitBox({ on, label, onPress, disabled }: { on: boolean; label: string
   return (
     <Pressable onPress={() => { tick(); onPress(); }} hitSlop={7} disabled={disabled} style={[s.cb, on && s.cbOn, disabled && { opacity: 0.35 }]}
       accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled }} accessibilityLabel={label}>
-      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color="#fff" strokeWidth={2.8} /></Animated.View> : null}
+      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color={C.onAccent} strokeWidth={2.8} /></Animated.View> : null}
     </Pressable>
   );
 }
@@ -73,6 +73,7 @@ function MealsPanel({ meals }: { meals: Settings['meals'] }) {
 export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange, onLogSession }: {
   settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void; today?: string;
 }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const [open, setOpen] = useState<{ key: string; kind: 'sess' | 'meals' } | null>(null);
   // Page back through earlier weeks (to fix a missed tick), never past the plan's first week or into the future
   const [back, setBack] = useState(0);
@@ -164,7 +165,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   );
 });
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   cap: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, paddingHorizontal: 4, marginTop: -4, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 },
   icCol: { width: 30, alignItems: 'center' },
@@ -190,16 +191,16 @@ const s = StyleSheet.create({
   tot: { backgroundColor: C.panelAlt, borderRadius: 8, padding: 9, marginTop: 8 },
   totTxt: { fontFamily: F.displaySemi, fontSize: 12.5, color: C.ink },
   totB: { color: C.plum2, fontFamily: F.display },
-  gap: { backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 8, padding: 9, marginTop: 6 },
+  gap: { backgroundColor: C.warnBg, borderWidth: 1, borderColor: C.warnLine, borderRadius: 8, padding: 9, marginTop: 6 },
   gapTxt: { fontFamily: F.body, fontSize: 12, color: C.warnInk, lineHeight: 17 },
   empty: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, padding: 6, paddingTop: 10, lineHeight: 17 },
   sumItem: { minWidth: '45%', flexGrow: 1 },
   bar: { height: 5, borderRadius: 3, backgroundColor: C.line, marginTop: 5, overflow: 'hidden' },
   barFill: { height: 5, borderRadius: 3, backgroundColor: C.coralInk },
   sumPct: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, marginTop: 3 },
-  logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.plum2, borderRadius: 12, minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
+  logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.primary, borderRadius: 12, minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
   logBtnTxt: { fontFamily: F.bodyBold, fontSize: 14, color: '#fff' },
   summary: { marginTop: 12, padding: 10, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6 },
   sumTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   sumB: { fontFamily: F.display, color: C.ink },
-});
+}));

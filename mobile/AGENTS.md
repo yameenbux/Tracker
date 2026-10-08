@@ -37,6 +37,15 @@ Run lint and typecheck before declaring any task done.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 
+## Colours and dark mode
+
+- `C` in `src/theme.ts` is a live palette: its values are swapped in place when the appearance changes (Settings → Appearance: Auto / Light / Dark). Read `C.x` during render; never copy a colour into a module-level constant, `useState` initialiser or `useMemo`.
+- Wrap every `StyleSheet.create` in `themed(() => …)` so it is rebuilt per scheme.
+- Components wrapped in `memo` must call `useScheme()` so they repaint on a switch.
+- No hard-coded hex in components. Use the role tokens: `fill`/`onFill` (selected segment, tooltip, toast), `primary` (filled button), `onAccent` (tick on coralInk/mintInk), `onCoral` (text on coral), `raised`, `bar`/`barLine`, `warnLine`/`mintLine`. The hero, race card and logo are fixed-colour surfaces and may use white.
+- Every new token needs a light and a dark value; `src/__tests__/theme.test.tsx` checks AA contrast for the main pairs.
+- This relies on React Compiler being off (no `experiments.reactCompiler` in app.json). Turning it on would cache JSX that reads `C`; pass the scheme through context first.
+
 ## Building with EAS
 
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.

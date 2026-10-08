@@ -8,7 +8,7 @@ import { exerciseName, lastLift, suggestNext } from '../core/progression';
 import { trendSeries, TrendPoint } from '../core/trend';
 import { KG_PER_LB, num, showChange, showAmount } from '../core/units';
 import type { HabitLog, Session, Settings, TrackerState, Unit, Weights } from '../core/types';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { fieldStyles } from './Fields';
 import { Icon } from './Icons';
 import { DONE_ID } from './KeyboardDone';
@@ -41,6 +41,7 @@ export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }
 /** Habit ↔ trend comparisons, only once there is enough data, worded as observations. */
 // Memoised: the habit/trend comparison walks every week for every habit
 export const PatternsCard = memo(function PatternsCard({ settings, weights, habits, unit, trend }: { settings: Settings; weights: Weights; habits: HabitLog; unit: Unit; trend?: TrendPoint[]; today?: string }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const series = trend ?? trendSeries(weightSeries(settings.plan, weights));
   const have = weeksOfData(settings.plan, series);
   if (!settings.habits.length) return null;
@@ -106,7 +107,7 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
         <View style={s.dayTabs} accessibilityRole="tablist" accessibilityLabel="Day">
           {(['today', 'yesterday'] as const).map(w => (
             <Pressable key={w} onPress={() => { if (w !== which && !invalid) { commit(); setWhich(w); } }} hitSlop={4} style={[s.dayTab, which === w && s.dayTabOn]} accessibilityRole="tab" accessibilityState={{ selected: which === w }}>
-              <Text style={[s.dayTabTxt, which === w && { color: '#fff' }]}>{w === 'today' ? 'Today' : 'Yesterday'}</Text>
+              <Text style={[s.dayTabTxt, which === w && { color: C.onFill }]}>{w === 'today' ? 'Today' : 'Yesterday'}</Text>
             </Pressable>
           ))}
         </View>
@@ -182,7 +183,7 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
               maxFontSizeMultiplier={1.4} accessibilityLabel={`${n} weight in ${unit === 'kg' ? 'kilograms' : 'pounds'}`} />
             <Pressable onPress={() => setRows(r => ({ ...r, [n]: { ...r[n], done: !r[n].done } }))} style={[s.liftDone, rows[n].done && s.liftDoneOn]}
               accessibilityRole="checkbox" accessibilityState={{ checked: rows[n].done }} accessibilityLabel={`${n}: all reps done`}>
-              <Icon name="check" size={18} color={rows[n].done ? '#fff' : C.inkSoft} strokeWidth={2.6} />
+              <Icon name="check" size={18} color={rows[n].done ? C.onAccent : C.inkSoft} strokeWidth={2.6} />
             </Pressable>
           </View>
         );
@@ -192,9 +193,9 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
   );
 }
 
-const s = StyleSheet.create({
-  mile: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: C.mintBg, borderWidth: 1, borderColor: '#BFEBD8', borderRadius: 16, padding: 14, marginBottom: 16 },
-  mileIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+const s = themed(() => StyleSheet.create({
+  mile: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: C.mintBg, borderWidth: 1, borderColor: C.mintLine, borderRadius: 16, padding: 14, marginBottom: 16 },
+  mileIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: C.raised, alignItems: 'center', justifyContent: 'center' },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, marginTop: 8, lineHeight: 19, paddingHorizontal: 4 },
   mileTitle: { fontFamily: F.display, fontSize: 16, color: C.ink },
   mileTxt: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19, marginTop: 3 },
@@ -207,7 +208,7 @@ const s = StyleSheet.create({
   calRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, marginBottom: 8 },
   dayTabs: { flexDirection: 'row', backgroundColor: C.chip, borderRadius: 999, padding: 3 },
   dayTab: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999 },
-  dayTabOn: { backgroundColor: C.ink },
+  dayTabOn: { backgroundColor: C.fill },
   dayTabTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   calIn: { flex: 1, minWidth: 0, fontFamily: F.displaySemi, textAlign: 'right' },
   calStats: { flexDirection: 'row', gap: 10, paddingHorizontal: 4, marginTop: 10 },
@@ -221,4 +222,4 @@ const s = StyleSheet.create({
   liftIn: { width: 72, textAlign: 'right', fontFamily: F.displaySemi },
   liftDone: { width: 44, height: 44, borderRadius: 9, borderWidth: 1.5, borderColor: C.control, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
   liftDoneOn: { backgroundColor: C.mintInk, borderColor: C.mintInk },
-});
+}));

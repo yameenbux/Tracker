@@ -8,7 +8,7 @@ import { num, showWeight } from '../core/units';
 import type { MeasureKey, Measurements, PhotoLog, Pose, Settings, Unit, Weights } from '../core/types';
 import { confirm } from '../dialogs';
 import { addPhoto, deletePhoto, photoUri } from '../photos';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { DateInput, Field, fieldStyles } from './Fields';
 import { Icon } from './Icons';
 import { DONE_ID } from './KeyboardDone';
@@ -44,6 +44,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
   settings: Settings; weights: Weights; unit: Unit; measurements: Measurements; photos: PhotoLog;
   onMeasurements: (m: Measurements) => void; onPhotos: (p: PhotoLog) => void;
 }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const [sheet, setSheet] = useState<null | 'measure' | 'photos'>(null);
   const [pose, setPose] = useState<Pose>('front');
   const dates = photoDates(photos).filter(k => photos[k][pose]);
@@ -102,7 +103,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
               {dates.slice(0, -1).map(k => (
                 <Pressable key={k} onPress={() => setThenKey(k)} hitSlop={4} style={[s.dateChip, k === before && s.dateChipOn]} accessibilityRole="button"
                   accessibilityLabel={`Compare from ${longDate(k)}`} accessibilityState={{ selected: k === before }}>
-                  <Text style={[s.dateChipTxt, k === before && { color: '#fff' }]}>{shortDate(parseKey(k))}</Text>
+                  <Text style={[s.dateChipTxt, k === before && { color: C.onFill }]}>{shortDate(parseKey(k))}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -204,7 +205,7 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 4 },
   chip: { flexGrow: 1, flexBasis: '45%', backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 13, padding: 11 },
   chipK: { fontFamily: F.bodySemi, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: C.inkSoft, marginBottom: 4 },
@@ -214,13 +215,13 @@ const s = StyleSheet.create({
   cmp: { flexDirection: 'row', gap: 8, marginTop: 10 },
   cmpCol: { flex: 1 },
   cmpImg: { width: '100%', aspectRatio: 3 / 4, borderRadius: 14, backgroundColor: C.chip },
-  cmpBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(36,27,51,0.72)', borderRadius: 999, paddingVertical: 3, paddingHorizontal: 8 },
+  cmpBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: C.scrim, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 8 },
   cmpBadgeTxt: { fontFamily: F.bodyBold, fontSize: 12, color: '#fff' },
   cmpW: { fontFamily: F.displaySemi, fontSize: 12.5, color: C.ink, marginTop: 6, textAlign: 'center' },
   cmpEmpty: { aspectRatio: 3 / 4, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line, alignItems: 'center', justifyContent: 'center', padding: 14 },
   cmpEmptyTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, textAlign: 'center', lineHeight: 17 },
   dateChip: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999, backgroundColor: C.chip },
-  dateChipOn: { backgroundColor: C.ink },
+  dateChipOn: { backgroundColor: C.fill },
   dateChipTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   mGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 },
   mCell: { flexBasis: '46%', flexGrow: 1 },
@@ -234,4 +235,4 @@ const s = StyleSheet.create({
   slotImg: { width: '100%', aspectRatio: 3 / 4, borderRadius: 12, backgroundColor: C.chip },
   slotEmpty: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   tip: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 17, marginTop: 12 },
-});
+}));

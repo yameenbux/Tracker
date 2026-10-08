@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, KeyboardAvoidingView, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from '../motion';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 import { CoverOverlay } from './Cover';
 import { KeyboardDone } from './KeyboardDone';
 import { Icon } from './Icons';
@@ -77,8 +77,8 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
   );
 }
 
-const s = StyleSheet.create({
-  backdrop: { backgroundColor: 'rgba(36,27,51,0.38)' },
+const s = themed(() => StyleSheet.create({
+  backdrop: { backgroundColor: C.backdrop },
   holder: { flex: 1, justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: '92%',
            shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } },
@@ -87,4 +87,4 @@ const s = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   title: { flex: 1, fontFamily: F.display, fontSize: 21, color: C.ink },
   x: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
-});
+}));

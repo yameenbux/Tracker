@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 
 export function Card({ title, right, children, style }: { title?: string; right?: React.ReactNode; children: React.ReactNode; style?: ViewStyle }) {
   return (
@@ -21,8 +21,8 @@ export function Button({ label, onPress, kind = 'primary', small, disabled, styl
 }) {
   return (
     <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityState={{ disabled }}
-      style={({ pressed }) => [s.btn, s[kind], small && s.btnSmall, (pressed || disabled) && { opacity: disabled ? 0.45 : 0.85 }, style]}>
-      <Text maxFontSizeMultiplier={1.5} style={[s.btnTxt, small && s.btnTxtSmall, (kind === 'ghost' || kind === 'danger' || kind === 'coral') && { color: kind === 'danger' ? C.danger : C.ink }]}>{label}</Text>
+      style={({ pressed }) => [s.btn, s[kind], small && s.btnSmall, pressed && { opacity: 0.85 }, disabled && s.btnOff, style]}>
+      <Text maxFontSizeMultiplier={1.5} style={[s.btnTxt, small && s.btnTxtSmall, (kind === 'ghost' || kind === 'danger' || kind === 'coral') && { color: kind === 'danger' ? C.danger : kind === 'coral' ? C.onCoral : C.ink }, disabled && { color: C.inkSoft }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -51,25 +51,26 @@ export function Pill({ kg, text, d = -1 }: { kg: number | null; text: string; d?
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingTop: 16, paddingHorizontal: 14, paddingBottom: 12, marginBottom: 16 },
   cardHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', rowGap: 8, columnGap: 8, paddingHorizontal: 4, marginBottom: 8 },
   cardTitle: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
   btn: { borderRadius: 14, minHeight: 52, paddingVertical: 15, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
   btnSmall: { borderRadius: 12, minHeight: 44, paddingVertical: 8, paddingHorizontal: 14 },
-  primary: { backgroundColor: C.plum2 },
+  primary: { backgroundColor: C.primary },
   coral: { backgroundColor: C.coral },
   ghost: { backgroundColor: C.chip },
   danger: { backgroundColor: C.coralBg },
+  btnOff: { backgroundColor: C.chip },   // flat grey when unavailable, like iOS, rather than a faded colour
   btnTxt: { fontFamily: F.bodyBold, fontSize: 16, color: '#fff' },
   btnTxtSmall: { fontSize: 14 },
   tabs: { flexDirection: 'row', backgroundColor: C.chip, borderRadius: 999, padding: 3, alignSelf: 'flex-start' },
   tab: { minHeight: 36, minWidth: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 12, borderRadius: 999 },
-  tabOn: { backgroundColor: C.ink },
+  tabOn: { backgroundColor: C.fill },
   tabTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
-  tabTxtOn: { color: '#fff' },
+  tabTxtOn: { color: C.onFill },
   pill: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: 999 },
   pillGood: { backgroundColor: C.mintBg },
   pillOver: { backgroundColor: C.coralBg },
   pillTxt: { fontFamily: F.displaySemi, fontSize: 13 },
-});
+}));

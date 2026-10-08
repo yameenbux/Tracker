@@ -10,7 +10,7 @@ import { daysSince } from '../core/summary';
 import { fmt, numOrNull, showWeight, toLbNum } from '../core/units';
 import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/types';
 import type { Reminder } from '../core/storage';
-import { DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
+import { AppearanceToggle, DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
 import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
 import { Button } from '../components/ui';
@@ -18,7 +18,7 @@ import { confirm } from '../dialogs';
 import { success } from '../feel';
 import { useReducedMotion } from '../motion';
 import { timeLabel } from '../reminders';
-import { C, F } from '../theme';
+import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
 export const PRIVACY_URL = 'https://yameenbux.github.io/Tracker/privacy.html';
 
@@ -96,6 +96,7 @@ export interface SettingsProps {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
   lock: boolean; lockAvailable: boolean; lockName: string; onLockChange: (on: boolean) => void;
   reminder: Reminder; onReminderChange: (r: Reminder) => void;
+  appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   onPlanLeftUnsaved: (plan: Settings['plan']) => void;
   onSave: (s: Settings) => void; onClose: () => void;
@@ -159,6 +160,10 @@ export function SettingsScreen(p: SettingsProps) {
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Plumb works out what you really burn from your trend.</Text>
 
+        <Group title="Display">
+          <Row icon="moon" label="Appearance" right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} last />
+        </Group>
+
         <Group title="Reminder" footer="A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.">
           <SwitchRow icon="bell" label="Daily weigh-in reminder" value={p.reminder.on} onChange={on => p.onReminderChange({ ...p.reminder, on })} last={!p.reminder.on} />
           {p.reminder.on && <Row icon="calendar" label="Time" last right={<TimeInput hour={p.reminder.hour} minute={p.reminder.minute}
@@ -193,12 +198,13 @@ export function SettingsScreen(p: SettingsProps) {
 }
 
 function TimeInput({ hour, minute, onChange }: { hour: number; minute: number; onChange: (h: number, m: number) => void }) {
+  const scheme = useScheme();
   if (Platform.OS === 'web') {
     return <Text style={s.rowValue}>{timeLabel(hour, minute)}</Text>;
   }
   const d = new Date(); d.setHours(hour, minute, 0, 0);
   return (
-    <DateTimePicker value={d} mode="time" display="compact" accentColor={C.coralInk} accessibilityLabel="Reminder time"
+    <DateTimePicker value={d} mode="time" display="compact" themeVariant={scheme} accentColor={C.coralInk} accessibilityLabel="Reminder time"
       onValueChange={(_, t) => t && onChange(t.getHours(), t.getMinutes())} />
   );
 }
@@ -463,10 +469,10 @@ function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg },
   scroll: { padding: 16, paddingBottom: 48 },
-  bar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 56, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#D9CFC4' },
+  bar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, minHeight: 56, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.barLine },
   barTitle: { flex: 1, textAlign: 'center', fontFamily: F.display, fontSize: 17, color: C.ink },
   barRight: { minWidth: 96, alignItems: 'flex-end' },
   back: { minWidth: 96, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2 },
@@ -499,4 +505,4 @@ const s = StyleSheet.create({
   habitRow: { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 10 },
   x: { width: 44, height: 44, borderRadius: 10, backgroundColor: C.coralBg, alignItems: 'center', justifyContent: 'center' },
   macros: { flexDirection: 'row', gap: 6, marginTop: 8 },
-});
+}));
