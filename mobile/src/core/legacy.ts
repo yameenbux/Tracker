@@ -1,16 +1,23 @@
-import type { Settings } from './types';
+import { addDays, dateKey, parseKey } from './dates';
+import { buildTargets } from './plan';
+import type { Settings, Weights } from './types';
 
 // Start of the original hard-coded web programme. Backups exported before plans became configurable
 // numbered weekly weigh-ins from this date and carried no plan of their own.
 export const LEGACY_START = '2026-09-28';
+const LEGACY_WEEKS = 32;
 
-export function legacySettings(): Settings {
+/**
+ * A plan for an old backup that carried none. It's worked out from the backup's own weigh-ins (earliest weight, a goal
+ * 10% lower over the old programme's 32 weeks) so it holds nobody's real numbers; the person can re-plan straight after.
+ */
+export function legacySettings(weights: Weights = {}): Settings {
+  const first = Object.keys(weights).sort()[0];
+  const startKg = first ? weights[first] : 80;
+  const goalKg = Math.round(startKg * 0.9 * 10) / 10;
+  const goalDate = dateKey(addDays(parseKey(LEGACY_START), LEGACY_WEEKS * 7));
   return {
-    plan: {
-      start: LEGACY_START, startKg: 83.0, goalKg: 71.0, goalDate: '2027-05-03',
-      targets: [83.0, 82.5, 82.0, 81.5, 81.0, 80.5, 80.0, 79.5, 79.0, 78.5, 78.0, 77.5, 77.5, 77.5, 77.5, 77.0,
-                76.5, 76.0, 75.5, 75.0, 74.5, 74.0, 73.7, 73.4, 73.1, 72.8, 72.5, 72.2, 71.9, 71.6, 71.3, 71.0],
-    },
+    plan: { start: LEGACY_START, startKg, goalKg, goalDate, targets: buildTargets(startKg, goalKg, LEGACY_START, goalDate) },
     event: null,
     habits: [
       // Same ids as the old programme so restored ticks line up; names kept generic

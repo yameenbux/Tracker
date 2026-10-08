@@ -11,7 +11,7 @@ jest.mock('expo-haptics', () => ({ selectionAsync: jest.fn(() => Promise.resolve
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(), getPermissionsAsync: jest.fn(async () => ({ granted: true })), requestPermissionsAsync: jest.fn(),
   getAllScheduledNotificationsAsync: jest.fn(async () => []), cancelScheduledNotificationAsync: jest.fn(), scheduleNotificationAsync: jest.fn(),
-  getLastNotificationResponseAsync: jest.fn(async () => null), addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getLastNotificationResponseAsync: jest.fn(async () => null), clearLastNotificationResponse: jest.fn(), addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   SchedulableTriggerInputTypes: { DATE: 'date', DAILY: 'daily' },
 }));
 jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn() }));

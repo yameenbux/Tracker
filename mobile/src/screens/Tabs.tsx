@@ -1,6 +1,6 @@
 import { CardBoundary } from '../components/States';
 import { MedicationToday, MedicationTrend } from '../components/Medication';
-import { isDoseDay } from '../core/medication';
+import { isDue } from '../core/medication';
 import { cloneElement, isValidElement, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { measureSummary, showLength } from '../core/body';
@@ -69,7 +69,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const status = trendNow != null ? lineStatus(settings.plan, trendNow) : null;   // same answer as the hero's "vs line"
   const week = changeTable(series, now, [7])[0].change;
   // On a dose day the card goes straight under the hero; otherwise it sits with the other daily items
-  const doseToday = !!settings.medication && isDoseDay(settings.medication, now);   // stays put once taken, so Undo doesn't jump away
+  const doseToday = !!settings.medication && (isDue(settings.medication, state.doses ?? {}, now) || !!state.doses?.[props.today]);   // stays put once taken, so Undo doesn't jump away
   const d = sign(direction(settings.plan));
 
   return (

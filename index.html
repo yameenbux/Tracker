@@ -387,16 +387,17 @@ const DEFAULT_HABITS = [
   { id: "workout", icon: "🏋", short: "WORK", name: "Workout" }
 ];
 
-// The original hard-coded programme. Anyone who already has data on this device gets it on first load,
-// so the app looks exactly as it did before plans became configurable.
-function legacySettings() {
+// Plan for data saved before plans were configurable (those saves carried none). It's worked out from the saved
+// weigh-ins (earliest weight, a goal 10% lower over 32 weeks), so it holds nobody's real numbers. Old weekly entries
+// were numbered from LEGACY_START, which is the only thing kept from the original programme.
+const LEGACY_START = "2026-09-28";
+function legacySettings(w) {
+  const first = Object.keys(w || {}).sort()[0];
+  const startKg = first ? w[first] : 80;
+  const goalKg = Math.round(startKg * 0.9 * 10) / 10;
+  const goalDate = dateKey(addDays(parseKey(LEGACY_START), 32 * 7));
   return {
-    plan: {
-      start: "2026-09-28", startKg: 83.0, goalKg: 71.0, goalDate: "2027-05-03",
-      targets: [83.0, 82.5, 82.0, 81.5, 81.0, 80.5, 80.0, 79.5, 79.0, 78.5, 78.0, 77.5, 77.5, 77.5, 77.5, 77.0,
-                76.5, 76.0, 75.5, 75.0, 74.5, 74.0, 73.7, 73.4, 73.1, 72.8, 72.5, 72.2, 71.9, 71.6, 71.3, 71.0]
-    },
-    // Only the plan dates matter (old weekly entries were numbered from this start). Nothing personal is kept here.
+    plan: { start: LEGACY_START, startKg, goalKg, goalDate, targets: buildTargets(startKg, goalKg, LEGACY_START, goalDate) },
     event: null,
     habits: DEFAULT_HABITS.map(h => ({ ...h })),
     sessions: emptySessions(),
@@ -542,9 +543,8 @@ function load() {
 
   if (!settings && (hasKey(KEY) || hasKey(HABITS_KEY) || hasKey(DAILYW_KEY))) {
     // Existing user from before plans were configurable: keep their programme and fold weekly entries into the date log.
-    settings = normalizeSettings(legacySettings());
-    const actuals = hasKey(KEY) ? readJSON(KEY) : { 1: 83.0 };   // the old app showed 83.0 at week 1 when nothing was saved
-    mergeLegacyActuals(actuals, weights, settings.plan.start);
+    mergeLegacyActuals(hasKey(KEY) ? readJSON(KEY) : {}, weights, LEGACY_START);
+    settings = normalizeSettings(legacySettings(weights));
     saveSettings(); saveWeights();
   }
   syncSeg();
@@ -1317,8 +1317,8 @@ function parseBackup(text) {
   }
   if (raw.actuals || raw.dailyW || raw.habits) {
     // Backup from before plans were configurable: weekly weigh-ins were numbered from the original programme start.
-    const s = settings || normalizeSettings(legacySettings());
-    const w = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), legacySettings().plan.start);
+    const w = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
+    const s = settings || normalizeSettings(legacySettings(w));
     return { settings: s, weights: w, habits: cleanHabits(raw.habits), unit: raw.unit };
   }
   throw new Error("That file doesn't look like a Tracker backup.");

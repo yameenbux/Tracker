@@ -6,13 +6,14 @@ import type { Reminder } from './core/storage';
 import type { DoseLog, Medication } from './core/types';
 
 // Daily weigh-in reminder, scheduled on the device (local notifications only: nothing is sent to a server).
-// Instead of one repeating notification, the next two months are scheduled one day at a time, so a day you've
+// Instead of one repeating notification, the next seven weeks or so are scheduled one day at a time, so a day you've
 // already logged gets no reminder. It's rescheduled whenever the app opens or a weigh-in is saved.
 
 const PREFIX = 'weigh-in-';
 const DOSE_PREFIX = 'dose-';
-// iOS allows 64 pending local notifications in all: 56 days of weigh-ins plus up to 8 dose reminders
-const DAYS_AHEAD = 56;
+// iOS allows 64 pending local notifications in all: 52 days of weigh-ins, up to 8 dose reminders, 4 spare
+const DAYS_AHEAD = 52;
+const MAX_DOSE_REMINDERS = 8;   // 8 weeks of a weekly dose, or 8 days of a daily one
 export const DOSE_HOUR = 9;
 
 if (Platform.OS !== 'web') {
@@ -88,8 +89,8 @@ export function applyReminder(r: Reminder, loggedToday = false): Promise<void> {
 /** The dose reminders this medication calls for: 9am on each dose day, skipping today once it's marked or past 9am. */
 export function doseReminderTimes(med: Medication | null | undefined, doses: DoseLog, now: Date = new Date()): Date[] {
   if (!med?.remind) return [];
-  return doseReminderDays(med, doses, now).map(d => { const at = new Date(d); at.setHours(DOSE_HOUR, 0, 0, 0); return at; })
-    .filter(at => at > now);
+  return doseReminderDays(med, doses, now, 7 * MAX_DOSE_REMINDERS).slice(0, MAX_DOSE_REMINDERS + 1).map(d => { const at = new Date(d); at.setHours(DOSE_HOUR, 0, 0, 0); return at; })
+    .filter(at => at > now).slice(0, MAX_DOSE_REMINDERS);
 }
 
 /** Replaces the scheduled dose reminders. The text never names the medication (it shows on the lock screen). */
@@ -102,7 +103,12 @@ export function applyDoseReminders(med: Medication | null | undefined, doses: Do
 export function onReminderTap(onOpen: () => void): () => void {
   if (Platform.OS === 'web') return () => {};
   const isOurs = (r: Notifications.NotificationResponse | null) => r?.notification.request.identifier.startsWith(PREFIX);
-  Notifications.getLastNotificationResponseAsync().then(r => { if (isOurs(r)) onOpen(); }).catch(() => {});
+  // The tap that launched the app is remembered by iOS; clear it once handled so a later launch doesn't open the sheet again
+  Notifications.getLastNotificationResponseAsync().then(r => {
+    if (!isOurs(r)) return;
+    try { Notifications.clearLastNotificationResponse(); } catch { /* older native module: harmless */ }
+    onOpen();
+  }).catch(() => {});
   const sub = Notifications.addNotificationResponseReceivedListener(r => { if (isOurs(r)) onOpen(); });
   return () => sub.remove();
 }

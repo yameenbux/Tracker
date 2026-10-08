@@ -74,7 +74,7 @@ describe('smart reminders', () => {
   const r = { on: true, hour: 7, minute: 30 };
   test('two months ahead (within iOS’s 64-notification limit), starting today when it is still before the reminder time', () => {
     const days = reminderDays(r, false, new Date(2026, 9, 8, 6, 0));
-    expect(days).toHaveLength(56);
+    expect(days).toHaveLength(52);
     expect(days[0].getDate()).toBe(8);
     expect(days[0].getHours()).toBe(7);
   });

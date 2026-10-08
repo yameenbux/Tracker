@@ -1,4 +1,4 @@
-import { cleanDoses, cleanMedication, doseReminderDays, dosePeriods, isDoseDay, nextDose } from '../medication';
+import { cleanDoses, cleanMedication, doseReminderDays, dosePeriods, isDoseDay, isDue, lastDose, nextDose } from '../medication';
 import { doseReminderTimes } from '../../reminders';
 import { parseKey } from '../dates';
 import type { Medication } from '../types';
@@ -36,8 +36,10 @@ describe('medication', () => {
   test('reminders only when switched on, at 9am, never in the past, and at most 8 (fits iOS’s limit with weigh-ins)', () => {
     expect(doseReminderTimes(weekly, {}, thu)).toEqual([]);
     const on = { ...weekly, remind: true };
-    expect(doseReminderTimes(on, {}, thu).map(d => [d.getDate(), d.getHours()])).toEqual([[8, 9], [15, 9]]);
-    expect(doseReminderTimes(on, {}, new Date(2026, 9, 8, 10, 0)).map(d => d.getDate())).toEqual([15]);
+    const times = doseReminderTimes(on, {}, thu);
+    expect(times).toHaveLength(8);   // 8 weeks ahead, so a weekly dose keeps reminding without opening the app
+    expect(times.slice(0, 2).map(d => [d.getDate(), d.getHours()])).toEqual([[8, 9], [15, 9]]);
+    expect(doseReminderTimes(on, {}, new Date(2026, 9, 8, 10, 0))[0].getDate()).toBe(15);
     expect(doseReminderTimes({ ...on, every: 'day' }, {}, thu).length).toBeLessThanOrEqual(8);
   });
   test('dose periods group doses by strength, with the trend change during each', () => {
@@ -53,5 +55,18 @@ describe('medication', () => {
     expect(runs[0].weeks).toBe(2);
     expect(runs[1].trendChange).toBeCloseTo(-2);
     expect(dosePeriods({}, series)).toEqual([]);
+  });
+  test('a weekly dose taken late or on a moved day covers the next few days: no second dose prompted', () => {
+    // Took Monday's dose, then moved the dose day to Thursday: Thursday is 3 days later, so not due
+    const moved = { '2026-10-05': { mg: 2.4 } };
+    expect(isDue(weekly, moved, thu)).toBe(false);
+    expect(nextDose(weekly, moved, thu).getDate()).toBe(15);
+    expect(doseReminderDays(weekly, moved, thu).map(d => d.getDate())).toEqual([15]);
+    // A dose 4+ days earlier doesn't cover it
+    expect(isDue(weekly, { '2026-10-04': { mg: 2.4 } }, thu)).toBe(true);
+    // Daily medicines are never covered by yesterday's dose
+    expect(isDue({ ...weekly, every: 'day' }, { '2026-10-07': { mg: 1 } }, thu)).toBe(true);
+    expect(lastDose(moved, thu)).toBe('2026-10-05');
+    expect(lastDose({}, thu)).toBeNull();
   });
 });

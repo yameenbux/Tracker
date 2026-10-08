@@ -141,6 +141,11 @@ describe('backups', () => {
     const r = parseBackup(txt, null);
     expect(r.weights).toEqual({ '2026-09-28': 83, '2026-10-12': 81.9, '2026-10-01': 82.5 });
     expect(r.settings.plan.start).toBe('2026-09-28');
+    // With no plan on the phone, one is worked out from the backup itself (nobody's real programme is built in)
+    expect(r.settings.plan.startKg).toBe(83);
+    expect(r.settings.plan.goalKg).toBe(74.7);
+    expect(r.settings.plan.targets[0]).toBe(83);
+    expect(r.settings.plan.targets).toHaveLength(33);
   });
 
   test('rejects files that are not backups', () => {
