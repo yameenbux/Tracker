@@ -12,8 +12,11 @@ function store(): Iap {
   return iap;
 }
 
-/** What the paywall shows for a plan: Apple's localised price, and whether it starts with a free trial. */
-export interface PlanOffer { plan: PlusPlan; id: string; price: string; trialDays: number | null }
+/**
+ * What the paywall shows for a plan: Apple's localised price, and whether it starts with a free trial. `amount` and
+ * `currency` are the same price as a number, for working out the yearly saving; null if the store leaves them out.
+ */
+export interface PlanOffer { plan: PlusPlan; id: string; price: string; trialDays: number | null; amount: number | null; currency: string | null }
 
 let connected: Promise<boolean> | null = null;
 export function connect(): Promise<boolean> {
@@ -39,7 +42,10 @@ export async function loadOffers(): Promise<PlanOffer[]> {
   const all = [...(subs ?? []), ...(once ?? [])] as unknown as (Record<string, unknown> & { id: string; displayPrice: string })[];
   return (Object.keys(PLUS_PRODUCTS) as PlusPlan[]).flatMap(plan => {
     const p = all.find(x => x.id === PLUS_PRODUCTS[plan]);
-    return p ? [{ plan, id: p.id, price: p.displayPrice, trialDays: plan === 'lifetime' ? null : trialDays(p) }] : [];
+    if (!p) return [];
+    const amount = typeof p.price === 'number' && isFinite(p.price) ? p.price : null;
+    const currency = typeof p.currency === 'string' && p.currency ? p.currency : null;
+    return [{ plan, id: p.id, price: p.displayPrice, trialDays: plan === 'lifetime' ? null : trialDays(p), amount, currency }];
   });
 }
 
