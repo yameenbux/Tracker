@@ -10,7 +10,8 @@ import { Icon } from './Icons';
 /**
  * Bottom sheet used for every quick-entry task (log weight, measurements, session weights).
  * The backdrop fades while only the sheet slides; drag the handle down, tap outside or tap ✕ to close.
- * Content scrolls and sits above the keyboard, and the bottom respects the home indicator.
+ * Content scrolls and sits above the keyboard, and the bottom respects the home indicator. An empty title leaves only
+ * the close button, for sheets whose content carries its own heading.
  */
 export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
   title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode;
@@ -59,7 +60,7 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
           <View {...pan.panHandlers} style={s.handleZone}>
             <View style={s.grab} />
             <View style={s.head}>
-              <Text style={s.title} accessibilityRole="header" numberOfLines={1}>{title}</Text>
+              {title ? <Text style={s.title} accessibilityRole="header" numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
               <Pressable onPress={close} style={s.x} hitSlop={6} accessibilityRole="button" accessibilityLabel="Close">
                 <Icon name="close" size={18} color={C.inkSoft} strokeWidth={2.4} />
               </Pressable>

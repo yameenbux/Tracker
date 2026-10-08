@@ -9,7 +9,7 @@ import { PlusProvider, usePlus } from '../plus';
 import { SettingsScreen, SettingsProps } from '../screens/SettingsScreen';
 
 const N = Iap as unknown as Record<string, jest.Mock>;
-const product = (id: string, price: string, trial = false) => ({ id, displayPrice: price, ...(trial ? {
+const product = (id: string, price: string, trial = false) => ({ id, displayPrice: price, price: Number(price.slice(1)), currency: 'GBP', ...(trial ? {
   introductoryPricePaymentModeIOS: 'free-trial', introductoryPriceNumberOfPeriodsIOS: '1', introductoryPriceSubscriptionPeriodIOS: 'week' } : {}) });
 beforeEach(() => {
   jest.clearAllMocks();
@@ -40,13 +40,27 @@ describe('buying Plus', () => {
     fireEvent.press(screen.getByText('open'));
     expect(await screen.findByText('Try free for 7 days')).toBeTruthy();       // yearly is preselected
     expect(screen.getByText(/renews automatically unless you cancel at least 24 hours/)).toBeTruthy();
-    expect(screen.getByText('Terms of use')).toBeTruthy();
-    expect(screen.getByText('Privacy policy')).toBeTruthy();
+    expect(screen.getByText('Free for 7 days, then £11.99 a year. Cancel any time.')).toBeTruthy();   // the trial, right by the button
+    expect(screen.getByText('Save 49%')).toBeTruthy();                       // £11.99 vs 12 × £1.99 is 49.8%: rounded down
+    expect(screen.getByText('£1.00 a month')).toBeTruthy();
+    expect(screen.getByLabelText('Terms of use')).toBeTruthy();
+    expect(screen.getByLabelText('Privacy policy')).toBeTruthy();
     await act(async () => { fireEvent.press(screen.getByText('Try free for 7 days')); });
     expect(N.requestPurchase).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'subs', request: expect.objectContaining({ apple: { sku: PLUS_PRODUCTS.yearly } }) }));
     fireEvent.press(screen.getByRole('radio', { name: /^Lifetime/ }));
+    expect(screen.getByText('£19.99 once. No subscription.')).toBeTruthy();
     await act(async () => { fireEvent.press(screen.getByText('Buy for £19.99')); });
     expect(N.requestPurchase).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'in-app', request: expect.objectContaining({ apple: { sku: PLUS_PRODUCTS.lifetime } }) }));
+  });
+  test('no saving badge when the store gives no numeric prices', async () => {
+    N.fetchProducts.mockImplementation(async ({ type }: { type: string }) => type === 'subs'
+      ? [{ ...product(PLUS_PRODUCTS.monthly, '£1.99', true), price: undefined }, { ...product(PLUS_PRODUCTS.yearly, '£11.99', true), price: undefined }]
+      : [product(PLUS_PRODUCTS.lifetime, '£19.99')]);
+    render(<Harness><Probe /></Harness>);
+    fireEvent.press(screen.getByText('open'));
+    expect(await screen.findByText('Try free for 7 days')).toBeTruthy();
+    expect(screen.queryByText(/^Save /)).toBeNull();
+    expect(screen.getByText('a year')).toBeTruthy();                         // no monthly figure either, just the period
   });
   test('a completed purchase is finished with Apple and unlocks Plus', async () => {
     render(<Harness><Probe /></Harness>);
@@ -62,7 +76,7 @@ describe('buying Plus', () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     render(<Harness><Probe /></Harness>);
     fireEvent.press(screen.getByText('open'));
-    await act(async () => { fireEvent.press(await screen.findByText('Restore purchases')); });
+    await act(async () => { fireEvent.press(await screen.findByLabelText('Restore purchases')); });
     expect(N.restorePurchases).toHaveBeenCalled();
     expect(alert.mock.calls.at(-1)?.[0]).toBe('No Plus purchase found');
   });
@@ -80,7 +94,7 @@ describe('the free version', () => {
     const p = props();
     render(<Harness><SettingsScreen {...p} /></Harness>);
     fireEvent.press(screen.getByLabelText(/^Medication/));
-    expect(await screen.findAllByText(/Part of Plus: medication log/)).toHaveLength(1);   // one paywall, shown in the Settings window
+    expect(await screen.findAllByText(/Medication log is part of Plus/)).toHaveLength(1);   // one paywall, shown in the Settings window
   });
   test('a 4th habit needs Plus; with Plus all 6 are available', () => {
     const { unmount } = render(<Harness><SettingsScreen {...props()} initialPage="habits" /></Harness>);

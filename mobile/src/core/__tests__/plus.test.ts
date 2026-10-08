@@ -1,4 +1,4 @@
-import { cleanPlus, NO_PLUS, OFFLINE_GRACE_MS, PLUS_PRODUCTS, plusActive, plusFrom, usableHabits } from '../plus';
+import { cleanPlus, NO_PLUS, OFFLINE_GRACE_MS, PLUS_PRODUCTS, perMonth, plusActive, plusFrom, usableHabits, yearlySaving } from '../plus';
 
 const now = Date.UTC(2026, 9, 8);
 const day = 86400000;
@@ -41,5 +41,20 @@ describe('Tidemark Plus', () => {
     const h = [1, 2, 3, 4, 5];
     expect(usableHabits(h, false)).toEqual([1, 2, 3]);
     expect(usableHabits(h, true)).toEqual(h);
+  });
+});
+
+describe('paywall prices', () => {
+  test('the yearly saving is rounded down so it never overstates', () => {
+    expect(yearlySaving(1.99, 11.99)).toBe(49);                  // 49.8%
+    expect(yearlySaving(2, 12)).toBe(50);                        // exactly half stays 50, not 49
+    expect(yearlySaving(1.99, 23.88)).toBeNull();                // no saving, no badge
+    expect(yearlySaving(null, 11.99)).toBeNull();
+    expect(yearlySaving(1.99, 0)).toBeNull();
+  });
+  test('a yearly price as a monthly figure, in the store’s currency', () => {
+    expect(perMonth(11.99, 'GBP')).toMatch(/£1\.00/);
+    expect(perMonth(11.99, null)).toBeNull();
+    expect(perMonth(11.99, 'not a currency')).toBeNull();
   });
 });

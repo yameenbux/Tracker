@@ -15,12 +15,13 @@ export const ALL_PLUS_IDS: string[] = Object.values(PLUS_PRODUCTS);
 export type PlusFeature = 'medication' | 'habits' | 'body' | 'calories' | 'protectedBackups';
 export const FREE_HABITS = 3;
 
-export const PLUS_PERKS: { feature: PlusFeature; icon: string; title: string; body: string }[] = [
-  { feature: 'medication', icon: 'pill', title: 'Medication log', body: 'Weekly GLP-1 or other doses, reminders, and how your trend moved at each dose' },
-  { feature: 'habits', icon: 'habits', title: 'Up to 6 habits', body: `Free includes ${FREE_HABITS}` },
-  { feature: 'body', icon: 'body', title: 'Measurements and photos', body: 'Waist, hips, chest and arm, plus private progress photos' },
-  { feature: 'calories', icon: 'flame', title: 'Calories', body: 'A daily total and an estimate of what you really burn' },
-  { feature: 'protectedBackups', icon: 'lock', title: 'Password-protected backups', body: 'Encrypted backup files only you can open' },
+/** The Plus extras: `title` names one (e.g. "Medication log is part of Plus"), `line` is its paywall checklist line. */
+export const PLUS_PERKS: { feature: PlusFeature; title: string; line: string }[] = [
+  { feature: 'medication', title: 'Medication log', line: 'Medication log and dose reminders' },
+  { feature: 'habits', title: 'More habits', line: `Up to 6 habits (free has ${FREE_HABITS})` },
+  { feature: 'body', title: 'Measurements and photos', line: 'Measurements and progress photos' },
+  { feature: 'calories', title: 'Calories', line: 'Calories and what you really burn' },
+  { feature: 'protectedBackups', title: 'Password-protected backups', line: 'Password-protected backups' },
 ];
 
 /** What the phone last knew about Plus. Kept so Plus works offline; re-checked with Apple whenever the app opens. */
@@ -69,6 +70,23 @@ export function cleanPlus(v: unknown): PlusStatus {
   const n = (x: unknown) => (typeof x === 'number' && isFinite(x) ? x : null);
   const productId = typeof o.productId === 'string' && ALL_PLUS_IDS.includes(o.productId) ? o.productId : null;
   return { active: o.active === true && productId != null, productId, expires: n(o.expires), checkedAt: n(o.checkedAt) };
+}
+
+/**
+ * Whole percent saved by paying yearly rather than 12 months of monthly, rounded down so it never overstates
+ * (£1.99 a month and £11.99 a year is 49.8%, so "Save 49%"). Null when there's no real saving or a price is missing.
+ */
+export function yearlySaving(monthly: number | null | undefined, yearly: number | null | undefined): number | null {
+  if (!monthly || !yearly || monthly <= 0 || yearly <= 0) return null;
+  const pct = Math.floor((1 - yearly / (monthly * 12)) * 100 + 1e-9);
+  return pct >= 1 ? pct : null;
+}
+
+/** A yearly price as a monthly figure in the store's currency (£11.99 → "£1.00"). Null if it can't be formatted. */
+export function perMonth(yearly: number | null | undefined, currency: string | null | undefined): string | null {
+  if (!yearly || yearly <= 0 || !currency) return null;
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(yearly / 12); }
+  catch { return null; }
 }
 
 /** Habits that are in use: all of them with Plus, otherwise the first FREE_HABITS (the rest are kept, not deleted). */
