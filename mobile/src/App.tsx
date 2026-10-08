@@ -26,6 +26,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { BodyTab, HabitsTab, TabProps, TodayNotices, TodayTab, TrendTab } from './screens/Tabs';
 import { Reminder, useTracker } from './store';
 import { useAppearance } from './appearance';
+import { clearCache } from './io';
 import { C, themed, useScheme } from './theme';
 import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
@@ -76,10 +77,11 @@ function Main() {
     const f1 = requestAnimationFrame(() => { f2 = requestAnimationFrame(() => { SplashScreen.hideAsync().catch(() => {}); }); });
     return () => { cancelAnimationFrame(f1); cancelAnimationFrame(f2); };
   }, [t.ready]);
+  // Leftovers in the cache (an export interrupted by a crash, picker copies) are cleared on every launch
+  useEffect(() => { if (t.ready) clearCache(); }, [t.ready]);
   // Reminders: skip today once it's logged, and keep the two-week window rolling (re-run each day and on changes)
   const loggedToday = state.weights[today] != null;
   useEffect(() => { if (t.ready) applyReminder(prefs.reminder, loggedToday); }, [t.ready, prefs.reminder, loggedToday, today]);
-  // Tapping a reminder opens the log sheet
   // Tapping a reminder opens the log sheet. It waits for Face ID when the lock is on, then opens straight after unlock.
   const [pendingLog, setPendingLog] = useState<number | null>(null);
   useEffect(() => onReminderTap(() => setPendingLog(Date.now())), []);
@@ -120,19 +122,25 @@ function Main() {
   if (!t.ready) return <View style={s.fill} />;
   if (t.loadFailed) return <LoadFailedScreen onRetry={t.retryLoad} />;
 
+  // The lock comes before everything else that shows data, onboarding included (a recovered setup shows weigh-in counts).
+  // While locked, render nothing but the lock: no data underneath for VoiceOver, and any open sheets close.
+  // (Adjusting state during render is React's documented pattern for reacting to a changed value without an extra pass.)
+  if (lock.locked && (showSettings || log || lift)) { setShowSettings(false); setLog(null); setLift(null); }   // don't reopen them on unlock
+  if (!lock.locked && settings && pendingLog != null) { setPendingLog(null); setShowSettings(false); setTab('today'); setLog({ key: null, n: pendingLog }); }
+  if (lock.locked) return <LockScreen lockName={lock.lockName} onUnlock={lock.tryUnlock} />;
+
   if (!settings) {
     const kept = Object.keys(state.weights).length;
     return (
+      <CoverContext.Provider value={lock.covered}>
       <Onboarding unit={state.unit} setUnit={t.setUnit} lockAvailable={lock.lockAvailable} lockName={lock.lockName}
         onDone={finishSetup} onRestore={data.restore}
         notice={t.recovered ? `Your saved plan couldn’t be read, so Plumb kept a copy on this phone${kept ? ` and kept your ${kept} weigh-ins` : ''}. Set your plan up again, or restore a backup.` : undefined} />
+      <CoverOverlay />
+      </CoverContext.Provider>
     );
   }
 
-  // While locked, render nothing but the lock: no data underneath for VoiceOver, and any open sheets close
-  if (lock.locked && (showSettings || log || lift)) { setShowSettings(false); setLog(null); setLift(null); }   // don't reopen them on unlock
-  if (!lock.locked && pendingLog != null) { setPendingLog(null); setShowSettings(false); setTab('today'); setLog({ key: null, n: pendingLog }); }
-  if (lock.locked) return <LockScreen lockName={lock.lockName} onUnlock={lock.tryUnlock} />;
 
   const replan = async (next: Settings['plan']) => {
     const ok = await confirm('Start a new line from here?', `Your goal date moves to ${longDate(next.goalDate)}. Past weeks and every weigh-in stay as they are.`, 'Re-plan', false);

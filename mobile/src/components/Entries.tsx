@@ -1,3 +1,4 @@
+import { FadeIn, Tap } from './Motion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -44,11 +45,12 @@ export function EntriesList({ settings, weights, unit, onEdit }: {
   return (
     <Card title="Weigh-ins" right={<Text style={s.count}>{list.length} logged</Text>}>
       {!list.length && <Text style={s.empty}>Nothing logged yet. Tap the + button after your next weigh-in.</Text>}
-      {shown.map(p => {
+      {shown.map((p, i) => {
         const diff = p.kg - targetAt(plan, p.d);
         const wk = Math.floor(weekFraction(plan, p.d)) + 1;
         return (
-          <Pressable key={p.k} onPress={() => onEdit(p.k)} style={({ pressed }) => [s.entry, pressed && { opacity: 0.6 }]}
+          <FadeIn key={p.k} index={i}>
+          <Pressable onPress={() => onEdit(p.k)} style={({ pressed }) => [s.entry, pressed && { backgroundColor: C.chip }]}
             accessibilityRole="button" accessibilityHint="Edits this weigh-in"
             accessibilityLabel={`${showWeight(p.kg, unit)} on ${DAY_ABBR[p.d.getDay()]} ${longDate(p.k)}, ${Math.abs(diff) <= 0.05 ? 'on target' : `${showAmount(Math.abs(diff), unit)} ${diff > 0 ? 'above' : 'below'} target`}`}>
             <View style={{ flex: 1 }}>
@@ -58,6 +60,7 @@ export function EntriesList({ settings, weights, unit, onEdit }: {
             <Pill kg={diff} text={showDiff(diff, unit)} d={sign(direction(plan)) as -1 | 0 | 1} />
             <Icon name="chevron" size={18} color={C.inkSoft} />
           </Pressable>
+          </FadeIn>
         );
       })}
       {list.length > 6 && (
@@ -101,17 +104,17 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
         {editing && <Button label="Delete weigh-in" kind="danger" disabled={!!then} onPress={() => setThen({ run: () => onDelete(initialKey!) })} style={{ marginTop: 8 }} />}
       </>}>
       <View style={s.stepRow}>
-        <Pressable onPress={() => nudge(-1)} disabled={kg == null} style={({ pressed }) => [s.stepBtn, pressed && { opacity: 0.6 }]}
+        <Tap onPress={() => nudge(-1)} disabled={kg == null} style={s.stepBtn}
           accessibilityRole="button" accessibilityState={{ disabled: kg == null }} accessibilityLabel={`Decrease by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
-          <Text style={s.stepTxt}>−</Text>
-        </Pressable>
+          <Icon name="minus" size={24} color={C.ink} strokeWidth={2.4} />
+        </Tap>
         <View style={{ alignItems: 'center' }}>
           <WeightInput unit={unit} kg={kg} onChange={setKg} live big label="Weight" sync={nudges} autoFocus={kg == null} />
         </View>
-        <Pressable onPress={() => nudge(1)} disabled={kg == null} style={({ pressed }) => [s.stepBtn, pressed && { opacity: 0.6 }]}
+        <Tap onPress={() => nudge(1)} disabled={kg == null} style={s.stepBtn}
           accessibilityRole="button" accessibilityState={{ disabled: kg == null }} accessibilityLabel={`Increase by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
-          <Text style={s.stepTxt}>+</Text>
-        </Pressable>
+          <Icon name="plus" size={24} color={C.ink} strokeWidth={2.4} />
+        </Tap>
       </View>
       {!editing && lastKey && kg != null && <Text style={s.hint}>Starts from your last weigh-in ({showWeight(weights[lastKey], unit)}, {longDate(lastKey)}). Nudge it or type over it.</Text>}
       <View style={s.dateRow}>
@@ -144,7 +147,6 @@ const s = themed(() => StyleSheet.create({
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, marginTop: 10, lineHeight: 19 },
   stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 10 },
   stepBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
-  stepTxt: { fontFamily: F.display, fontSize: 26, color: C.ink, marginTop: -2 },
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 },
   dateLabel: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   hint: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, marginTop: 10, lineHeight: 19, textAlign: 'center' },

@@ -1,9 +1,11 @@
+import { Tap } from './Motion';
+import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { DAY_ABBR, dateKey, parseKey } from '../core/dates';
 import { consistency } from '../core/insights';
-import { toggleHabit } from '../core/plan';
+import { toggleHabit, extent } from '../core/plan';
 import { changeTable, habitGrid } from '../core/summary';
 import type { TrendPoint } from '../core/trend';
 import { showChange } from '../core/units';
@@ -18,7 +20,7 @@ export function Sparkline({ points, width = 120, height = 34, color = C.graphCor
   if (points.length < 2) return <View style={{ height }} />;
   const t0 = points[0].d.getTime(), t1 = points[points.length - 1].d.getTime();
   const vals = points.map(p => p.trend);
-  const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(hi - lo, 0.3);
+  const [lo, hi] = extent(vals), span = Math.max(hi - lo, 0.3);
   const x = (p: TrendPoint) => 3 + (width - 6) * (t1 === t0 ? 1 : (p.d.getTime() - t0) / (t1 - t0));
   const y = (v: number) => 3 + (height - 6) * (1 - (v - lo) / span);
   const d = points.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p.trend).toFixed(1)}`).join(' ');
@@ -38,7 +40,7 @@ export function Tile({ icon, label, value, valueColor, sub, spark, children, onP
 }) {
   const [w, setW] = useState(0);
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.tile, pressed && { opacity: 0.7 }]}
+    <Tap onPress={onPress} style={s.tile}
       accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint={`Opens ${label}`}>
       <View style={s.tileHead}>
         <Icon name={icon} size={16} color={C.inkSoft} />
@@ -50,7 +52,7 @@ export function Tile({ icon, label, value, valueColor, sub, spark, children, onP
       <View style={{ marginTop: 'auto', paddingTop: 10 }} onLayout={e => setW(e.nativeEvent.layout.width)}>
         {spark && w > 0 ? <Sparkline points={spark} width={w} /> : children}
       </View>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -105,7 +107,7 @@ export const HabitGrids = memo(function HabitGrids({ settings, habits }: { setti
         return (
           <View key={h.id} style={s.gridRow} accessible accessibilityLabel={`${h.name}: done ${m.done} of the last ${m.of} days, ${pct} percent`}>
             <View style={s.gridHead}>
-              <Text style={s.gridName} numberOfLines={1}>{h.icon}  {h.name}</Text>
+              <Icon name={habitIcon(h.icon, h.name)} size={16} color={C.plum2} /><Text style={s.gridName} numberOfLines={1}>{h.name}</Text>
               <Text style={s.gridPct}>{pct}%</Text>
             </View>
             <View style={s.grid}>
@@ -132,12 +134,12 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
         {settings.habits.map(h => {
           const on = !!habits[key]?.[h.id];
           return (
-            <Pressable key={h.id} onPress={() => { tick(); onChange(toggleHabit(habits, key, h.id)); }} style={[s.chip, on && s.chipOn]}
+            <Tap key={h.id} onPress={() => { tick(); onChange(toggleHabit(habits, key, h.id)); }} style={[s.chip, on && s.chipOn]}
               accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={h.name}>
-              <Text style={s.chipIcon}>{h.icon}</Text>
+              <Icon name={habitIcon(h.icon, h.name)} size={18} color={on ? C.onCoral : C.plum2} />
               <Text style={[s.chipTxt, on && { color: C.onCoral }]} numberOfLines={1}>{h.name}</Text>
               {on && <Icon name="check" size={16} color={C.onCoral} strokeWidth={2.6} />}
-            </Pressable>
+            </Tap>
           );
         })}
       </View>
@@ -169,7 +171,7 @@ const s = themed(() => StyleSheet.create({
   cellV: { fontFamily: F.display, fontSize: 15, marginTop: 4 },
   foot: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, lineHeight: 17, paddingHorizontal: 4, marginTop: 10 },
   gridRow: { paddingHorizontal: 4, paddingVertical: 8 },
-  gridHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  gridHead: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8 },
   gridName: { flex: 1, fontFamily: F.bodySemi, fontSize: 14, color: C.ink },
   gridPct: { fontFamily: F.display, fontSize: 14, color: C.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
@@ -179,7 +181,6 @@ const s = themed(() => StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.control },
   chipOn: { backgroundColor: C.coral, borderColor: C.coralInk },
-  chipIcon: { fontSize: 16 },
   chipTxt: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink, maxWidth: 150 },
   sess: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginHorizontal: 2, padding: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },
   sessK: { fontFamily: F.bodySemi, fontSize: 11, color: C.plum2, textTransform: 'uppercase', letterSpacing: 0.8 },

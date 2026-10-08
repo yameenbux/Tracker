@@ -108,7 +108,8 @@ describe('smart reminders', () => {
 });
 
 jest.mock('../lock', () => ({
-  canLock: jest.fn(async () => false), biometricName: jest.fn(async () => 'Face ID'), unlock: jest.fn(async () => false),
+  canLock: jest.fn(async () => false), lockAvailability: jest.fn(async () => 'none'),
+  biometricName: jest.fn(async () => 'Face ID'), unlock: jest.fn(async () => false),
 }));
 describe('lock', () => {
   test('if the phone loses its passcode, the lock turns itself off instead of locking you out', async () => {
@@ -117,6 +118,16 @@ describe('lock', () => {
     await waitFor(() => expect(result.current.lockLost).toBe(true));
     expect(setPrefs).toHaveBeenCalledWith({ lock: false });
     await act(async () => {});
+  });
+  test('if the check itself fails, the app stays locked (it never fails open)', async () => {
+    const L = jest.requireMock('../lock');
+    L.lockAvailability.mockResolvedValue('unknown');
+    const setPrefs = jest.fn();
+    const { result } = renderHook(() => useLock(true, { ...DEFAULT_PREFS, lock: true }, setPrefs));
+    await act(async () => { await new Promise(r => setTimeout(r, 10)); });
+    expect(result.current.locked).toBe(true);
+    expect(setPrefs).not.toHaveBeenCalled();
+    L.lockAvailability.mockResolvedValue('none');
   });
 });
 

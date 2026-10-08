@@ -33,7 +33,11 @@ export async function addPhoto(source: 'camera' | 'library', dateKey: string, po
   const asset = res.assets[0];
   if (Platform.OS === 'web') return asset.base64 ? `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}` : asset.uri;
   const name = `p-${dateKey}-${pose}-${Date.now().toString(36)}.jpg`;
-  await new File(asset.uri).copy(new File(photoDir(), name));
+  const picked = new File(asset.uri);
+  await picked.copy(new File(photoDir(), name));
+  // The picker's working copy (and crop) sits in the cache; remove it so a deleted photo leaves nothing behind.
+  // Only ever inside our own cache folder: never touch a file outside the app.
+  try { if (asset.uri.startsWith(Paths.cache.uri) && picked.exists) picked.delete(); } catch { /* the cache sweep gets it */ }
   return name;
 }
 

@@ -67,8 +67,8 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
 
   return (
     <Card title="Measurements & photos" right={<View style={{ flexDirection: 'row', gap: 6 }}>
-      <Button label="+ Measure" kind="ghost" small onPress={() => setSheet('measure')} />
-      <Button label="+ Photos" kind="ghost" small onPress={() => setSheet('photos')} />
+      <Button icon="plus" label="Measure" kind="ghost" small onPress={() => setSheet('measure')} />
+      <Button icon="plus" label="Photos" kind="ghost" small onPress={() => setSheet('photos')} />
     </View>}>
       {summaries.length > 0 ? (
         <View style={s.chips}>

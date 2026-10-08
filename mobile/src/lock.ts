@@ -2,18 +2,20 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Platform } from 'react-native';
 
 /**
- * True when this phone has any way to prove it's you: Face ID, Touch ID or just a passcode.
+ * Whether this phone has any way to prove it's you: Face ID, Touch ID or just a passcode.
  * Deliberately not "is Face ID enrolled": turning off Face ID for Plumb in iOS Settings must not count as
  * "no lock possible" (the passcode still works), and passcode-only phones can use the lock too.
+ * 'unknown' (the check itself failed) is kept apart from 'none', so an error can never switch the lock off.
  */
-export async function canLock(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
+export async function lockAvailability(): Promise<'available' | 'none' | 'unknown'> {
+  if (Platform.OS === 'web') return 'none';
   try {
-    return (await LocalAuthentication.getEnrolledLevelAsync()) !== LocalAuthentication.SecurityLevel.NONE;
+    return (await LocalAuthentication.getEnrolledLevelAsync()) !== LocalAuthentication.SecurityLevel.NONE ? 'available' : 'none';
   } catch {
-    return false;
+    return 'unknown';
   }
 }
+export async function canLock(): Promise<boolean> { return (await lockAvailability()) === 'available'; }
 
 /** "Face ID", "Touch ID" or a generic name, for button labels. */
 export async function biometricName(): Promise<string> {
