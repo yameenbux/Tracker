@@ -19,7 +19,7 @@ import { DoneInput } from './KeyboardDone';
 import { Sheet } from './Sheet';
 import { Button, Card } from './ui';
 
-const change = (kg: number, unit: Unit) => showChange(kg, unit, 2);
+const change = (kg: number, unit: Unit) => showChange(kg, unit, 1);   // one decimal for every kg change, app-wide
 
 /** Calm note when the trend passes another quarter of the way to goal. Shown once per milestone. */
 export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }: {
@@ -169,7 +169,7 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
   const [saving, setSaving] = useState(false);   // animate away, then save
   return (
     <Sheet title={session.title || 'Session'} onClose={() => (saving ? save() : onClose())} closing={saving}
-      footer={names.length > 0 ? <Button label="Save session" kind="coral" disabled={bad.length > 0 || saving} onPress={() => setSaving(true)} /> : undefined}>
+      footer={names.length > 0 ? <Button label="Save session" disabled={bad.length > 0 || saving} onPress={() => setSaving(true)} /> : undefined}>
       <Text style={s.muted}>{DAY_ABBR[d.getDay()]} {longDate(dateK)} · weights in {L}. Tick when you hit every rep.</Text>
       {names.length === 0 && <Text style={[s.muted, { marginTop: 12 }]}>Add exercises to this day in Settings → Weekly sessions.</Text>}
       {names.map(n => {

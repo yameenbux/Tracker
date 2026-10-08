@@ -3,11 +3,14 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { BodyCard } from '../components/Body';
 import { CaloriesCard, LiftSheet, MilestoneBanner } from '../components/Extras';
+import { Hero } from '../components/Hero';
 import { addDays, dateKey } from '../core/dates';
 import { buildTargets, defaultSettings, DEFAULT_HABITS } from '../core/plan';
 import { DEFAULT_PREFS } from '../core/storage';
 import type { Medication } from '../core/types';
 import { SettingsScreen, SettingsProps } from '../screens/SettingsScreen';
+import { NO_PLUS } from '../core/plus';
+import { PlusProvider } from '../plus';
 
 const settings = defaultSettings({ start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: buildTargets(90, 80, '2026-01-05', '2026-06-01') }, DEFAULT_HABITS);
 const today = new Date();
@@ -101,6 +104,33 @@ describe('body and extras', () => {
     fireEvent.changeText(screen.getByLabelText(/weight in kilograms/), '60');
     fireEvent.press(screen.getByText('Save session'));
     await waitFor(() => expect(onSave).toHaveBeenCalled());
+  });
+});
+
+describe('the hero', () => {
+  const plan = { ...settings.plan, start: dateKey(addDays(today, -30)), goalDate: dateKey(addDays(today, 120)) };
+  const s2 = { ...settings, plan: { ...plan, targets: buildTargets(90, 80, plan.start, plan.goalDate) } };
+  const series = (n: number) => Array.from({ length: n }, (_, i) => ({ d: addDays(today, i - n + 1), k: dateKey(addDays(today, i - n + 1)), kg: 90, trend: 90 }));
+  test('day one: says what comes next, not a verdict', () => {
+    render(<Hero settings={s2} weights={{ [dateKey(today)]: 90 }} unit="kg" trend={series(1)} />);
+    expect(screen.getByText(/First weigh-in logged/)).toBeTruthy();
+    expect(screen.queryByText('vs plan')).toBeNull();
+    expect(screen.queryByText('On track')).toBeNull();
+  });
+  test('with a few weigh-ins it uses the shared words, and kg users get no pounds line', () => {
+    render(<Hero settings={s2} weights={{}} unit="kg" trend={series(5)} />);
+    expect(screen.getByText('vs plan')).toBeTruthy();
+    expect(screen.getByText(/^(On track|Ahead|Behind)$/)).toBeTruthy();
+    expect(screen.queryByText(/ lb$/)).toBeNull();
+    expect(screen.getByText(/^Plan: goal by/)).toBeTruthy();
+  });
+});
+
+describe('free Settings', () => {
+  test('the calorie estimate is a plain Plus row, not a switch that sells', () => {
+    render(<PlusProvider status={NO_PLUS} onStatus={jest.fn()}><SettingsScreen {...props()} /></PlusProvider>);
+    expect(screen.getByRole('button', { name: 'Calorie estimate, Plus' })).toBeTruthy();
+    expect(screen.queryByRole('switch', { name: 'Calorie estimate' })).toBeNull();
   });
 });
 

@@ -9,7 +9,7 @@ import type { Plan, Settings, Unit, Weights } from '../core/types';
 import { C, F, themed, useScheme } from '../theme';
 import { Button, Card } from './ui';
 
-const change = (kg: number, unit: Unit, dp = 2) => showChange(kg, unit, dp);
+const change = (kg: number, unit: Unit) => showChange(kg, unit, 1);   // one decimal for every kg change, app-wide
 
 /**
  * Trend weight: what the scale is really doing once daily water swings are smoothed out,
@@ -67,7 +67,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
               ? <>You’re at your goal. Holding it for a few weeks is the next win.</>
               : eta
                 ? <>At this pace you reach {showWeight(plan.goalKg, unit)} around <Text style={s.b}>{longDate(eta)}</Text>
-                    {eta <= plan.goalDate ? ', ahead of plan.' : ` (plan: ${longDate(plan.goalDate)}).`}</>
+                    {eta <= plan.goalDate ? ': ahead' : ': behind'} of the plan’s {longDate(plan.goalDate)}.</>
                 : along < -0.05
                   ? <>Your trend has moved {dir === 'lose' ? 'up' : 'down'} over the last {rate.days} days. One or two weeks like this is normal; a month is worth a look.</>
                   : <>Your trend is roughly flat over the last {rate.days} days.</>}
@@ -79,7 +79,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
       {jump && (
         <View style={[s.jump, jump.direction === 'down' && s.jumpDown]}>
           <Text style={s.jumpTitle}>
-            {change(jump.delta, unit, 1)} {jump.days === 1 ? 'since your last weigh-in' : `in ${jump.days} days`}, but the trend moved {change(jump.trendDelta, unit)}
+            {change(jump.delta, unit)} {jump.days === 1 ? 'since your last weigh-in' : `in ${jump.days} days`}, but the trend moved {change(jump.trendDelta, unit)}
           </Text>
           <Text style={s.jumpTxt}>
             {jump.direction === 'up'

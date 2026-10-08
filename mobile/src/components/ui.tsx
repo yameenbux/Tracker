@@ -17,11 +17,12 @@ export function Card({ title, right, children, style }: { title?: string; right?
   );
 }
 
+// Every primary action is plum. 'coral' is kept only as an alias (coral is reserved for the + button and "off track")
 type BtnKind = 'primary' | 'coral' | 'ghost' | 'danger';
 export function Button({ label, onPress, kind = 'primary', small, disabled, style, icon }: {
   label: string; onPress: () => void; kind?: BtnKind; small?: boolean; disabled?: boolean; style?: ViewStyle; icon?: IconName;
 }) {
-  const txt = disabled ? C.inkSoft : kind === 'danger' ? C.danger : kind === 'coral' ? C.onCoral : kind === 'ghost' ? C.ink : '#FFFFFF';
+  const txt = disabled ? C.inkSoft : kind === 'danger' ? C.danger : kind === 'ghost' ? C.ink : '#FFFFFF';
   return (
     <Tap onPress={onPress} disabled={disabled} accessibilityRole="button" accessibilityState={{ disabled }}
       style={[s.btn, s[kind], small && s.btnSmall, disabled && s.btnOff, style]}>
@@ -62,7 +63,7 @@ const s = themed(() => StyleSheet.create({
   btn: { borderRadius: 14, minHeight: 52, paddingVertical: 15, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 },
   btnSmall: { borderRadius: 12, minHeight: 44, paddingVertical: 8, paddingHorizontal: 14 },
   primary: { backgroundColor: C.primary },
-  coral: { backgroundColor: C.coral },
+  coral: { backgroundColor: C.primary },
   ghost: { backgroundColor: C.chip },
   danger: { backgroundColor: C.coralBg },
   btnOff: { backgroundColor: C.chip },   // flat grey when unavailable, like iOS, rather than a faded colour

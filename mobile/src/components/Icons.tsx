@@ -6,7 +6,7 @@ import { C } from '../theme';
 // so controls look the same on every phone and scale cleanly.
 export type IconName =
   | 'today' | 'trend' | 'habits' | 'body' | 'settings' | 'plus' | 'chevron' | 'back' | 'close' | 'lock'
-  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal' | 'moon' | 'mail' | 'minus' | HabitIcon;
+  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal' | 'moon' | 'mail' | 'minus' | 'sparkle' | HabitIcon;
 
 const P: Record<IconName, (c: string) => React.ReactNode> = {
   today: c => <><Path d="M4 11.5 12 5l8 6.5" stroke={c} /><Path d="M6.5 10v9h11v-9" stroke={c} /></>,
@@ -16,6 +16,7 @@ const P: Record<IconName, (c: string) => React.ReactNode> = {
   settings: c => <><Circle cx={12} cy={12} r={3} stroke={c} /><Path stroke={c} d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></>,
   mail: c => <><Rect x={3.5} y={6} width={17} height={12.5} rx={2.5} stroke={c} /><Path d="m4.5 7.5 7.5 6 7.5-6" stroke={c} /></>,
   minus: c => <Path d="M5 12h14" stroke={c} />,
+  sparkle: c => <Path d="M11 5c.6 4.4 2.6 6.4 7 7-4.4.6-6.4 2.6-7 7-.6-4.4-2.6-6.4-7-7 4.4-.6 6.4-2.6 7-7zM18.5 3v3.4M16.8 4.7h3.4" stroke={c} />,
   // habits
   water: c => <Path d="M12 3.8c3 3.6 5.5 6.8 5.5 10a5.5 5.5 0 0 1-11 0c0-3.2 2.5-6.4 5.5-10z" stroke={c} />,
   steps: c => <><Path d="M8 3.8c1.7 0 2.6 1.9 2.4 4.2-.2 2-1 3.3-2.4 3.3S5.8 10 5.6 8C5.4 5.7 6.3 3.8 8 3.8zM6.6 13.8h2.8v1.4a1.4 1.4 0 0 1-2.8 0z" stroke={c} />

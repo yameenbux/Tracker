@@ -167,7 +167,7 @@ function MeasureSheet({ unit, onUnit, measurements, onSave, onClose }: {
   const [then, setThen] = useState<null | { run: () => void }>(null);   // animate away, then save
   return (
     <Sheet title="Measurements" onClose={() => (then ? then.run() : onClose())} closing={!!then} footer={<>
-      <Button label="Save" kind="coral" disabled={bad || !any || !!then} onPress={() => setThen({ run: () => onSave(setMeasureDay(measurements, k, values)) })} />
+      <Button label="Save" disabled={bad || !any || !!then} onPress={() => setThen({ run: () => onSave(setMeasureDay(measurements, k, values)) })} />
       {existing && <Button label={`Delete ${longDate(k)}`} kind="danger" style={{ marginTop: 8 }}
         onPress={() => confirmDelete('Delete these measurements?', `Removes everything measured on ${longDate(k)}.`, () => setThen({ run: () => onSave(setMeasureDay(measurements, k, null)) }))} />}
     </>}>

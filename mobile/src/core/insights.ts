@@ -68,3 +68,15 @@ export function milestoneQuarter(plan: Plan, trendNow: number): number {
   return Math.max(0, Math.min(4, Math.floor(done * 4 + 1e-9)));
 }
 export const MILESTONE_TEXT = ['', 'A quarter of the way there', 'Halfway to your goal', 'Three quarters of the way', 'Goal reached'];
+
+/** The one status vocabulary for "trend vs the plan's line", used by the hero, the Pace tile and the Trend tab. */
+export function lineWord(status: { onLine: boolean; ahead: boolean }, d: number): 'On track' | 'Ahead' | 'Behind' | 'Off' {
+  return status.onLine ? 'On track' : status.ahead ? 'Ahead' : d === 0 ? 'Off' : 'Behind';
+}
+
+/** Weigh-ins before the hero gives a verdict (the same 4 the weekly rate needs). */
+export const FIRST_DAYS = 4;
+export function firstDaysText(count: number): string {
+  if (count <= 1) return 'First weigh-in logged. Log again tomorrow and the trend starts to form.';
+  return `${count} weigh-ins so far. ${FIRST_DAYS - count === 1 ? 'One more' : 'A couple more'} and the trend has something to say.`;
+}

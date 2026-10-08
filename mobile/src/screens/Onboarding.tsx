@@ -265,10 +265,10 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         </>}
         {step === 'habits' && <Button label={picked.length ? `Next · ${picked.length} chosen` : 'Skip for now'} kind={picked.length ? 'primary' : 'ghost'} onPress={next} />}
         {step === 'plan' && (lockAvailable
-          ? <Button label="Continue" kind="coral" onPress={next} />
-          : <Button label="Start tracking" kind="coral" onPress={() => finish(false)} />)}
+          ? <Button label="Continue" onPress={next} />
+          : <Button label="Start tracking" onPress={() => finish(false)} />)}
         {step === 'lock' && <>
-          <Button label={`Yes, use ${lockName}`} kind="coral" onPress={() => finish(true)} />
+          <Button label={`Yes, use ${lockName}`} onPress={() => finish(true)} />
           <Pressable onPress={() => finish(false)} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Not now</Text></Pressable>
         </>}
       </View>
@@ -282,7 +282,7 @@ const s = themed(() => StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 44 },
   backBtn: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   progress: { flex: 1, height: 6, borderRadius: 3, backgroundColor: C.chip, overflow: 'hidden' },
-  progressFill: { height: 6, backgroundColor: C.coral, borderRadius: 3 },
+  progressFill: { height: 6, backgroundColor: C.done, borderRadius: 3 },
   body: { paddingTop: 24, paddingBottom: 24 },
   eyebrow: { fontFamily: F.bodySemi, fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase', color: C.coralInk },
   h1: { fontFamily: F.display, fontSize: 34, lineHeight: 40, color: C.ink, marginTop: 8, marginBottom: 26, letterSpacing: -0.5 },
