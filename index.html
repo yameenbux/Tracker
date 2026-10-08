@@ -373,6 +373,11 @@ const UNIT_KEY = "tracker_unit_v1";
 const HABITS_KEY = "tracker_habits_v1";
 const DAILYW_KEY = "tracker_dailyw_v1";  // every weigh-in, keyed by date (weekly ones are just entries on the week's date)
 const SETTINGS_KEY = "tracker_settings_v1";
+// Parts of a phone (Tidemark) backup this page doesn't show: doses, measurements, calories, session weights, and the
+// "lb" unit. Kept untouched and written back on export, so a backup passed through this page loses nothing.
+// (Timestamped weigh-in records aren't kept: weights can be edited here, and the phone rebuilds records from them.)
+const EXTRAS_KEY = "tracker_phone_extras_v1";
+const EXTRA_FIELDS = ["doses", "measurements", "intake", "lifts"];
 const KG_PER_LB = 0.45359237;
 const DAY_MS = 86400000, WEEK_MS = 7 * DAY_MS;
 const DAY_ABBR = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -1235,7 +1240,13 @@ document.getElementById("reset").addEventListener("click", () => {
 
 // ---- export ----
 function pad(s, n) { s = String(s); return s + " ".repeat(Math.max(0, n - s.length)); }
-function backupObject() { return { app: "tracker", version: 2, settings, weights, habits, unit }; }
+function phoneExtras() { const x = readJSON(EXTRAS_KEY); return x && typeof x === "object" && !Array.isArray(x) ? x : {}; }
+function backupObject() {
+  const x = phoneExtras(), out = {};
+  for (const k of EXTRA_FIELDS) if (x[k] && typeof x[k] === "object") out[k] = x[k];
+  // A phone backup in pounds shows in kg here; it goes back out in pounds unless the unit was changed here
+  return Object.assign(out, { app: "tracker", version: 2, settings, weights, habits, unit: x.unit === "lb" && unit === "kg" ? "lb" : unit });
+}
 function buildExportText() {
   const plan = settings.plan;
   const L = [];
@@ -1313,7 +1324,10 @@ function parseBackup(text) {
   if (raw.version === 2) {
     const s = normalizeSettings(raw.settings);
     if (!s) throw new Error("The plan in that backup is incomplete.");
-    return { settings: s, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), unit: raw.unit };
+    const extras = {};
+    for (const k of EXTRA_FIELDS) if (raw[k] && typeof raw[k] === "object" && !Array.isArray(raw[k])) extras[k] = raw[k];
+    if (raw.unit === "lb") extras.unit = "lb";
+    return { settings: s, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), unit: raw.unit === "lb" ? "kg" : raw.unit, extras };
   }
   if (raw.actuals || raw.dailyW || raw.habits) {
     // Backup from before plans were configurable: weekly weigh-ins were numbered from the original programme start.
@@ -1335,6 +1349,7 @@ document.getElementById("import-file").addEventListener("change", async e => {
   if (!confirm(`Restore this backup?\n\n${nW} weigh-in${nW === 1 ? "" : "s"} and ${nH} day${nH === 1 ? "" : "s"} of habits.\n\nThis replaces everything currently on this device.`)) return;
   settings = b.settings; weights = b.weights; habits = b.habits;
   if (b.unit === "kg" || b.unit === "imp") unit = b.unit;
+  try { localStorage.setItem(EXTRAS_KEY, JSON.stringify(b.extras || {})); } catch (e) {}
   saveSettings(); saveWeights(); saveHabits(); saveUnit(); syncSeg();
   hideSheet(); firstDraw = true; render();
 });

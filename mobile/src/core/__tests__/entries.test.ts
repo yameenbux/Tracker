@@ -1,5 +1,5 @@
 import { buildExportText, parseBackup } from '../backup';
-import { cleanEntries, dailyWeights, fromWeights, reconcile, WeighIn } from '../entries';
+import { cleanEntries, dailyWeights, entriesFor, fromWeights, reconcile, WeighIn } from '../entries';
 import { buildTargets, defaultSettings } from '../plan';
 import { hydrate } from '../storage';
 
@@ -40,5 +40,21 @@ describe('timestamped weigh-ins', () => {
     const r = parseBackup(text, null);
     expect(r.entries).toEqual(cleanEntries(entries));
     expect(r.weights).toEqual({ '2026-10-01': 89.8, '2026-10-02': 89.6 });
+  });
+  test('typing over a day keeps its Apple Health readings (the typed value wins); deleting the day removes them', () => {
+    const before = [e('h1', '2026-10-01', '06:40', 89.8, 'health'), e('h2', '2026-10-01', '08:00', 90.2, 'health')];
+    const edited = reconcile(before, { '2026-10-01': 89.5 });
+    expect(edited.filter(x => x.source === 'health').map(x => x.id)).toEqual(['h1', 'h2']);
+    expect(dailyWeights(edited)).toEqual({ '2026-10-01': 89.5 });
+    expect(reconcile(edited, {})).toEqual([]);
+  });
+  test('damaged records never lose a day the saved day map still has', () => {
+    const weights = { '2026-10-01': 90, '2026-10-02': 89.6 };
+    const all = entriesFor([{ id: 'x', day: 'bad' }], weights)!;          // every record damaged
+    expect(dailyWeights(all)).toEqual(weights);
+    const some = entriesFor([e('a', '2026-10-01', '06:40', 89.9)], weights)!;   // one day's record lost
+    expect(dailyWeights(some)).toEqual({ '2026-10-01': 89.9, '2026-10-02': 89.6 });
+    expect(entriesFor(undefined, weights)).toBeNull();
+    expect(hydrate(JSON.stringify({ v: 3, entries: [{ id: 'x' }], weights })).weights).toEqual(weights);
   });
 });

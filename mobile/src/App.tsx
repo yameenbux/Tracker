@@ -61,7 +61,7 @@ function Main() {
   const [scrollTop, setScrollTop] = useState<Record<Tab, number>>({ today: 0, trend: 0, habits: 0, body: 0 });   // per tab
   const [pendingPlan, setPendingPlan] = useState<Settings['plan'] | null>(null);   // plan edits left unsaved
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsPage, setSettingsPage] = useState<'root' | 'habits'>('root');
+  const [settingsPage, setSettingsPage] = useState<'root' | 'habits' | 'medication'>('root');
   const [lift, setLift] = useState<{ k: string; dow: number } | null>(null);
   const [log, setLog] = useState<{ key: string | null; n: number } | null>(null);
   const [toast, setToast] = useState<ToastMsg | null>(null);
@@ -89,7 +89,8 @@ function Main() {
   useEffect(() => { if (t.ready) applyDoseReminders(med, doses ?? {}); }, [t.ready, med, doses, today]);
   // Tapping a reminder opens the log sheet. It waits for Face ID when the lock is on, then opens straight after unlock.
   const [pendingLog, setPendingLog] = useState<number | null>(null);
-  useEffect(() => onReminderTap(() => setPendingLog(Date.now())), []);
+  // A dose reminder opens Today, where the dose card is (the lock, if on, still asks first)
+  useEffect(() => onReminderTap(() => setPendingLog(Date.now()), () => { setShowSettings(false); setTab('today'); }), []);
 
   // Reminders switched on here but notifications switched off in iOS Settings: say so in Settings
   const [notifBlocked, setNotifBlocked] = useState(false);
@@ -213,6 +214,7 @@ function Main() {
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
               appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
+              doses={state.doses ?? {}} onDoses={t.setDoses}
               onSave={t.setSettings} onClose={closeSettings}
               onExport={data.exportData} onExportCsv={data.exportCsv} onRestore={data.restore} onReset={data.reset}
               onEraseAll={async () => { await data.eraseAll(); setTab('today'); }} />

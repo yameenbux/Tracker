@@ -99,17 +99,24 @@ export function applyDoseReminders(med: Medication | null | undefined, doses: Do
     at, title: 'Dose day', body: 'Today is a dose day. Mark it in Tidemark once it’s done.', action: 'dose' })));
 }
 
-/** Calls `onOpen` when the person taps a reminder (including the one that launched the app). Returns an unsubscribe. */
-export function onReminderTap(onOpen: () => void): () => void {
+/**
+ * Calls `onLog` when the person taps a weigh-in reminder, `onDose` for a dose reminder (including the tap that launched
+ * the app). Returns an unsubscribe.
+ */
+export function onReminderTap(onLog: () => void, onDose: () => void = () => {}): () => void {
   if (Platform.OS === 'web') return () => {};
-  const isOurs = (r: Notifications.NotificationResponse | null) => r?.notification.request.identifier.startsWith(PREFIX);
-  // The tap that launched the app is remembered by iOS; clear it once handled so a later launch doesn't open the sheet again
+  const route = (r: Notifications.NotificationResponse | null) => {
+    const id = r?.notification.request.identifier ?? '';
+    if (id.startsWith(PREFIX)) { onLog(); return true; }
+    if (id.startsWith(DOSE_PREFIX)) { onDose(); return true; }
+    return false;
+  };
+  // The tap that launched the app is remembered by iOS; clear it once handled so a later launch doesn't act on it again
   Notifications.getLastNotificationResponseAsync().then(r => {
-    if (!isOurs(r)) return;
+    if (!route(r)) return;
     try { Notifications.clearLastNotificationResponse(); } catch { /* older native module: harmless */ }
-    onOpen();
   }).catch(() => {});
-  const sub = Notifications.addNotificationResponseReceivedListener(r => { if (isOurs(r)) onOpen(); });
+  const sub = Notifications.addNotificationResponseReceivedListener(r => { route(r); });
   return () => sub.remove();
 }
 

@@ -52,13 +52,15 @@ export function fromWeights(weights: Weights): WeighIn[] {
 
 /**
  * Brings records in line with a per-day map that may have been edited (a weigh-in typed, deleted, restored, undone).
- * Days whose value is unchanged keep their records and times; changed days get one manual reading; missing days go.
+ * Days whose value is unchanged keep their records and times. A changed day gets one new manual reading, which wins,
+ * and keeps any readings from Apple Health (they're the scale's record, not ours to drop). A day removed from the
+ * map loses all its records, since removing it is what the person asked for.
  */
 export function reconcile(entries: WeighIn[], weights: Weights, now: Date = new Date()): WeighIn[] {
   const current = dailyWeights(entries);
-  const kept = entries.filter(e => weights[e.day] != null && current[e.day] === weights[e.day]);
-  const keptDays = new Set(kept.map(e => e.day));
-  const added: WeighIn[] = Object.keys(weights).filter(day => !keptDays.has(day))
+  const unchanged = new Set(Object.keys(weights).filter(day => current[day] === weights[day]));
+  const kept = entries.filter(e => weights[e.day] != null && (unchanged.has(e.day) || e.source !== 'manual'));
+  const added: WeighIn[] = Object.keys(weights).filter(day => !unchanged.has(day))
     .map(day => ({ id: newId(now), at: stampFor(day, now), day, kg: weights[day], source: 'manual' as const }));
   return [...kept, ...added].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
 }
@@ -76,4 +78,18 @@ export function cleanEntries(v: unknown): WeighIn[] | null {
     out.push({ id, at: new Date(e.at).toISOString(), day: e.day, kg: round2(kg), source: e.source === 'health' ? 'health' : 'manual' });
   }
   return out.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+}
+
+/**
+ * Records from a save or backup, checked against the per-day map saved beside them. The two are written together, so a
+ * day in the map with no usable record means records were damaged: that day is rebuilt from the map rather than lost.
+ * Null when there are no records at all (an older save), so the caller builds them from the map.
+ */
+export function entriesFor(raw: unknown, weights: Weights): WeighIn[] | null {
+  const entries = cleanEntries(raw);
+  if (!entries) return null;
+  const have = new Set(entries.map(e => e.day));
+  const missing: Weights = {};
+  for (const day of Object.keys(weights)) if (!have.has(day)) missing[day] = weights[day];
+  return Object.keys(missing).length ? [...entries, ...fromWeights(missing)].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0)) : entries;
 }

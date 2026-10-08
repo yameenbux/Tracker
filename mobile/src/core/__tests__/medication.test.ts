@@ -1,4 +1,4 @@
-import { cleanDoses, cleanMedication, doseReminderDays, dosePeriods, isDoseDay, isDue, lastDose, nextDose } from '../medication';
+import { cleanDoses, cleanMedication, doseHistoryDays, doseReminderDays, dosePeriods, isDoseDay, isDue, lastDose, missedDose, nextDose } from '../medication';
 import { doseReminderTimes } from '../../reminders';
 import { parseKey } from '../dates';
 import type { Medication } from '../types';
@@ -68,5 +68,27 @@ describe('medication', () => {
     expect(isDue({ ...weekly, every: 'day' }, { '2026-10-07': { mg: 1 } }, thu)).toBe(true);
     expect(lastDose(moved, thu)).toBe('2026-10-05');
     expect(lastDose({}, thu)).toBeNull();
+  });
+  test('after an early dose the next one is still on the dose day, never a random weekday', () => {
+    const monday: Medication = { ...weekly, weekday: 1 };
+    // Took Monday 12 Oct's dose early on Saturday 10 Oct: Monday is covered, so the next is Monday 19 Oct
+    const sat = new Date(2026, 9, 10), early = { '2026-10-10': { mg: 2.4 } };
+    for (const from of [sat, new Date(2026, 9, 11)]) {
+      const n = nextDose(monday, early, from);
+      expect([n.getDay(), n.getDate()]).toEqual([1, 19]);
+    }
+  });
+  test('missed: a weekly dose day in the last 6 days with nothing logged around it', () => {
+    const mon: Medication = { ...weekly, weekday: 1 }, wed = new Date(2026, 9, 7);   // Mon 5 Oct was the dose day
+    expect(missedDose(mon, {}, wed)?.getDate()).toBe(5);
+    expect(missedDose(mon, { '2026-10-06': { mg: 1 } }, wed)).toBeNull();   // taken a day late
+    expect(missedDose(mon, { '2026-10-03': { mg: 1 } }, wed)).toBeNull();   // taken early (within the cover window)
+    expect(missedDose(mon, {}, new Date(2026, 9, 5))).toBeNull();           // today is the dose day: due, not missed
+    expect(missedDose({ ...mon, every: 'day' }, {}, wed)).toBeNull();      // daily medicines aren't flagged
+  });
+  test('dose history lists every scheduled day plus any extra logged day, newest first', () => {
+    const days = doseHistoryDays(weekly, { '2026-10-06': { mg: 2.4 } }, thu, 2);
+    expect(days).toEqual(['2026-10-08', '2026-10-06', '2026-10-01']);
+    expect(doseHistoryDays({ ...weekly, every: 'day' }, {}, thu)).toHaveLength(14);
   });
 });

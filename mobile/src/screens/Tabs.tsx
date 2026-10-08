@@ -1,6 +1,6 @@
 import { CardBoundary } from '../components/States';
 import { MedicationToday, MedicationTrend } from '../components/Medication';
-import { isDue } from '../core/medication';
+import { isDue, missedDose } from '../core/medication';
 import { cloneElement, isValidElement, useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { measureSummary, showLength } from '../core/body';
@@ -34,7 +34,7 @@ export interface TabProps {
   rate: Rate | null;
   today: string;                           // changes at midnight, so memoised cards refresh
   scrollTop: number;                       // bumps when the active tab is tapped again
-  openSettings: (page?: 'habits') => void;
+  openSettings: (page?: 'habits' | 'medication') => void;
   go: (tab: Tab) => void;
   show: (m: { message: string; action?: string; onAction?: () => void }) => void;
 }
@@ -69,14 +69,17 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const status = trendNow != null ? lineStatus(settings.plan, trendNow) : null;   // same answer as the hero's "vs line"
   const week = changeTable(series, now, [7])[0].change;
   // On a dose day the card goes straight under the hero; otherwise it sits with the other daily items
-  const doseToday = !!settings.medication && (isDue(settings.medication, state.doses ?? {}, now) || !!state.doses?.[props.today]);   // stays put once taken, so Undo doesn't jump away
+  // On a dose day, or when a dose looks missed, the card goes straight under the hero; otherwise it sits lower.
+  // It stays put once taken, so Undo doesn't jump away.
+  const med = settings.medication, doseLog = state.doses ?? {};
+  const doseToday = !!med && (isDue(med, doseLog, now) || !!doseLog[props.today] || !!missedDose(med, doseLog, now));
   const d = sign(direction(settings.plan));
 
   return (
     <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={() => openSettings()} scrollTop={scrollTop}>
       {notices}
       <CardBoundary name="Your weight"><Hero settings={settings} weights={state.weights} unit={unit} today={props.today} trend={series} /></CardBoundary>
-      {settings.medication && doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} /></CardBoundary>}
+      {settings.medication && doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
       {quarter > celebrated && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter, milestoneFor: planKey })} />
       )}
@@ -117,7 +120,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
             a11y={waist ? `Waist ${showLength(waist.latest.cm, unit)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, unit)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
         )}
       </View>
-      {settings.medication && !doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} /></CardBoundary>}
+      {settings.medication && !doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
       <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')} /></CardBoundary>
       <CardBoundary name="Your event"><EventCard settings={settings} /></CardBoundary>
       {isValidElement<{ part?: string }>(notices) ? cloneElement(notices, { part: 'nudge' }) : null}
@@ -134,7 +137,7 @@ export function TrendTab({ t, settings, series, today, scrollTop, openSettings, 
       <CardBoundary name="Your trend"><TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} today={today} /></CardBoundary>
       {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} d={sign(direction(settings.plan)) as -1 | 0 | 1} />}
       <CardBoundary name="The chart"><ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} /></CardBoundary>
-      {settings.medication && <CardBoundary name="Medication"><MedicationTrend med={settings.medication} doses={t.state.doses ?? {}} series={series} unit={t.state.unit} /></CardBoundary>}
+      {settings.medication && <CardBoundary name="Medication"><MedicationTrend med={settings.medication} doses={t.state.doses ?? {}} series={series} unit={t.state.unit} onHistory={() => openSettings('medication')} /></CardBoundary>}
       <SectionLabel>History</SectionLabel>
       <CardBoundary name="Weigh-ins"><EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} trend={series} /></CardBoundary>
     </TabScreen>

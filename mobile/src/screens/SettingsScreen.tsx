@@ -4,11 +4,12 @@ import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
-import { addDays, dateKey, DAY_ABBR, DAY_FULL, DAY_ORDER, longDate, mondayOf, validKey } from '../core/dates';
+import { addDays, dateKey, DAY_ABBR, DAY_FULL, DAY_ORDER, longDate, mondayOf, parseKey, shortDate, validKey } from '../core/dates';
+import { doseHistoryDays, isDoseDay } from '../core/medication';
 import { assessPlan, buildTargets, cleanBreaks, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
 import { daysSince } from '../core/summary';
 import { fmt, num, numOrNull, showWeight, toLbNum } from '../core/units';
-import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/types';
+import type { DoseLog, Habit, Meal, Medication, PlanBreak, Session, Settings, Unit } from '../core/types';
 import type { Reminder } from '../core/storage';
 import { HABIT_ICONS, habitIcon } from '../core/habitIcons';
 import { FONTS, LIBRARIES, MIT, OFL } from '../core/licences';
@@ -17,8 +18,8 @@ import { Icon, IconName } from '../components/Icons';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { Button, Tabs } from '../components/ui';
 import { Tap } from '../components/Motion';
-import { confirm, notify } from '../dialogs';
-import { success } from '../feel';
+import { choose, confirm, notify } from '../dialogs';
+import { success, tap } from '../feel';
 import { useReducedMotion } from '../motion';
 import { allowReminders, DOSE_HOUR, timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
@@ -108,6 +109,7 @@ export interface SettingsProps {
   reminder: Reminder; onReminderChange: (r: Reminder) => void;
   appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void; reminderBlocked?: boolean;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
+  doses: DoseLog; onDoses: (d: DoseLog) => void;
   onPlanLeftUnsaved: (plan: Settings['plan']) => void;
   initialPage?: Page;   // open straight onto a sub-page (e.g. Habits from an empty Habits tab)
   onSave: (s: Settings) => void; onClose: () => void;
@@ -134,7 +136,7 @@ export function SettingsScreen(p: SettingsProps) {
   if (page === 'habits') return <HabitsPage settings={settings} onSave={keep<Habit[]>('habits')} onBack={back} />;
   if (page === 'sessions') return <SessionsPage settings={settings} onSave={keep<Settings['sessions']>('sessions')} onBack={back} />;
   if (page === 'credits') return <CreditsPage onBack={back} />;
-  if (page === 'medication') return <MedicationPage settings={settings} onSave={keep<Settings['medication']>('medication')} onBack={back} />;
+  if (page === 'medication') return <MedicationPage settings={settings} doses={p.doses} onDoses={p.onDoses} onSave={keep<Settings['medication']>('medication')} onBack={back} />;
   return <MealsPage settings={settings} onSave={keep<Settings['meals']>('meals')} onBack={back} />;
   }
 
@@ -491,7 +493,9 @@ function CreditsPage({ onBack }: { onBack: () => void }) {
 
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 /** Optional medication companion (e.g. a weekly GLP-1 injection). Records only: Tidemark never suggests doses. */
-function MedicationPage({ settings, onSave, onBack }: { settings: Settings; onSave: (m: Settings['medication']) => void; onBack: () => void }) {
+function MedicationPage({ settings, doses, onDoses, onSave, onBack }: {
+  settings: Settings; doses: DoseLog; onDoses: (d: DoseLog) => void; onSave: (m: Settings['medication']) => void; onBack: () => void;
+}) {
   const cur = settings.medication;
   const [name, setName] = useState(cur?.name ?? '');
   const [dose, setDose] = useState(cur?.doseMg != null ? String(cur.doseMg) : '');
@@ -538,8 +542,50 @@ function MedicationPage({ settings, onSave, onBack }: { settings: Settings; onSa
           <Switch value={remind} onValueChange={toggleRemind} trackColor={{ true: C.mintInk }} accessibilityLabel="Remind me on dose days" />
         </View>
         <Text style={s.hint}>If you change dose, update it here; earlier doses keep the strength they were logged at.</Text>
-        {cur && <Button label="Stop tracking medication" kind="danger" small style={{ alignSelf: 'flex-start', marginTop: 12 }} onPress={() => { skip(); onSave(null); onBack(); }} />}
+        {cur && <DoseHistory med={cur} doses={doses} onDoses={onDoses} />}
+        {cur && <Button label="Stop tracking medication" kind="danger" small style={{ alignSelf: 'flex-start', marginTop: 16 }} onPress={async () => {
+          const n = Object.keys(doses).length;
+          if (n) {
+            const pick = await choose('Stop tracking medication?', `You have ${n} dose${n === 1 ? '' : 's'} recorded. Keep them (they stay in your backups) or delete them from this phone.`,
+              [{ id: 'keep', label: 'Keep dose history' }, { id: 'delete', label: 'Delete dose history' }]);
+            if (!pick) return;
+            if (pick === 'delete') onDoses({});
+          }
+          skip(); onSave(null); onBack();
+        }} />}
       </ScrollView>
+    </View>
+  );
+}
+
+/** Recent dose days with a tick each, so a dose marked by mistake can be cleared and a forgotten one added. */
+function DoseHistory({ med, doses, onDoses }: { med: Medication; doses: DoseLog; onDoses: (d: DoseLog) => void }) {
+  const days = doseHistoryDays(med, doses);
+  const toggle = (k: string) => {
+    const d = { ...doses };
+    if (d[k]) delete d[k]; else d[k] = { mg: med.doseMg };
+    onDoses(d); tap();
+  };
+  return (
+    <View style={{ marginTop: 22 }}>
+      <Text style={s.groupTitle} accessibilityRole="header">Dose history</Text>
+      <View style={s.form}>
+        {days.map((k, i) => {
+          const d = parseKey(k), on = !!doses[k];
+          const label = `${DAY_ABBR[d.getDay()]} ${shortDate(d)}`;
+          return (
+            <Tap key={k} onPress={() => toggle(k)} style={[s.doseRow, i > 0 && s.doseRowLine]} accessibilityRole="checkbox"
+              accessibilityState={{ checked: on }} accessibilityLabel={`${label}, ${on ? 'taken' : 'not marked'}`}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.remindTitle}>{label}</Text>
+                <Text style={s.hint}>{on ? ['Taken', doses[k].mg != null ? `${doses[k].mg} mg` : ''].filter(Boolean).join(' · ') : isDoseDay(med, d) ? 'Not marked' : 'Extra dose'}</Text>
+              </View>
+              <View style={[s.doseTick, on && s.doseTickOn]}>{on && <Icon name="check" size={16} color={C.onDone} strokeWidth={2.6} />}</View>
+            </Tap>
+          );
+        })}
+      </View>
+      <Text style={s.hint}>Tap a day to mark or clear it. A dose added here uses your current strength.</Text>
     </View>
   );
 }
@@ -613,6 +659,10 @@ const s = themed(() => StyleSheet.create({
   dayChip: { flex: 1, minWidth: 0, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.chip, paddingHorizontal: 2 },
   dayChipOn: { backgroundColor: C.fill },
   dayChipTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.ink },
+  doseRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4, minHeight: 52 },
+  doseRowLine: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line },
+  doseTick: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: C.inkSoft, alignItems: 'center', justifyContent: 'center' },
+  doseTickOn: { backgroundColor: C.done, borderColor: C.done },
   remindRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 14 },
   remindTitle: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   creditName: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },

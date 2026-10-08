@@ -1,0 +1,53 @@
+name: Deploy web app to Pages
+
+# Builds the web version of the Tidemark app and publishes it to GitHub Pages:
+#   /<repo>/              the app (Add to Home Screen on an iPhone for a full-screen app)
+#   /<repo>/privacy.html  the privacy policy
+#   /<repo>/classic/      the original web tracker
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: Export the web app
+        run: npx expo export --platform web --output-dir dist
+        env:
+          WEB_BASE_URL: /${{ github.event.repository.name }}
+      - name: Assemble the site
+        run: node scripts/pages-site.js dist ../_site /${{ github.event.repository.name }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

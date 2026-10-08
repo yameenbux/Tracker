@@ -56,11 +56,38 @@ export function isDue(med: Medication, doses: DoseLog, d: Date): boolean {
 
 /** The next dose still to take, from today on (today if it's due). */
 export function nextDose(med: Medication, doses: DoseLog, today: Date = new Date()): Date {
-  for (let i = 0; i < 8; i++) {
+  // A weekly dose can be covered for up to COVER_DAYS, so its next one can be up to 7 + COVER_DAYS days away
+  for (let i = 0; i <= 7 + COVER_DAYS + 1; i++) {
     const d = addDays(startOfDay(today), i);
     if (isDue(med, doses, d)) return d;
   }
   return addDays(startOfDay(today), 7);
+}
+
+/**
+ * A weekly dose day in the last 6 days with no dose logged around it (from COVER_DAYS before it up to today): it was
+ * missed, or taken and not marked. Daily medicines don't get this (a missed daily dose is just the next day).
+ */
+export function missedDose(med: Medication, doses: DoseLog, today: Date = new Date()): Date | null {
+  if (med.every !== 'week') return null;
+  for (let i = 1; i <= 6; i++) {
+    const d = addDays(startOfDay(today), -i);
+    if (!isDoseDay(med, d)) continue;
+    for (let j = -COVER_DAYS; j <= i; j++) if (doses[dateKey(addDays(d, j))]) return null;
+    return d;
+  }
+  return null;
+}
+
+/** Days to show in the dose history: every scheduled day and every logged day, newest first, over `weeks`. */
+export function doseHistoryDays(med: Medication, doses: DoseLog, today: Date = new Date(), weeks = 8): string[] {
+  const out: string[] = [];
+  const span = med.every === 'week' ? weeks * 7 : 14;
+  for (let i = 0; i < span; i++) {
+    const d = addDays(startOfDay(today), -i), k = dateKey(d);
+    if (isDoseDay(med, d) || doses[k]) out.push(k);
+  }
+  return out;
 }
 
 /** Days scheduled for a reminder over the next `days` (doses already marked today are skipped). */
