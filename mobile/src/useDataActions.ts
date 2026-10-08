@@ -7,7 +7,7 @@ import { DEFAULT_PREFS } from './core/storage';
 import { askPassword, choose, confirm, notify } from './dialogs';
 import { clearCache, pickBackupText, shareBackup } from './io';
 import { deleteAllPhotos, deletePhoto } from './photos';
-import { applyReminder } from './reminders';
+import { applyDoseReminders, applyReminder } from './reminders';
 import { eraseStorage, latestRescue, Tracker } from './store';
 
 type Show = (m: { message: string; action?: string; onAction?: () => void }) => void;
@@ -36,7 +36,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
       const before = state;
       // Photos aren't in backups, so the ones already on this phone are kept
       t.replaceAll({ settings: b.settings, weights: b.weights, entries: b.entries, habits: b.habits, measurements: b.measurements, photos: state.photos,
-        intake: b.intake, lifts: b.lifts, unit: b.unit ?? state.unit });
+        intake: b.intake, lifts: b.lifts, doses: b.doses ?? {}, unit: b.unit ?? state.unit });
       done();
       show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo', onAction: () => t.replaceAll(before) });
     } catch (e) {
@@ -102,6 +102,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
     deleteAllPhotos();
     clearCache();                                  // exported files, picked backups, photo-picker leftovers
     await applyReminder({ ...prefs.reminder, on: false });
+    await applyDoseReminders(null, {});
     done();
     t.replaceAll({ settings: null, weights: {}, habits: {}, unit: state.unit, measurements: {}, photos: {}, intake: {}, lifts: {} });
     t.setPrefs({ ...DEFAULT_PREFS });

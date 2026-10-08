@@ -1,5 +1,6 @@
 // Reading saved data back safely: every field is cleaned, older versions load, and junk is rejected rather than half-used.
 import { cleanEntries, dailyWeights, fromWeights } from './entries';
+import { cleanDoses } from './medication';
 import { cleanMeasurements, cleanPhotos } from './body';
 import { cleanIntake } from './calories';
 import { cleanHabits, cleanWeights, normalizeSettings } from './plan';
@@ -64,5 +65,6 @@ export function hydrate(raw: string): TrackerState {
     photos: cleanPhotos(s.photos),
     intake: cleanIntake(s.intake),
     lifts: cleanSessionLog(s.lifts),
+    doses: cleanDoses(s.doses),
   };
 }

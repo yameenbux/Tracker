@@ -25,7 +25,12 @@ export interface Settings {
   sessions: Record<number, Session>;   // keyed by JS day of week, 0 = Sunday
   meals: { items: Meal[]; target: Macros };
   trackCalories?: boolean;   // optional one-number-a-day calorie logging
+  medication?: Medication | null;   // optional GLP-1 (or other) medication companion
 }
+
+/** A medication taken on a schedule, e.g. a weekly GLP-1 injection. Tidemark only records it; it never advises on dosing. */
+export interface Medication { name: string; doseMg: number | null; every: 'week' | 'day'; weekday: number; remind?: boolean }   // weekday: 0 = Sunday
+export type DoseLog = Record<string, { mg: number | null }>;   // date -> dose taken that day
 
 export type Weights = Record<string, number>;                     // date -> kg
 export type HabitLog = Record<string, Record<string, true>>;       // date -> habit id -> ticked
@@ -39,6 +44,7 @@ export interface TrackerState {
   settings: Settings | null;
   weights: Weights;                                             // one number a day, derived from `entries`
   entries?: import('./entries').WeighIn[];                     // timestamped weigh-ins: the source of truth
+  doses?: DoseLog;                                              // medication doses marked as taken
   habits: HabitLog;
   unit: Unit;
   measurements: Measurements;

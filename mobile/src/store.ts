@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import { cleanPrefs, DEFAULT_PREFS, hydrate, Prefs, SCHEMA_VERSION } from './core/storage';
 import { reconcile } from './core/entries';
 import { round2 } from './core/units';
-import type { HabitLog, Measurements, PhotoLog, Settings, TrackerState, Unit } from './core/types';
+import type { DoseLog, HabitLog, Measurements, PhotoLog, Settings, TrackerState, Unit } from './core/types';
 export type { Prefs, Reminder } from './core/storage';
 
 const STORAGE_KEY = 'tracker_state_v1';
@@ -152,6 +152,7 @@ export function useTracker() {
     return { ...s, weights, entries: reconcile(s.entries ?? [], weights) };
   }), []);
   const setUnit = useCallback((unit: Unit) => setState(s => ({ ...s, unit })), []);
+  const setDoses = useCallback((doses: DoseLog) => setState(s => ({ ...s, doses })), []);
   const setSettings = useCallback((settings: Settings) => setState(s => ({ ...s, settings })), []);
   const setHabits = useCallback((habits: HabitLog) => setState(s => ({ ...s, habits })), []);
   const setMeasurements = useCallback((measurements: Measurements) => setState(s => ({ ...s, measurements })), []);
@@ -180,7 +181,7 @@ export function useTracker() {
 
   return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
            setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs,
-           discardPending };
+           discardPending, setDoses };
 }
 export type Tracker = ReturnType<typeof useTracker>;
 
