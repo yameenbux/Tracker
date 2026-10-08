@@ -26,7 +26,7 @@ import { PRIVACY_URL, SUPPORT_EMAIL } from '../support';
 import { PaywallSlot, usePlus } from '../plus';
 import { FREE_HABITS, PLUS_PRODUCTS } from '../core/plus';
 import { useReducedMotion } from '../motion';
-import { allowReminders, DOSE_HOUR, timeLabel } from '../reminders';
+import { allowReminders, DOSE_HOUR, remindersSetUntil, timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
 
@@ -149,6 +149,9 @@ export function SettingsScreen(p: SettingsProps) {
   const plan = settings.plan;
   const sessionDays = DAY_ORDER.filter(d => settings.sessions[d].title || settings.sessions[d].items.length).length;
   const backupDays = daysSince(p.lastBackup);
+  // Reminders are scheduled a few weeks ahead and topped up when Tidemark opens; say how far, so a long break isn't a surprise
+  const until = remindersSetUntil(p.reminder, FEATURES.medication && plus ? settings.medication : null, p.doses, p.weights[dateKey(new Date())] != null);
+  const reminderEnd = until ? ` Reminders are set up to ${shortDate(until)}; opening Tidemark adds more.` : '';
   const version = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
   const build = Application.nativeBuildVersion ?? Constants.expoConfig?.ios?.buildNumber;
 
@@ -193,7 +196,7 @@ export function SettingsScreen(p: SettingsProps) {
         </Group>
 
         <Group title="Reminder" footer={p.reminderBlocked ? 'Notifications for Tidemark are switched off in iOS Settings, so no reminder will appear until they’re allowed again.'
-          : 'A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.'}>
+          : 'A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.' + reminderEnd}>
           <SwitchRow icon="bell" label="Daily weigh-in reminder" value={p.reminder.on} onChange={on => p.onReminderChange({ ...p.reminder, on })} last={!p.reminder.on} />
           {p.reminderBlocked && <Row icon="info" label="Allow notifications" value="iOS Settings" onPress={() => Linking.openSettings().catch(() => {})} hint="Opens Tidemark’s page in iOS Settings" />}
           {p.reminder.on && <Row icon="calendar" label="Time" last right={<TimeInput hour={p.reminder.hour} minute={p.reminder.minute}

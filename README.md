@@ -208,8 +208,9 @@ coverage drops below the floor set in `mobile/package.json`.
 
 | Address | What it is |
 | :--- | :--- |
-| `/Tracker/privacy.html` | The privacy policy the app and the App Store link to. This is the page that has to stay up |
-| `/Tracker/` | The web build of the app: the owner's private test tool, not a product. `noindex`, and not linked from anywhere |
+| `/Tracker/` | The website: what Tidemark does, Free and Plus, support questions and the full privacy policy. Use it as the App Store **Support URL** |
+| `/Tracker/privacy.html` | The privacy policy on its own, which every app build links to. This is the page that has to stay up |
+| `/Tracker/app/` | The web build of the app: the owner's private test tool, not a product. `noindex`, and not linked from anywhere |
 | `/Tracker/classic/` | The original tracker, kept for the owner's old data. `noindex` |
 
 The web build is not offered to anyone, so the privacy policy doesn't cover it.
@@ -219,7 +220,10 @@ data, not real medication records. Photos are switched off on web, because they
 would fill the browser's storage.
 
 **Settings → Pages → Source** must be **GitHub Actions**, not a branch.
-`site-check.yml` loads all three every 6 hours and fails, which makes GitHub
+The website is `site/index.html`. The privacy section is filled in from
+`privacy.html` when the site is built, so edit the policy in one place only.
+
+`site-check.yml` loads the main pages every 6 hours and fails, which makes GitHub
 email you, if one is down. Only the deploy job can publish: the build job, which
 installs packages, gets read access only, and every action is pinned to a commit.
 

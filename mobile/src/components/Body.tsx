@@ -7,7 +7,7 @@ import { weightSeries } from '../core/plan';
 import { trendSeries, TrendPoint } from '../core/trend';
 import { num, showWeight } from '../core/units';
 import type { MeasureKey, Measurements, PhotoLog, Pose, Settings, Unit, Weights } from '../core/types';
-import { confirm } from '../dialogs';
+import { confirm, notify } from '../dialogs';
 import { addPhoto, deletePhoto, photoUri } from '../photos';
 import { C, F, themed, useScheme } from '../theme';
 import { DateInput, Field, fieldStyles } from './Fields';
@@ -203,7 +203,7 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
       if (day[pose]) deletePhoto(day[pose]!);
       onChange(setPhotoRef(photos, k, pose, ref));
     } catch (e) {
-      Alert.alert("Couldn't add the photo", e instanceof Error ? e.message : 'Please try again.');
+      notify('Couldn’t add the photo', e instanceof Error ? e.message : 'Please try again.');
     } finally { setBusy(false); }
   };
   const tap = (pose: Pose) => {

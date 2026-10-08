@@ -73,6 +73,10 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const weighIns7 = last7.filter(k => state.weights[k] != null).length;
   // At the largest text sizes two tiles can't share a row without breaking words: one per row instead
   const stack = useWindowDimensions().fontScale > 1.35;
+  // A week's change needs weigh-ins in that week: someone who's had a break is told so, not asked for a week's data
+  const lapsed = Object.keys(state.weights).some(k => k < dateKey(addDays(now, -7)));
+  // Nothing ticked in 30 days (usually day one) shows a dash, not a 0% that reads like a mark
+  const ticked30 = H.some(h => consistency(state.habits, h.id, 30, now, settings.plan.start).done > 0);
   const avg30 = H.length ? Math.round(H.reduce((a, h) => { const c = consistency(state.habits, h.id, 30, now, settings.plan.start); return a + (c.of ? c.done / c.of : 0); }, 0) / H.length * 100) : 0;
   const waist = measureSummary(state.measurements, 'waist');
   const tdee = settings.trackCalories ? estimateExpenditure(state.intake, series) : null;
@@ -98,7 +102,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
         <Tile icon="trend" label="This week" onPress={() => go('trend')} wide={stack}
           value={week != null ? showChange(week, unit, 1) : '—'}
           valueColor={week == null || d === 0 ? C.ink : week * d > 0.05 ? C.mintInk : week * d < -0.05 ? C.coralInk : C.ink}
-          sub={week != null ? 'trend change, 7 days' : 'Needs a week of weigh-ins'}
+          sub={week != null ? 'trend change, 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
           spark={recentTrend(series, 30)}
           a11y={week != null ? `Trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'Weekly change, needs a week of weigh-ins'} />
         <Tile icon="target" label="Pace" onPress={() => go('trend')} wide={stack}
@@ -114,8 +118,8 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
       <View style={[s.tiles, stack && s.tilesStacked]}>
         {/* Consistency, not today's ticks (the chips below already show those) */}
         <Tile icon="habits" label="Habits" onPress={() => go('habits')} wide={stack}
-          value={H.length ? `${avg30}%` : 'Add habits'}
-          sub={H.length ? 'consistency, last 30 days' : 'Small daily ticks, no streaks'}
+          value={!H.length ? 'Add habits' : ticked30 ? `${avg30}%` : '—'}
+          sub={!H.length ? 'Small daily ticks, no streaks' : ticked30 ? 'consistency, last 30 days' : 'tick one off below to start'}
           a11y={H.length ? `Habits: ${avg30} percent over the last 30 days. Last 7 days: all done on ${fullDays} ${fullDays === 1 ? 'day' : 'days'}, some on ${someDays}` : 'Habits, none set up'}>
           {H.length ? <><WeekDots log={state.habits} ids={H.map(h => h.id)} /><Text style={s.dotsCap} maxFontSizeMultiplier={1.4}>last 7 days</Text></> : null}
         </Tile>
