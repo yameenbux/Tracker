@@ -1,5 +1,6 @@
+import { EmptyState, Skeleton } from './States';
 import { memo, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, ImageStyle, Platform, Pressable, ScrollView, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { cmToUnit, lengthToCm, MEASURES, measureSummary, photoDates, plausibleCm, POSES, setMeasureDay, setPhotoRef, showLength } from '../core/body';
 import { dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { weightSeries } from '../core/plan';
@@ -8,10 +9,10 @@ import { num, showWeight } from '../core/units';
 import type { MeasureKey, Measurements, PhotoLog, Pose, Settings, Unit, Weights } from '../core/types';
 import { confirm } from '../dialogs';
 import { addPhoto, deletePhoto, photoUri } from '../photos';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { DateInput, Field, fieldStyles } from './Fields';
 import { Icon } from './Icons';
-import { DONE_ID } from './KeyboardDone';
+import { DoneInput } from './KeyboardDone';
 import { Sheet } from './Sheet';
 import { Button, Card, Tabs } from './ui';
 
@@ -40,10 +41,25 @@ function trendOn(series: TrendPoint[], k: string): number | null {
   return v;
 }
 
+/** A stored photo with a breathing placeholder until it has decoded (large photos take a moment). */
+function LoadingImage({ uri, style, label }: { uri: string; style: ImageStyle; label: string }) {
+  const [state, setState] = useState<'loading' | 'ok' | 'failed'>('loading');
+  return (
+    <View style={[style, { overflow: 'hidden' }]}>
+      {state === 'loading' && <Skeleton style={StyleSheet.absoluteFill as ViewStyle} />}
+      {state === 'failed'
+        ? <View style={[StyleSheet.absoluteFill, s.cmpEmpty]}><Icon name="body" size={22} color={C.inkSoft} /><Text style={s.cmpEmptyTxt}>Photo missing</Text></View>
+        : <Image source={{ uri }} style={StyleSheet.absoluteFill} accessibilityLabel={label}
+            onLoad={() => setState('ok')} onError={() => setState('failed')} />}
+    </View>
+  );
+}
+
 export const BodyCard = memo(function BodyCard({ settings, weights, unit, measurements, photos, onMeasurements, onPhotos }: {
   settings: Settings; weights: Weights; unit: Unit; measurements: Measurements; photos: PhotoLog;
   onMeasurements: (m: Measurements) => void; onPhotos: (p: PhotoLog) => void;
 }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const [sheet, setSheet] = useState<null | 'measure' | 'photos'>(null);
   const [pose, setPose] = useState<Pose>('front');
   const dates = photoDates(photos).filter(k => photos[k][pose]);
@@ -57,7 +73,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
     const tw = trendOn(series, k);
     return (
       <View style={s.cmpCol}>
-        <Image source={{ uri: photoUri(photos[k][pose]!) }} style={s.cmpImg} accessibilityLabel={`${label} photo, ${longDate(k)}`} />
+        <LoadingImage key={photos[k][pose]} uri={photoUri(photos[k][pose]!)} style={s.cmpImg} label={`${label} photo, ${longDate(k)}`} />
         <View style={s.cmpBadge}><Text style={s.cmpBadgeTxt}>{label} · {shortDate(parseKey(k))}</Text></View>
         {tw != null && <Text style={s.cmpW}>{showWeight(tw, unit)} trend</Text>}
       </View>
@@ -66,8 +82,8 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
 
   return (
     <Card title="Measurements & photos" right={<View style={{ flexDirection: 'row', gap: 6 }}>
-      <Button label="+ Measure" kind="ghost" small onPress={() => setSheet('measure')} />
-      <Button label="+ Photos" kind="ghost" small onPress={() => setSheet('photos')} />
+      <Button icon="plus" label="Measure" kind="ghost" small onPress={() => setSheet('measure')} />
+      <Button icon="plus" label="Photos" kind="ghost" small onPress={() => setSheet('photos')} />
     </View>}>
       {summaries.length > 0 ? (
         <View style={s.chips}>
@@ -84,7 +100,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
           ))}
         </View>
       ) : (
-        <Text style={s.empty}>Your waist often keeps shrinking in weeks the scale stalls. Measure every 2–4 weeks, same time of day.</Text>
+        <EmptyState compact icon="ruler" title="No measurements yet" body="Your waist often keeps shrinking in weeks the scale stalls. Measure every 2–4 weeks, same time of day." action="Add a measurement" onAction={() => setSheet('measure')} />
       )}
 
       {dates.length > 0 || photoDates(photos).length > 0 ? (
@@ -95,21 +111,21 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
           ) : dates.length === 1 ? (
             <View style={s.cmp}>{photoBox(dates[0], 'First')}<View style={[s.cmpCol, s.cmpEmpty]}><Text style={s.cmpEmptyTxt}>Take another {POSES.find(p => p.key === pose)!.label.toLowerCase()} photo in a few weeks to compare</Text></View></View>
           ) : (
-            <Text style={[s.empty, { marginTop: 10 }]}>No {pose} photos yet.</Text>
+            <EmptyState compact icon="body" title={`No ${pose} photos yet`} action="Add photos" onAction={() => setSheet('photos')} />
           )}
           {dates.length > 2 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingTop: 8 }}>
               {dates.slice(0, -1).map(k => (
                 <Pressable key={k} onPress={() => setThenKey(k)} hitSlop={4} style={[s.dateChip, k === before && s.dateChipOn]} accessibilityRole="button"
                   accessibilityLabel={`Compare from ${longDate(k)}`} accessibilityState={{ selected: k === before }}>
-                  <Text style={[s.dateChipTxt, k === before && { color: '#fff' }]}>{shortDate(parseKey(k))}</Text>
+                  <Text style={[s.dateChipTxt, k === before && { color: C.onFill }]}>{shortDate(parseKey(k))}</Text>
                 </Pressable>
               ))}
             </ScrollView>
           )}
         </View>
       ) : (
-        <Text style={[s.empty, { marginTop: 8 }]}>Progress photos stay private on this phone, never in your camera roll. Same spot, same light, every few weeks.</Text>
+        <EmptyState compact icon="body" title="No progress photos yet" body="They stay private on this phone, never in your camera roll. Same spot, same light, every few weeks." action="Add photos" onAction={() => setSheet('photos')} />
       )}
 
       {sheet === 'measure' && <MeasureSheet unit={unit} measurements={measurements} onClose={() => setSheet(null)}
@@ -151,8 +167,8 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
         {MEASURES.map(m => (
           <View key={m.key} style={s.mCell}>
             <Field label={`${m.label} (${unit === 'kg' ? 'cm' : 'in'})`}>
-              <TextInput style={[fieldStyles.fIn, { fontFamily: F.displaySemi }]} value={txt[m.key]} keyboardType="decimal-pad"
-                onChangeText={v => setTxt(t => ({ ...t, [m.key]: v }))} inputAccessoryViewID={DONE_ID} placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={m.label} />
+              <DoneInput style={[fieldStyles.fIn, { fontFamily: F.displaySemi }]} value={txt[m.key]} keyboardType="decimal-pad"
+                onChangeText={v => setTxt(t => ({ ...t, [m.key]: v }))} placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={m.label} />
             </Field>
             <Text style={s.mHint}>{m.hint}</Text>
           </View>
@@ -182,7 +198,7 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
     const label = POSES.find(p => p.key === pose)!.label;
     const opts: Choice[] = [{ label: 'Take photo', run: () => take('camera', pose) }, { label: 'Choose from library', run: () => take('library', pose) }];
     if (day[pose]) opts.push({ label: 'Remove photo', destructive: true, run: () => confirmDelete(`Remove this ${label.toLowerCase()} photo?`,
-      'It’s deleted from Plumb. Photos aren’t in backups, so this can’t be undone.', () => { deletePhoto(day[pose]!); onChange(setPhotoRef(photos, k, pose, null)); }) });
+      'It’s deleted from Tidemark. Photos aren’t in backups, so this can’t be undone.', () => { deletePhoto(day[pose]!); onChange(setPhotoRef(photos, k, pose, null)); }) });
     choose(label + ' photo', Platform.OS === 'web' ? [opts[1]] : opts);
   };
   return (
@@ -199,12 +215,12 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
           </Pressable>
         ))}
       </View>
-      <Text style={s.tip}>Same spot, same light, same clothes each time, so the only thing that changes is you. Photos stay inside Plumb and aren’t included in backups.</Text>
+      <Text style={s.tip}>Same spot, same light, same clothes each time, so the only thing that changes is you. Photos stay inside Tidemark and aren’t included in backups.</Text>
     </Sheet>
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 4 },
   chip: { flexGrow: 1, flexBasis: '45%', backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 13, padding: 11 },
   chipK: { fontFamily: F.bodySemi, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: C.inkSoft, marginBottom: 4 },
@@ -214,13 +230,13 @@ const s = StyleSheet.create({
   cmp: { flexDirection: 'row', gap: 8, marginTop: 10 },
   cmpCol: { flex: 1 },
   cmpImg: { width: '100%', aspectRatio: 3 / 4, borderRadius: 14, backgroundColor: C.chip },
-  cmpBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(36,27,51,0.72)', borderRadius: 999, paddingVertical: 3, paddingHorizontal: 8 },
+  cmpBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: C.scrim, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 8 },
   cmpBadgeTxt: { fontFamily: F.bodyBold, fontSize: 12, color: '#fff' },
   cmpW: { fontFamily: F.displaySemi, fontSize: 12.5, color: C.ink, marginTop: 6, textAlign: 'center' },
   cmpEmpty: { aspectRatio: 3 / 4, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line, alignItems: 'center', justifyContent: 'center', padding: 14 },
   cmpEmptyTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, textAlign: 'center', lineHeight: 17 },
   dateChip: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999, backgroundColor: C.chip },
-  dateChipOn: { backgroundColor: C.ink },
+  dateChipOn: { backgroundColor: C.fill },
   dateChipTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   mGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 },
   mCell: { flexBasis: '46%', flexGrow: 1 },
@@ -234,4 +250,4 @@ const s = StyleSheet.create({
   slotImg: { width: '100%', aspectRatio: 3 / 4, borderRadius: 12, backgroundColor: C.chip },
   slotEmpty: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   tip: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 17, marginTop: 12 },
-});
+}));

@@ -6,7 +6,7 @@ import { chartRange, ChartRange, chartWindow, latestWeight, weekDate, targetAt, 
 import { trendSeries, TrendPoint } from '../core/trend';
 import { KG_PER_LB, showWeight } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { Card, Tabs } from './ui';
 
 const H = 220;
@@ -28,7 +28,14 @@ function smooth(pts: { x: number; y: number }[]): string {
 export const ProgressChart = memo(function ProgressChart({ settings, weights, unit, fixedRange, trend }: {
   settings: Settings; weights: Weights; unit: Unit; fixedRange?: boolean; trend?: TrendPoint[]; today?: string;
 }) {
-  const [range, setRange] = useState<ChartRange>('plan');
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
+  // Open on 12 weeks when a long plan has only a little data, so recent weigh-ins aren't squeezed into one corner
+  const [range, setRange] = useState<ChartRange>(() => {
+    if (fixedRange) return 'plan';
+    const pts = weightSeries(settings.plan, weights);
+    const dataDays = pts.length ? daysBetween(pts[0].d, pts[pts.length - 1].d) : 0;
+    return settings.plan.targets.length > 17 && dataDays < 56 ? '12w' : 'plan';
+  });
   const [w, setW] = useState(0);
   const [sel, setSel] = useState<number | null>(null);      // weigh-in being read by touch (or VoiceOver)
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,8 +86,8 @@ export const ProgressChart = memo(function ProgressChart({ settings, weights, un
       <Tabs value={range} onChange={setRange} label="Chart range" options={[{ id: '4w', label: '4W' }, { id: '12w', label: '12W' }, { id: 'plan', label: 'Plan' }]} />
     }>
       <View style={s.legend}>
-        <View style={s.lg}><View style={s.swLine} /><Text style={s.lgTxt}>Trend</Text></View>
-        <View style={s.lg}><View style={s.swDot} /><Text style={s.lgTxt}>Weigh-ins</Text></View>
+        {series.length > 0 && <View style={s.lg}><View style={s.swLine} /><Text style={s.lgTxt}>Trend</Text></View>}
+        {series.length > 0 && <View style={s.lg}><View style={s.swDot} /><Text style={s.lgTxt}>Weigh-ins</Text></View>}
         <View style={s.lg}><View style={s.swDash} /><Text style={s.lgTxt}>Target</Text></View>
         <Text style={[s.lgTxt, { marginLeft: 'auto', color: C.inkSoft }]}>{unit === 'kg' ? 'kg' : 'lb'}</Text>
       </View>
@@ -110,10 +117,10 @@ export const ProgressChart = memo(function ProgressChart({ settings, weights, un
           <Svg width={w} height={H}>
             <Defs>
               <LinearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"><Stop offset="0" stopColor={C.graphAmber} /><Stop offset="1" stopColor={C.graphCoral} /></LinearGradient>
-              <LinearGradient id="area" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor={C.coral} stopOpacity={0.24} /><Stop offset="1" stopColor={C.coral} stopOpacity={0} /></LinearGradient>
+              <LinearGradient id="area" x1="0" y1="0" x2="0" y2="1"><Stop offset="0" stopColor={C.coral} stopOpacity={0.14} /><Stop offset="1" stopColor={C.coral} stopOpacity={0} /></LinearGradient>
             </Defs>
             {grid.map(v => (
-              <Line key={'g' + v} x1={M.l} x2={w - M.r} y1={yu(v)} y2={yu(v)} stroke="#F0E8E0" strokeWidth={1} />
+              <Line key={'g' + v} x1={M.l} x2={w - M.r} y1={yu(v)} y2={yu(v)} stroke={C.chip} strokeWidth={1} />
             ))}
             {grid.map(v => (
               <SvgText key={'l' + v} x={M.l - 7} y={yu(v) + 4} fontSize={11} fill={C.inkSoft} textAnchor="end" fontFamily={F.bodyMed}>{v}</SvgText>
@@ -125,6 +132,8 @@ export const ProgressChart = memo(function ProgressChart({ settings, weights, un
             )}
             {ev && <Line x1={x(ev)} x2={x(ev)} y1={M.t + 8} y2={M.t + ih} stroke={C.graphMint} strokeWidth={1.5} strokeDasharray="3 3" />}
             {ev && <Circle cx={x(ev)} cy={M.t + 4} r={4} fill={C.graphMint} />}
+            {/* Weigh-ins sit under the trend line, small and grey: the line is the story, the dots are the noise */}
+            {raw.map(p => <Circle key={`r${p.x.toFixed(1)}`} cx={p.x} cy={p.y} r={2.6} fill={C.inkSoft} opacity={0.45} />)}
             {pts.length >= 2 && (
               <>
                 {/* Shade under the line only once it spans a fair width; a few close points would draw a thin bar */}
@@ -134,12 +143,11 @@ export const ProgressChart = memo(function ProgressChart({ settings, weights, un
                 <Path d={smooth(pts)} fill="none" stroke="url(#stroke)" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" />
               </>
             )}
-            {raw.map(p => <Circle key={`r${p.x.toFixed(1)}`} cx={p.x} cy={p.y} r={3} fill="#fff" stroke={C.coralInk} strokeWidth={1.6} opacity={0.85} />)}
-            {pts.length > 0 && <Circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r={6.5} fill={C.graphCoral} stroke="#fff" strokeWidth={2.5} />}
+            {pts.length > 0 && <Circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r={6.5} fill={C.graphCoral} stroke={C.card} strokeWidth={2.5} />}
             {picked && <>
               <Line x1={x(picked.d)} x2={x(picked.d)} y1={M.t} y2={M.t + ih} stroke={C.ink} strokeWidth={1} opacity={0.35} />
-              <Circle cx={x(picked.d)} cy={y(picked.trend)} r={5} fill={C.coralInk} stroke="#fff" strokeWidth={2} />
-              <Circle cx={x(picked.d)} cy={y(picked.kg)} r={4} fill="#fff" stroke={C.ink} strokeWidth={1.6} />
+              <Circle cx={x(picked.d)} cy={y(picked.trend)} r={5} fill={C.coralInk} stroke={C.card} strokeWidth={2} />
+              <Circle cx={x(picked.d)} cy={y(picked.kg)} r={4} fill={C.raised} stroke={C.ink} strokeWidth={1.6} />
             </>}
           </Svg>
         )}
@@ -148,15 +156,15 @@ export const ProgressChart = memo(function ProgressChart({ settings, weights, un
   );
 });
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   legend: { flexDirection: 'row', gap: 14, paddingHorizontal: 4, paddingBottom: 6, alignItems: 'center' },
   lg: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   lgTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft },
   swLine: { width: 18, height: 3, borderRadius: 2, backgroundColor: C.graphCoral },
-  swDot: { width: 8, height: 8, borderRadius: 4, borderWidth: 1.8, borderColor: C.coralInk, backgroundColor: '#fff' },
+  swDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.inkSoft, opacity: 0.6 },
   swDash: { width: 18, height: 0, borderTopWidth: 2, borderStyle: 'dashed', borderColor: C.targetLine },
-  tip: { position: 'absolute', top: 0, width: 140, zIndex: 2, backgroundColor: C.ink, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10 },
-  tipDate: { fontFamily: F.bodySemi, fontSize: 12, color: 'rgba(255,255,255,0.75)' },
-  tipVal: { fontFamily: F.display, fontSize: 15, color: '#fff' },
-  tipTrend: { fontFamily: F.body, fontSize: 12, color: '#FFC2A3' },
-});
+  tip: { position: 'absolute', top: 0, width: 140, zIndex: 2, backgroundColor: C.fill, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10 },
+  tipDate: { fontFamily: F.bodySemi, fontSize: 12, color: C.onFill, opacity: 0.75 },
+  tipVal: { fontFamily: F.display, fontSize: 15, color: C.onFill },
+  tipTrend: { fontFamily: F.body, fontSize: 12, color: C.tipTrend },
+}));

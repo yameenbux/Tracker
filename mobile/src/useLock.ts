@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { biometricName, canLock, unlock } from './lock';
+import { biometricName, canLock, lockAvailability, unlock } from './lock';
 import type { Prefs } from './core/storage';
 
 /**
  * The Face ID lock and the app-switcher privacy cover.
  * - `locked`: the app shows only the lock screen (no data rendered underneath, sheets closed).
- * - `covered`: a plain cover shown while the app is inactive, so iOS's app-switcher snapshot is blank.
+ * - `covered`: a plain cover shown while the app is inactive (lock on or off), so iOS's app-switcher snapshot is blank.
  * If the phone loses its passcode / Face ID while the lock is on, the lock switches itself off rather than
  * locking the person out of their own data for good (`lockLost` explains what happened).
  */
@@ -30,7 +30,12 @@ export function useLock(ready: boolean, prefs: Prefs, setPrefs: (p: Partial<Pref
     if (asking.current || !lockedRef.current) return;
     asking.current = true;
     try {
-      if (!(await canLock())) {          // passcode removed in iOS Settings: authentication can never succeed
+      const avail = await lockAvailability();
+      if (avail === 'unknown') {         // couldn't check: fail closed, but still let iOS try Face ID / passcode, so nobody is shut out
+        if (await unlock()) release();
+        return;
+      }
+      if (avail === 'none') {            // passcode removed in iOS Settings: authentication can never succeed
         setPrefs({ lock: false });
         setLockAvailable(false);
         setLockLost(true);
@@ -53,8 +58,12 @@ export function useLock(ready: boolean, prefs: Prefs, setPrefs: (p: Partial<Pref
     let wasBackground = false;
     const sub = AppState.addEventListener('change', st => {
       // iOS takes the app-switcher snapshot while 'inactive', so cover the screen then; lock fully on 'background'
-      if (st === 'inactive' && lockRef.current) setCovered(true);
-      if (st === 'background') { wasBackground = true; if (lockRef.current) { lockedRef.current = true; setLocked(true); } }
+      if (st === 'inactive') setCovered(true);   // always: weight is health data, lock or no lock
+      if (st === 'background') {
+        setCovered(true);                        // Android never reports 'inactive', so cover here too
+        wasBackground = true;
+        if (lockRef.current) { lockedRef.current = true; setLocked(true); }
+      }
       if (st === 'active') {
         setCovered(false);
         // Only ask on a real return from the background. The Face ID sheet itself makes the app briefly inactive,

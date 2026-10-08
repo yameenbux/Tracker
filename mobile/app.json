@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Plumb",
-    "slug": "plumb",
+    "name": "Tidemark",
+    "slug": "tidemark",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yameenbux.plumb",
+      "bundleIdentifier": "com.yameenbux.tidemark",
       "icon": {
         "light": "./assets/icon.png",
         "dark": "./assets/icon-dark.png",
@@ -33,7 +33,6 @@
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
             "NSPrivacyAccessedAPITypeReasons": [
               "C617.1",
-              "0A2A.1",
               "3B52.1"
             ]
           },
@@ -46,8 +45,7 @@
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
             "NSPrivacyAccessedAPITypeReasons": [
-              "E174.1",
-              "85F4.1"
+              "E174.1"
             ]
           }
         ]
@@ -57,6 +55,9 @@
           "NSAllowsArbitraryLoads": false,
           "NSAllowsLocalNetworking": true
         }
+      },
+      "entitlements": {
+        "com.apple.developer.default-data-protection": "NSFileProtectionComplete"
       }
     },
     "android": {
@@ -67,29 +68,34 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.yameenbux.plumb",
-      "versionCode": 1
+      "package": "com.yameenbux.tidemark",
+      "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "name": "Plumb"
+      "name": "Tidemark"
     },
     "plugins": [
       "./plugins/withoutPushEntitlement.js",
+      "./plugins/withProductionHardening.js",
       "expo-sharing",
       "expo-font",
       "@react-native-community/datetimepicker",
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Plumb uses Face ID to keep your weight and habits private."
+          "faceIDPermission": "Tidemark uses Face ID to keep your weight and habits private."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Plumb lets you pick progress photos. They stay private inside the app.",
-          "cameraPermission": "Plumb uses the camera to take progress photos. They stay private inside the app.",
+          "photosPermission": "Tidemark lets you pick progress photos. They stay private inside the app.",
+          "cameraPermission": "Tidemark uses the camera to take progress photos. They stay private inside the app.",
           "microphonePermission": false
         }
       ],
@@ -99,7 +105,11 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 112,
           "resizeMode": "contain",
-          "backgroundColor": "#FBF7F3"
+          "backgroundColor": "#FBF7F3",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#121019"
+          }
         }
       ],
       "expo-web-browser",

@@ -1,9 +1,10 @@
+import { FadeList, Tap, useReturnFade } from './Motion';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tap } from '../feel';
 import { useReducedMotion } from '../motion';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 import { Icon, IconName } from './Icons';
 
 export type Tab = 'today' | 'trend' | 'habits' | 'body';
@@ -24,6 +25,7 @@ export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
   const ref = useRef<ScrollView>(null);
   useEffect(() => { if (scrollTop) ref.current?.scrollTo({ y: 0, animated: true }); }, [scrollTop]);
   const barOpacity = y.interpolate({ inputRange: [30, 70], outputRange: [0, 1], extrapolate: 'clamp' });
+  const back = useReturnFade(active);   // a quick 180 ms settle when you switch back to this tab
   return (
     <View style={{ flex: 1 }}>
     <Animated.ScrollView ref={ref} contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16 }}
@@ -34,12 +36,12 @@ export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
           {eyebrow ? <Text style={s.eyebrow} maxFontSizeMultiplier={1.4}>{eyebrow}</Text> : null}
           <Text style={s.title} accessibilityRole="header" maxFontSizeMultiplier={1.3}>{title}</Text>
         </View>
-        <Pressable onPress={onSettings} style={({ pressed }) => [s.round, pressed && { opacity: 0.6 }]} hitSlop={4}
+        <Tap onPress={onSettings} style={s.round} hitSlop={4}
           accessibilityRole="button" accessibilityLabel="Settings">
           <Icon name="settings" size={22} color={C.ink} />
-        </Pressable>
+        </Tap>
       </View>
-      {children}
+      <Animated.View style={{ opacity: back }}><FadeList>{children}</FadeList></Animated.View>
     </Animated.ScrollView>
     <Animated.View pointerEvents="none" style={[s.compact, { height: insets.top + 40, paddingTop: insets.top, opacity: barOpacity }]}
       importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
@@ -73,10 +75,10 @@ export function TabBar({ tab, onTab, onLog, onReselect }: { tab: Tab; onTab: (t:
     <View style={[s.bar, { paddingBottom: insets.bottom, height: TAB_BAR_H + insets.bottom }]} accessibilityRole="tablist">
       {item(TABS[0])}{item(TABS[1])}
       <View style={s.tab}>
-        <Pressable onPress={onLog} style={({ pressed }) => [s.log, pressed && { transform: [{ scale: 0.95 }] }]}
+        <Tap onPress={onLog} style={s.log}
           accessibilityRole="button" accessibilityLabel="Log weight" accessibilityHint="Opens the weigh-in sheet">
-          <Icon name="plus" size={26} color={C.ink} strokeWidth={2.6} />
-        </Pressable>
+          <Icon name="plus" size={26} color={C.onCoral} strokeWidth={2.6} />
+        </Tap>
       </View>
       {item(TABS[2])}{item(TABS[3])}
     </View>
@@ -143,32 +145,32 @@ export function SectionLabel({ children }: { children: string }) {
   return <Text style={s.section} accessibilityRole="header">{children}</Text>;
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 16, paddingHorizontal: 4, gap: 12 },
   eyebrow: { fontFamily: F.bodySemi, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: C.coralInk, marginBottom: 2 },
   title: { fontFamily: F.display, fontSize: 34, color: C.ink, letterSpacing: -0.6 },
   round: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', backgroundColor: 'rgba(251,247,243,0.97)',
-         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#D9CFC4' },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', backgroundColor: C.bar,
+         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.barLine },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, minHeight: 48 },
   tabTxt: { fontFamily: F.bodySemi, fontSize: 11, color: C.inkSoft },
   tabOn: { color: C.coralInk },
   log: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.coral, alignItems: 'center', justifyContent: 'center', marginTop: -18,
          shadowColor: C.coral, shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 6,
          borderWidth: 3, borderColor: C.bg },
-  toast: { position: 'absolute', left: 16, right: 16, backgroundColor: C.ink, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16,
+  toast: { position: 'absolute', left: 16, right: 16, backgroundColor: C.fill, borderRadius: 14, paddingVertical: 13, paddingHorizontal: 16,
            flexDirection: 'row', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 8 },
-  toastTxt: { flex: 1, fontFamily: F.bodySemi, fontSize: 14, color: '#fff' },
-  toastAct: { fontFamily: F.bodyBold, fontSize: 15, color: '#FFB3A8' },
+  toastTxt: { flex: 1, fontFamily: F.bodySemi, fontSize: 14, color: C.onFill },
+  toastAct: { fontFamily: F.bodyBold, fontSize: 15, color: C.toastAct },
   toastBtn: { minHeight: 44, minWidth: 56, alignItems: 'flex-end', justifyContent: 'center', marginVertical: -10 },
   notice: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine, borderRadius: 16, padding: 14, marginBottom: 14 },
-  noticeWarn: { backgroundColor: C.warnBg, borderColor: '#F2E0B5' },
+  noticeWarn: { backgroundColor: C.warnBg, borderColor: C.warnLine },
   nTitle: { fontFamily: F.bodyBold, fontSize: 14, color: C.ink },
   nBody: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 2, lineHeight: 18 },
   nAct: { fontFamily: F.bodyBold, fontSize: 15, color: C.coralInk },
   nActBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginTop: 2, marginBottom: -8 },
-  compact: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(251,247,243,0.97)', alignItems: 'center', justifyContent: 'center',
-             borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#D9CFC4' },
+  compact: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: C.bar, alignItems: 'center', justifyContent: 'center',
+             borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.barLine },
   compactTxt: { fontFamily: F.display, fontSize: 17, color: C.ink },
   section: { fontFamily: F.bodyBold, fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: C.inkSoft, marginTop: 6, marginBottom: 10, paddingHorizontal: 4 },
-});
+}));

@@ -4,8 +4,8 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, TextStyle, View } fro
 import { dateKey, parseKey, validKey } from '../core/dates';
 import { fmt, lbPart, parseWeightInput, stPart, toLbNum } from '../core/units';
 import type { Unit } from '../core/types';
-import { DONE_ID } from './KeyboardDone';
-import { C, F } from '../theme';
+import { DoneInput } from './KeyboardDone';
+import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
 /** kg / st-lb toggle */
 export function UnitToggle({ unit, onChange }: { unit: Unit; onChange: (u: Unit) => void }) {
@@ -15,7 +15,23 @@ export function UnitToggle({ unit, onChange }: { unit: Unit; onChange: (u: Unit)
         <Pressable key={u} onPress={() => onChange(u)} style={[s.segBtn, unit === u && s.segOn]}
           accessibilityRole="radio" accessibilityState={{ checked: unit === u }}
           accessibilityLabel={u === 'kg' ? 'Kilograms' : u === 'imp' ? 'Stones and pounds' : 'Pounds'}>
-          <Text style={[s.segTxt, unit === u && s.segTxtOn]}>{u === 'kg' ? 'kg' : u === 'imp' ? 'st / lb' : 'lb'}</Text>
+          <Text maxFontSizeMultiplier={1.4} style={[s.segTxt, unit === u && s.segTxtOn]}>{u === 'kg' ? 'kg' : u === 'imp' ? 'st / lb' : 'lb'}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+/** System / Light / Dark, the same control as the unit picker. */
+export function AppearanceToggle({ value, onChange }: { value: AppearancePref; onChange: (v: AppearancePref) => void }) {
+  const opts: [AppearancePref, string][] = [['system', 'Auto'], ['light', 'Light'], ['dark', 'Dark']];
+  return (
+    <View style={s.seg} accessibilityRole="radiogroup" accessibilityLabel="Appearance">
+      {opts.map(([id, label]) => (
+        <Pressable key={id} onPress={() => onChange(id)} style={[s.segBtn, value === id && s.segOn]}
+          accessibilityRole="radio" accessibilityState={{ checked: value === id }}
+          accessibilityLabel={id === 'system' ? 'Match iPhone setting' : label}>
+          <Text maxFontSizeMultiplier={1.4} style={[s.segTxt, value === id && s.segTxtOn]}>{label}</Text>
         </Pressable>
       ))}
     </View>
@@ -61,8 +77,8 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
   if (unit === 'kg' || unit === 'lb') {
     return (
       <View style={s.wRow}>
-        <TextInput style={[...box, w(84, 66, 132)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
-          maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="decimal-pad"
+        <DoneInput style={[...box, w(84, 66, 132)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
+          maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus keyboardType="decimal-pad"
           placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + (unit === 'kg' ? ' in kilograms' : ' in pounds')} />
         <Text style={s.unit}>{unit}</Text>
       </View>
@@ -70,12 +86,12 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
   }
   return (
     <View style={s.wRow}>
-      <TextInput style={[...box, w(52, 40, 64)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
-        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="number-pad"
+      <DoneInput style={[...box, w(52, 40, 64)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
+        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus keyboardType="number-pad"
         placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' stone'} />
       <Text style={s.unit}>st</Text>
-      <TextInput style={[...box, w(64, 52, 84)]} value={txt[1]} onChangeText={v => edit(1, v)}
-        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="decimal-pad"
+      <DoneInput style={[...box, w(64, 52, 84)]} value={txt[1]} onChangeText={v => edit(1, v)}
+        maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus keyboardType="decimal-pad"
         placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' pounds'} />
       <Text style={s.unit}>lb</Text>
     </View>
@@ -84,6 +100,7 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
 
 /** Calendar day picker. Native compact picker on iPhone; a plain YYYY-MM-DD box on web (used for previews only). */
 export function DateInput({ value, onChange, label, min, max }: { value: string; onChange: (k: string) => void; label: string; min?: string; max?: string }) {
+  const scheme = useScheme();
   const inRange = (k: string) => (!min || k >= min) && (!max || k <= max);
   const [txt, setTxt] = useState(value);
   const [seen, setSeen] = useState(value);
@@ -96,7 +113,7 @@ export function DateInput({ value, onChange, label, min, max }: { value: string;
   }
   return (
     <View style={{ alignItems: 'flex-start' }}>
-      <DateTimePicker value={validKey(value) ? parseKey(value) : new Date()} mode="date" display="compact"
+      <DateTimePicker value={validKey(value) ? parseKey(value) : new Date()} mode="date" display="compact" themeVariant={scheme}
         accentColor={C.coralInk} accessibilityLabel={label}
         minimumDate={min ? parseKey(min) : undefined} maximumDate={max ? parseKey(max) : undefined}
         onValueChange={(_, d) => d && onChange(dateKey(d))} />
@@ -113,17 +130,17 @@ export function Field({ label, children }: { label: string; children: React.Reac
   );
 }
 
-export const fieldStyles = StyleSheet.create({
+export const fieldStyles = themed(() => StyleSheet.create({
   fIn: { fontFamily: F.body, fontSize: 16, color: C.ink, backgroundColor: C.bg, borderWidth: 1, borderColor: C.control,
          borderRadius: 10, minHeight: 44, paddingVertical: 9, paddingHorizontal: 10 },
-});
+}));
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   seg: { flexDirection: 'row', backgroundColor: C.chip, borderRadius: 999, padding: 3 },
   segBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999 },
-  segOn: { backgroundColor: C.ink },
+  segOn: { backgroundColor: C.fill },
   segTxt: { fontFamily: F.bodySemi, fontSize: 12.5, color: C.inkSoft },
-  segTxtOn: { color: '#fff' },
+  segTxtOn: { color: C.onFill },
   wRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   wIn: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink, backgroundColor: C.bg, borderWidth: 1, borderColor: C.control,
          borderRadius: 10, minHeight: 44, paddingVertical: 8, paddingHorizontal: 8, textAlign: 'right' },
@@ -133,4 +150,4 @@ const s = StyleSheet.create({
   fld: { gap: 5, flex: 1, minWidth: 0 },
   fLabel: { fontFamily: F.bodyBold, fontSize: 11.5, letterSpacing: 0.8, textTransform: 'uppercase', color: C.inkSoft },
   fIn: fieldStyles.fIn,
-});
+}));

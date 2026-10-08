@@ -1,12 +1,14 @@
+import { habitIcon } from './habitIcons';
+import { cleanMedication } from './medication';
 import { addDays, dateKey, daysBetween, parseKey, startOfDay, validKey, WEEK_MS } from './dates';
 import { numOrNull, plausible, round2 } from './units';
 import type { Habit, HabitLog, Macros, Plan, PlanBreak, Session, Settings, Weights } from './types';
 
 export const MAX_HABITS = 6;
 export const DEFAULT_HABITS: Habit[] = [
-  { id: 'water', icon: '💧', short: '3 L', name: 'Water 3 L' },
-  { id: 'steps', icon: '👟', short: '8K', name: 'Steps 8k' },
-  { id: 'workout', icon: '🏋', short: 'WORK', name: 'Workout' },
+  { id: 'water', icon: 'water', short: '3 L', name: 'Water 3 L' },
+  { id: 'steps', icon: 'steps', short: '8K', name: 'Steps 8k' },
+  { id: 'workout', icon: 'dumbbell', short: 'WORK', name: 'Workout' },
 ];
 
 export function emptySessions(): Record<number, Session> {
@@ -16,8 +18,20 @@ export function emptySessions(): Record<number, Session> {
 }
 const emptyMacros = (): Macros => ({ kcal: null, p: null, c: null, f: null });
 
-export function defaultSettings(plan: Plan): Settings {
-  return { plan, event: null, habits: DEFAULT_HABITS.map(h => ({ ...h })), sessions: emptySessions(),
+/** Habits offered during setup. None are picked for you: only what someone chooses shows up. */
+export const SUGGESTED_HABITS: Habit[] = [
+  { id: 'water', icon: 'water', short: 'WATER', name: 'Water 2–3 L' },
+  { id: 'steps', icon: 'steps', short: 'STEPS', name: 'Steps 8k' },
+  { id: 'workout', icon: 'dumbbell', short: 'TRAIN', name: 'Workout' },
+  { id: 'protein', icon: 'meal', short: 'PROT', name: 'Protein at each meal' },
+  { id: 'sleep', icon: 'moon', short: 'SLEEP', name: 'Sleep 7 h' },
+  { id: 'veg', icon: 'leaf', short: 'VEG', name: '5 portions of veg' },
+  { id: 'noalcohol', icon: 'noAlcohol', short: 'DRY', name: 'No alcohol' },
+  { id: 'stretch', icon: 'stretch', short: 'MOVE', name: 'Stretch or mobility' },
+];
+
+export function defaultSettings(plan: Plan, habits: Habit[] = []): Settings {
+  return { plan, event: null, habits: habits.slice(0, MAX_HABITS).map(h => ({ ...h })), sessions: emptySessions(),
            meals: { items: [], target: emptyMacros() } };
 }
 
@@ -101,42 +115,58 @@ export function assessPlan(p: PlanDraft): PlanAssessment {
   return { ok: true, weeks, perWeek, pct, warn: pct > (dir === 'gain' ? GAIN_WARN_PCT : 1) };
 }
 
+export const MAX_PLAN_WEEKS = 520;   // the editor allows 156; re-plans can extend that, but never past ten years
+/** A string from untrusted data, trimmed to a sane length (a 200,000-character habit name would freeze layout). */
+const RESERVED = new Set(['__proto__', 'constructor', 'prototype']);   // never usable as object keys for ticks
+const str = (v: unknown, max: number): string => (v == null ? '' : String(v)).slice(0, max);
+/** Smallest and largest without spreading (`Math.min(...a)` overflows the stack on very long arrays). */
+export function extent(a: number[]): [number, number] {
+  let lo = Infinity, hi = -Infinity;
+  for (const v of a) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  return [lo, hi];
+}
+
 /** Fill in anything missing or malformed, so bad storage or a hand-edited backup can't break rendering. */
 export function normalizeSettings(s: any): Settings | null {
   if (!s || typeof s !== 'object' || !s.plan) return null;
   const p = s.plan;
   const startKg = numOrNull(p.startKg), goalKg = numOrNull(p.goalKg);
   if (!validKey(p.start) || !validKey(p.goalDate) || !plausible(startKg) || !plausible(goalKg)) return null;
+  // The same bounds the plan editor enforces (with room for re-plans), so a hand-made backup can't create a plan the
+  // app can't draw. Targets must be exactly one per week; anything else is rebuilt from the plan.
+  const weeks = weeksBetween(p.start, p.goalDate);
+  if (weeks < 1 || weeks > MAX_PLAN_WEEKS) return null;
   let targets: number[] = Array.isArray(p.targets) ? p.targets : [];
   const breaks = cleanBreaks(p.breaks);
-  if (targets.length < 2 || !targets.every(plausible)) targets = buildTargets(startKg, goalKg, p.start, p.goalDate, breaks);
+  if (targets.length !== weeks + 1 || !targets.every(plausible)) targets = buildTargets(startKg, goalKg, p.start, p.goalDate, breaks);
   const plan: Plan = { start: p.start, startKg, goalKg, goalDate: p.goalDate, targets: [...targets], breaks };
 
   const ev = s.event && s.event.name && validKey(s.event.date)
-    ? { name: String(s.event.name), date: s.event.date, detail: String(s.event.detail || '') } : null;
+    ? { name: str(s.event.name, 60), date: s.event.date, detail: str(s.event.detail, 120) } : null;
 
   const seen: Record<string, boolean> = {};
   const habits: Habit[] = (Array.isArray(s.habits) ? s.habits : DEFAULT_HABITS)
-    .filter((h: any) => h && h.id && !seen[h.id] && (seen[h.id] = true))
+    .filter((h: any) => { const id = h && h.id ? str(h.id, 40) : '';
+      return id && !RESERVED.has(id) && !Object.prototype.hasOwnProperty.call(seen, id) && (seen[id] = true); })
     .slice(0, MAX_HABITS)
-    .map((h: any) => ({ id: String(h.id), icon: String(h.icon || '✓'), short: String(h.short || '').slice(0, 5),
-                        name: String(h.name || h.short || 'Habit') }));
+    .map((h: any) => ({ id: str(h.id, 40), icon: habitIcon(h.icon, str(h.name, 40)), short: str(h.short, 5),
+                        name: str(h.name || h.short, 40) || 'Habit' }));
 
   const sessions = emptySessions();
   for (let d = 0; d < 7; d++) {
     const x = s.sessions && s.sessions[d];
-    if (x) sessions[d] = { title: String(x.title || ''), items: Array.isArray(x.items) ? x.items.map(String) : [], note: String(x.note || '') };
+    if (x) sessions[d] = { title: str(x.title, 60), items: Array.isArray(x.items) ? x.items.slice(0, 40).map((i: unknown) => str(i, 120)) : [], note: str(x.note, 500) };
   }
 
   const m = s.meals || {};
   const mt = m.target || {};
   const meals = {
-    items: (Array.isArray(m.items) ? m.items : []).filter((x: any) => x && (x.text || x.when)).map((x: any) => ({
-      when: String(x.when || ''), text: String(x.text || ''),
+    items: (Array.isArray(m.items) ? m.items : []).filter((x: any) => x && (x.text || x.when)).slice(0, 20).map((x: any) => ({
+      when: str(x.when, 40), text: str(x.text, 200),
       kcal: numOrNull(x.kcal), p: numOrNull(x.p), c: numOrNull(x.c), f: numOrNull(x.f) })),
     target: { kcal: numOrNull(mt.kcal), p: numOrNull(mt.p), c: numOrNull(mt.c), f: numOrNull(mt.f) },
   };
-  return { plan, event: ev, habits, sessions, meals, trackCalories: s.trackCalories === true };
+  return { plan, event: ev, habits, sessions, meals, trackCalories: s.trackCalories === true, medication: cleanMedication(s.medication) };
 }
 
 export function cleanWeights(obj: unknown): Weights {
@@ -240,7 +270,7 @@ export function planChanged(old: Plan, p: PlanDraft): boolean {
 export function cleanBreaks(v: unknown): PlanBreak[] {
   if (!Array.isArray(v)) return [];
   return v.filter(b => b && validKey(b.start) && Number.isInteger(b.weeks) && b.weeks >= 1 && b.weeks <= MAX_BREAK_WEEKS)
-          .map(b => ({ start: b.start as string, weeks: b.weeks as number }))
+          .slice(0, 24).map(b => ({ start: b.start as string, weeks: b.weeks as number }))
           .sort((a, b) => a.start.localeCompare(b.start));
 }
 
@@ -293,9 +323,21 @@ export function behindBy(plan: Plan, trendNow: number, today: Date = new Date())
   return d === 0 ? Math.abs(off) : -d * off;
 }
 
+/** Within this much of the line counts as "on the line" (kg); a maintenance plan allows a kilo either way. */
+export const ON_LINE_KG = 0.3, HOLD_KG = 1;
+/**
+ * The one answer to "how am I doing against the line?", used by every screen so they can never disagree.
+ * `off` is how far behind (positive) or ahead (negative) the trend is today, in kg.
+ */
+export function lineStatus(plan: Plan, trendNow: number, today: Date = new Date()): { off: number; onLine: boolean; ahead: boolean } {
+  const off = behindBy(plan, trendNow, today);
+  const tol = direction(plan) === 'maintain' ? HOLD_KG : ON_LINE_KG;
+  return { off, onLine: off <= tol, ahead: direction(plan) !== 'maintain' && off < -tol };
+}
+
 /** Chart y-range: fits targets and weights, snapped to a tidy step. */
 export function chartRange(values: number[]): { min: number; max: number; step: number } {
-  const lo = Math.min(...values), hi = Math.max(...values);
+  const [lo, hi] = extent(values);
   const span = hi - lo;
   const step = span <= 3 ? 0.5 : span <= 7 ? 1 : span <= 16 ? 2 : span <= 40 ? 5 : 10;
   const pad = step < 1 ? step : 1;   // short ranges (the 4-week view) get finer lines instead of looking flat

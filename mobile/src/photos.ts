@@ -26,14 +26,18 @@ export async function addPhoto(source: 'camera' | 'library', dateKey: string, po
                                                   base64: Platform.OS === 'web' };
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) throw new Error('Plumb needs camera access to take progress photos. You can allow it in the iPhone Settings app.');
+    if (!perm.granted) throw new Error('Tidemark needs camera access to take progress photos. You can allow it in the iPhone Settings app.');
   }
   const res = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
   if (res.canceled || !res.assets.length) return null;
   const asset = res.assets[0];
   if (Platform.OS === 'web') return asset.base64 ? `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}` : asset.uri;
   const name = `p-${dateKey}-${pose}-${Date.now().toString(36)}.jpg`;
-  await new File(asset.uri).copy(new File(photoDir(), name));
+  const picked = new File(asset.uri);
+  await picked.copy(new File(photoDir(), name));
+  // The picker's working copy (and crop) sits in the cache; remove it so a deleted photo leaves nothing behind.
+  // Only ever inside our own cache folder: never touch a file outside the app.
+  try { if (asset.uri.startsWith(Paths.cache.uri) && picked.exists) picked.delete(); } catch { /* the cache sweep gets it */ }
   return name;
 }
 
@@ -43,7 +47,7 @@ export function deletePhoto(ref: string): void {
   try { const f = new File(photoDir(), ref); if (f.exists) f.delete(); } catch { /* already gone */ }
 }
 
-/** Deletes every stored progress photo (used by "Erase everything"). */
+/** Deletes every stored progress photo (used by "Delete all my data"). */
 export function deleteAllPhotos(): void {
   if (Platform.OS === 'web') return;
   try { const dir = new Directory(Paths.document, 'photos'); if (dir.exists) dir.delete(); } catch { /* nothing to delete */ }

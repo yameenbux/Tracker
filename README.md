@@ -20,7 +20,7 @@ Each week: weigh in on the same day (after waking, after toilet, before food or 
 Built with Plain HTML, CSS, and vanilla JavaScript in a single file. No frameworks, no build step, no dependencies. The chart is drawn directly as SVG; persistence uses the browser `localStorage` API.
 
 Deployment
-Hosted on GitHub Pages from the `main` branch (root). Because the free GitHub Pages tier serves only from public repositories, the repo is public — but note that no personal data is committed: the repository contains only the blank app, and all weight entries live in the browser on the device.
+Hosted on GitHub Pages from the `main` branch (root). Because the free GitHub Pages tier serves only from public repositories, the repo is public — so nothing personal belongs in it: the app files hold no one's data, and all weight entries live in the browser on the device.
 
 Notes
 The target line is a guide, not a verdict. Weekly weight fluctuates with water, glycogen, and digestion, so a single week above the line means little. Waist measurements and progress photos tell the fuller story.

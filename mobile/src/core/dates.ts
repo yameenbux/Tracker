@@ -15,6 +15,8 @@ export function parseKey(k: string): Date {
 }
 export function validKey(k: unknown): k is string {
   if (typeof k !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(k)) return false;
+  const y = Number(k.slice(0, 4));
+  if (y < 1990 || y > 2100) return false;            // no real weigh-in is outside this; keeps hostile backups' date maths bounded
   const d = parseKey(k);
   return !isNaN(d.getTime()) && dateKey(d) === k;   // rejects 2026-02-31 and friends
 }

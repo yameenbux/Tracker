@@ -1,16 +1,19 @@
+import { EmptyState } from './States';
+import { FadeIn, Tap } from './Motion';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAY_ABBR, dateKey, daysBetween, longDate, parseKey } from '../core/dates';
-import { direction, sign, targetAt, weekFraction, weightSeries } from '../core/plan';
-import { plausible, rangeText, showRangeError, stepWeight, showDiff, showAmount, showWeight } from '../core/units';
+import { weekFraction, weightSeries } from '../core/plan';
+import { trendSeries, TrendPoint } from '../core/trend';
+import { plausible, rangeText, showRangeError, stepWeight, showWeight } from '../core/units';
 import { tick } from '../feel';
 import { Icon } from './Icons';
 import { Sheet } from './Sheet';
 import type { Settings, Unit, Weights } from '../core/types';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 import { DateInput, WeightInput } from './Fields';
-import { Button, Card, Pill } from './ui';
+import { Button, Card } from './ui';
 
 export function EventCard({ settings }: { settings: Settings }) {
   const ev = settings.event;
@@ -33,37 +36,54 @@ export function EventCard({ settings }: { settings: Settings }) {
   );
 }
 
-/** Recent weigh-ins, newest first, each compared with that day's point on the target line. Tap to edit. */
-export function EntriesList({ settings, weights, unit, onEdit }: {
-  settings: Settings; weights: Weights; unit: Unit; onEdit: (k: string) => void;
+/**
+ * Recent weigh-ins, newest first. Each shows the trend on that day in plain grey: colouring single readings red or
+ * green would highlight exactly the day-to-day noise the trend is there to ignore. Tap to edit.
+ * Pages in 30 at a time, so years of data never render as one long list.
+ */
+export function EntriesList({ settings, weights, unit, onEdit, trend }: {
+  settings: Settings; weights: Weights; unit: Unit; onEdit: (k: string) => void; trend?: TrendPoint[];
 }) {
-  const [all, setAll] = useState(false);
+  const [count, setCount] = useState(6);
   const plan = settings.plan;
+  const series = useMemo(() => trend ?? trendSeries(weightSeries(plan, weights)), [trend, plan, weights]);
+  const byDay = useMemo(() => new Map(series.map(p => [p.k, p.trend])), [series]);
   const list = weightSeries(plan, weights).reverse();
-  const shown = all ? list : list.slice(0, 6);
+  const shown = list.slice(0, count);
   return (
     <Card title="Weigh-ins" right={<Text style={s.count}>{list.length} logged</Text>}>
-      {!list.length && <Text style={s.empty}>Nothing logged yet. Tap the + button after your next weigh-in.</Text>}
-      {shown.map(p => {
-        const diff = p.kg - targetAt(plan, p.d);
+      {!list.length && <EmptyState icon="scale" title="No weigh-ins yet" body="Tap + after your next weigh-in. Mornings, before breakfast, give the steadiest numbers." />}
+      {shown.map((p, i) => {
+        const tr = byDay.get(p.k);
         const wk = Math.floor(weekFraction(plan, p.d)) + 1;
         return (
-          <Pressable key={p.k} onPress={() => onEdit(p.k)} style={({ pressed }) => [s.entry, pressed && { opacity: 0.6 }]}
+          <FadeIn key={p.k} index={i}>
+          <Pressable onPress={() => onEdit(p.k)} style={({ pressed }) => [s.entry, pressed && { backgroundColor: C.chip }]}
             accessibilityRole="button" accessibilityHint="Edits this weigh-in"
-            accessibilityLabel={`${showWeight(p.kg, unit)} on ${DAY_ABBR[p.d.getDay()]} ${longDate(p.k)}, ${Math.abs(diff) <= 0.05 ? 'on target' : `${showAmount(Math.abs(diff), unit)} ${diff > 0 ? 'above' : 'below'} target`}`}>
+            accessibilityLabel={`${showWeight(p.kg, unit)} on ${DAY_ABBR[p.d.getDay()]} ${longDate(p.k)}${tr != null ? `, trend ${showWeight(tr, unit)}` : ''}`}>
             <View style={{ flex: 1 }}>
               <Text style={s.eW}>{showWeight(p.kg, unit)}</Text>
               <Text style={s.eD}>{DAY_ABBR[p.d.getDay()]} {longDate(p.k)} · week {wk}</Text>
             </View>
-            <Pill kg={diff} text={showDiff(diff, unit)} d={sign(direction(plan)) as -1 | 0 | 1} />
+            {tr != null && <Text style={s.eT}>trend {showWeight(tr, unit)}</Text>}
             <Icon name="chevron" size={18} color={C.inkSoft} />
           </Pressable>
+          </FadeIn>
         );
       })}
       {list.length > 6 && (
-        <Pressable onPress={() => setAll(a => !a)} style={s.more} accessibilityRole="button" accessibilityState={{ expanded: all }}>
-          <Text style={s.moreTxt}>{all ? 'Show fewer' : `Show all ${list.length}`}</Text>
-        </Pressable>
+        <View style={s.moreRow}>
+          {count < list.length && (
+            <Pressable onPress={() => setCount(c => c + 30)} style={s.more} accessibilityRole="button">
+              <Text style={s.moreTxt}>Show {Math.min(30, list.length - count)} more</Text>
+            </Pressable>
+          )}
+          {count > 6 && (
+            <Pressable onPress={() => setCount(6)} style={s.more} accessibilityRole="button">
+              <Text style={s.moreTxt}>Show fewer</Text>
+            </Pressable>
+          )}
+        </View>
       )}
       <Text style={s.foot}>Weigh in after waking, before food or drink. Most mornings is ideal: more weigh-ins make a steadier trend. The target line is a guide, not a verdict.</Text>
     </Card>
@@ -101,17 +121,17 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
         {editing && <Button label="Delete weigh-in" kind="danger" disabled={!!then} onPress={() => setThen({ run: () => onDelete(initialKey!) })} style={{ marginTop: 8 }} />}
       </>}>
       <View style={s.stepRow}>
-        <Pressable onPress={() => nudge(-1)} disabled={kg == null} style={({ pressed }) => [s.stepBtn, pressed && { opacity: 0.6 }]}
+        <Tap onPress={() => nudge(-1)} disabled={kg == null} style={s.stepBtn}
           accessibilityRole="button" accessibilityState={{ disabled: kg == null }} accessibilityLabel={`Decrease by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
-          <Text style={s.stepTxt}>−</Text>
-        </Pressable>
+          <Icon name="minus" size={24} color={C.ink} strokeWidth={2.4} />
+        </Tap>
         <View style={{ alignItems: 'center' }}>
           <WeightInput unit={unit} kg={kg} onChange={setKg} live big label="Weight" sync={nudges} autoFocus={kg == null} />
         </View>
-        <Pressable onPress={() => nudge(1)} disabled={kg == null} style={({ pressed }) => [s.stepBtn, pressed && { opacity: 0.6 }]}
+        <Tap onPress={() => nudge(1)} disabled={kg == null} style={s.stepBtn}
           accessibilityRole="button" accessibilityState={{ disabled: kg == null }} accessibilityLabel={`Increase by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
-          <Text style={s.stepTxt}>+</Text>
-        </Pressable>
+          <Icon name="plus" size={24} color={C.ink} strokeWidth={2.4} />
+        </Tap>
       </View>
       {!editing && lastKey && kg != null && <Text style={s.hint}>Starts from your last weigh-in ({showWeight(weights[lastKey], unit)}, {longDate(lastKey)}). Nudge it or type over it.</Text>}
       <View style={s.dateRow}>
@@ -126,7 +146,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   race: { borderRadius: 18, padding: 18, marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
   raceLabel: { fontFamily: F.bodyBold, fontSize: 11.5, letterSpacing: 1.6, textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)' },
   raceName: { fontFamily: F.display, fontSize: 20, color: '#fff', marginTop: 3 },
@@ -138,14 +158,15 @@ const s = StyleSheet.create({
   entry: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingVertical: 10, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line },
   eW: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
   eD: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 2 },
-  more: { minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  eT: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
+  moreRow: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
+  more: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
   moreTxt: { fontFamily: F.bodyBold, fontSize: 14, color: C.coralInk },
   foot: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 17, paddingHorizontal: 6, paddingTop: 10 },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, marginTop: 10, lineHeight: 19 },
   stepRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 10 },
   stepBtn: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
-  stepTxt: { fontFamily: F.display, fontSize: 26, color: C.ink, marginTop: -2 },
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 },
   dateLabel: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   hint: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, marginTop: 10, lineHeight: 19, textAlign: 'center' },
-});
+}));

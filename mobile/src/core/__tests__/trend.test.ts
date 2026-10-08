@@ -15,6 +15,16 @@ describe('trendSeries', () => {
     expect(week).toBeLessThan(one);
     expect(week).toBeCloseTo(90 - (1 - 0.9 ** 7), 5);   // 52% of the way
   });
+  test('on a steady loss the trend keeps up with the real line instead of trailing it', () => {
+    const rows: [string, number][] = [];
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(2026, 0, 5 + i), k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      rows.push([k, 90 - 0.07 * i + [0.4, -0.3, 0.1, -0.2, 0.3, -0.4, 0][i % 7]]);   // 0.49 kg a week, with water noise
+    }
+    const t = trendSeries(pts(rows));
+    const truth = 90 - 0.07 * 59;
+    expect(Math.abs(t[59].trend - truth)).toBeLessThan(0.2);          // plain smoothing trails by ~0.6 kg here
+  });
   test('a single water spike barely moves the trend', () => {
     const t = trendSeries(pts([['2026-10-01', 90], ['2026-10-02', 90], ['2026-10-03', 91.2], ['2026-10-04', 90]]));
     expect(t[2].trend - t[1].trend).toBeLessThan(0.15);

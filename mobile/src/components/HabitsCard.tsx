@@ -1,3 +1,5 @@
+import { EmptyState } from './States';
+import { habitIcon } from '../core/habitIcons';
 import { memo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { addDays, DAY_ABBR, dateKey, MON } from '../core/dates';
@@ -6,7 +8,7 @@ import { mealTotals, toggleHabit, weekDays } from '../core/plan';
 import type { HabitLog, Session, Settings } from '../core/types';
 import { tick } from '../feel';
 import { useReducedMotion } from '../motion';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { Icon } from './Icons';
 import { Card } from './ui';
 
@@ -22,7 +24,7 @@ function HabitBox({ on, label, onPress, disabled }: { on: boolean; label: string
   return (
     <Pressable onPress={() => { tick(); onPress(); }} hitSlop={7} disabled={disabled} style={[s.cb, on && s.cbOn, disabled && { opacity: 0.35 }]}
       accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled }} accessibilityLabel={label}>
-      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color="#fff" strokeWidth={2.8} /></Animated.View> : null}
+      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color={C.onDone} strokeWidth={2.8} /></Animated.View> : null}
     </Pressable>
   );
 }
@@ -70,9 +72,11 @@ function MealsPanel({ meals }: { meals: Settings['meals'] }) {
   );
 }
 
-export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange, onLogSession }: {
+export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange, onLogSession, onAddHabits }: {
   settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void; today?: string;
+  onAddHabits?: () => void;
 }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const [open, setOpen] = useState<{ key: string; kind: 'sess' | 'meals' } | null>(null);
   // Page back through earlier weeks (to fix a missed tick), never past the plan's first week or into the future
   const [back, setBack] = useState(0);
@@ -82,6 +86,14 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   const H = settings.habits;
   const hasMeals = settings.meals.items.length > 0;
   const anySession = days.some(d => { const x = settings.sessions[d.getDay()]; return x.title || x.items.length; });
+  if (!H.length && !anySession && !hasMeals) {
+    return (
+      <Card title="This week">
+        <EmptyState icon="habits" title="No daily habits yet" body="Pick up to six small things that help, like water, steps or sleep. Ticking one takes a second."
+          action="Choose habits" onAction={onAddHabits} />
+      </Card>
+    );
+  }
 
   return (
     <Card title={back === 0 ? 'This week' : back === 1 ? 'Last week' : `${back} weeks ago`} right={
@@ -100,7 +112,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
         <View style={{ flex: 1 }} />
         {H.map(h => (
           <View key={h.id} style={s.icCol} accessible accessibilityLabel={h.name}>
-            <Text style={s.icon}>{h.icon}</Text>
+            <Icon name={habitIcon(h.icon, h.name)} size={18} color={C.plum2} />
             <Text style={s.icSmall}>{h.short.toUpperCase()}</Text>
           </View>
         ))}
@@ -152,7 +164,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
             const pct = m.of ? Math.round(m.done / m.of * 100) : 0;
             return (
               <View key={h.id} style={s.sumItem} accessible accessibilityLabel={`${h.name}: ${w.done} of the last ${w.of} days, ${pct}% over ${m.of} days`}>
-                <Text style={s.sumTxt}>{h.icon} <Text style={s.sumB}>{w.done}/{w.of}</Text> last 7 days</Text>
+                <View style={s.sumHead}><Icon name={habitIcon(h.icon, h.name)} size={15} color={C.plum2} /><Text style={s.sumTxt}><Text style={s.sumB}>{w.done}/{w.of}</Text> last 7 days</Text></View>
                 <View style={s.bar}><View style={[s.barFill, { width: `${pct}%` }]} /></View>
                 <Text style={s.sumPct}>{pct}% of {m.of} days</Text>
               </View>
@@ -164,21 +176,20 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   );
 });
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   cap: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, paddingHorizontal: 4, marginTop: -4, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 },
   icCol: { width: 30, alignItems: 'center' },
-  icon: { fontSize: 15 },
   icSmall: { fontFamily: F.bodyBold, fontSize: 10, color: C.inkSoft, marginTop: 3 },
-  dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line, borderRadius: 10 },
-  today: { backgroundColor: C.todayBg, borderLeftWidth: 3, borderLeftColor: C.coral },
+  dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line },
+  today: { backgroundColor: C.todayBg, borderLeftWidth: 3, borderLeftColor: C.coral, borderRadius: 10, borderBottomColor: 'transparent' },   // rounded highlight; plain rows keep straight dividers
   dayTxt: { fontFamily: F.displaySemi, fontSize: 14, color: C.ink },
   todayTag: { fontFamily: F.bodyBold, fontSize: 11, color: C.coralInk, letterSpacing: 0.5 },
   sessTitle: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 1 },
   link: { fontFamily: F.bodyBold, fontSize: 13, color: C.coralInk },
   linkBtn: { minHeight: 36, justifyContent: 'center', paddingRight: 10 },
   cb: { width: 30, height: 30, borderWidth: 1.5, borderColor: C.control, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
-  cbOn: { backgroundColor: C.coralInk, borderColor: C.coralInk },
+  cbOn: { backgroundColor: C.done, borderColor: C.done },   // plum = done; coral is kept for "off track"
   pager: { flexDirection: 'row', gap: 4 },
   pageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
   panel: { backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine, borderRadius: 12, padding: 12, marginHorizontal: 6, marginVertical: 6 },
@@ -190,16 +201,17 @@ const s = StyleSheet.create({
   tot: { backgroundColor: C.panelAlt, borderRadius: 8, padding: 9, marginTop: 8 },
   totTxt: { fontFamily: F.displaySemi, fontSize: 12.5, color: C.ink },
   totB: { color: C.plum2, fontFamily: F.display },
-  gap: { backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 8, padding: 9, marginTop: 6 },
+  gap: { backgroundColor: C.warnBg, borderWidth: 1, borderColor: C.warnLine, borderRadius: 8, padding: 9, marginTop: 6 },
   gapTxt: { fontFamily: F.body, fontSize: 12, color: C.warnInk, lineHeight: 17 },
   empty: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, padding: 6, paddingTop: 10, lineHeight: 17 },
   sumItem: { minWidth: '45%', flexGrow: 1 },
   bar: { height: 5, borderRadius: 3, backgroundColor: C.line, marginTop: 5, overflow: 'hidden' },
-  barFill: { height: 5, borderRadius: 3, backgroundColor: C.coralInk },
+  barFill: { height: 5, borderRadius: 3, backgroundColor: C.done },
   sumPct: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, marginTop: 3 },
-  logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.plum2, borderRadius: 12, minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
+  logBtn: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: C.primary, borderRadius: 12, minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 },
   logBtnTxt: { fontFamily: F.bodyBold, fontSize: 14, color: '#fff' },
   summary: { marginTop: 12, padding: 10, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6 },
+  sumHead: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   sumTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   sumB: { fontFamily: F.display, color: C.ink },
-});
+}));

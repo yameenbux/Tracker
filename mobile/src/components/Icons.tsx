@@ -1,11 +1,12 @@
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import type { HabitIcon } from '../core/habitIcons';
 import { C } from '../theme';
 
 // One consistent line-icon set (24 grid, 2px rounded strokes) instead of emoji and text glyphs,
 // so controls look the same on every phone and scale cleanly.
 export type IconName =
   | 'today' | 'trend' | 'habits' | 'body' | 'settings' | 'plus' | 'chevron' | 'back' | 'close' | 'lock'
-  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal';
+  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal' | 'moon' | 'mail' | 'minus' | HabitIcon;
 
 const P: Record<IconName, (c: string) => React.ReactNode> = {
   today: c => <><Path d="M4 11.5 12 5l8 6.5" stroke={c} /><Path d="M6.5 10v9h11v-9" stroke={c} /></>,
@@ -13,6 +14,28 @@ const P: Record<IconName, (c: string) => React.ReactNode> = {
   habits: c => <><Rect x={4} y={4} width={16} height={16} rx={4.5} stroke={c} /><Path d="m8.5 12.2 2.4 2.4 4.8-5" stroke={c} /></>,
   body: c => <><Circle cx={12} cy={5.5} r={2.2} stroke={c} /><Path d="M6 10h12M12 10v4.5M12 14.5 9 20M12 14.5 15 20" stroke={c} /></>,
   settings: c => <><Circle cx={12} cy={12} r={3} stroke={c} /><Path stroke={c} d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></>,
+  mail: c => <><Rect x={3.5} y={6} width={17} height={12.5} rx={2.5} stroke={c} /><Path d="m4.5 7.5 7.5 6 7.5-6" stroke={c} /></>,
+  minus: c => <Path d="M5 12h14" stroke={c} />,
+  // habits
+  water: c => <Path d="M12 3.8c3 3.6 5.5 6.8 5.5 10a5.5 5.5 0 0 1-11 0c0-3.2 2.5-6.4 5.5-10z" stroke={c} />,
+  steps: c => <><Path d="M8 3.8c1.7 0 2.6 1.9 2.4 4.2-.2 2-1 3.3-2.4 3.3S5.8 10 5.6 8C5.4 5.7 6.3 3.8 8 3.8zM6.6 13.8h2.8v1.4a1.4 1.4 0 0 1-2.8 0z" stroke={c} />
+    <Path d="M16 8.3c1.7 0 2.6 1.9 2.4 4.2-.2 2-1 3.3-2.4 3.3s-2.2-1.3-2.4-3.3c-.2-2.3.7-4.2 2.4-4.2zM14.6 18.3h2.8v1.4a1.4 1.4 0 0 1-2.8 0z" stroke={c} /></>,
+  dumbbell: c => <><Rect x={5} y={6.5} width={3.4} height={11} rx={1.2} stroke={c} /><Rect x={15.6} y={6.5} width={3.4} height={11} rx={1.2} stroke={c} /><Path d="M8.4 12h7.2M2.8 9.8v4.4M21.2 9.8v4.4" stroke={c} /></>,
+  run: c => <><Circle cx={15} cy={4.8} r={1.8} stroke={c} /><Path d="m7.5 20.5 3.2-5 3 2.2 1.2-5M6 10.5l3.2-2.6 4.3 1.1 2 3.1 3 .6" stroke={c} /></>,
+  bike: c => <><Circle cx={6} cy={16} r={3.5} stroke={c} /><Circle cx={18} cy={16} r={3.5} stroke={c} /><Path d="m6 16 3.8-7h5.2L18 16M9.8 9l2.6 7H6M13.5 6h2.6" stroke={c} /></>,
+  stretch: c => <><Circle cx={12} cy={4.8} r={1.8} stroke={c} /><Path d="m4.5 10 7.5 1.6 7.5-1.6M12 11.6v3.9l-3.6 5M12 15.5l3.6 5" stroke={c} /></>,
+  leaf: c => <Path d="M5 19.5C5 11 10 5.8 19.5 4.5c0 9.5-5.2 15-13.8 15M5 19.5c3-4.2 6.3-6.8 10-8.8" stroke={c} />,
+  apple: c => <Path d="M12 8c-1.6-1-5.2-1.2-6.5 1.7-1.4 3.1.3 8 2.7 10.2 1.2 1.1 2.5.9 3.8.3 1.3.6 2.6.8 3.8-.3 2.4-2.2 4.1-7.1 2.7-10.2C17.2 6.8 13.6 7 12 8zm0 0c0-2.1 1-3.6 2.9-4.3" stroke={c} />,
+  noAlcohol: c => <><Path d="M8 3.8h8l-.5 5a3.5 3.5 0 0 1-7 0zM12 12.3v7.9M9 20.4h6" stroke={c} /><Path d="m4.5 4.5 15 15" stroke={c} /></>,
+  coffee: c => <Path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M9 3.8v2.4M12.5 3.8v2.4" stroke={c} />,
+  book: c => <Path d="M4.5 5.6c2.5-1 5-1 7.5 1 2.5-2 5-2 7.5-1v13c-2.5-1-5-1-7.5 1-2.5-2-5-2-7.5-1zM12 6.6v13" stroke={c} />,
+  mind: c => <Path d="m12 3.8 1.8 5 5 1.8-5 1.8-1.8 5-1.8-5-5-1.8 5-1.8zM18.5 15.8l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" stroke={c} />,
+  sun: c => <><Circle cx={12} cy={12} r={4} stroke={c} /><Path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M5.5 18.5l1.4-1.4M17.1 6.9l1.4-1.4" stroke={c} /></>,
+  heart: c => <Path d="M12 19.8s-7.2-4.4-7.2-9.6A4 4 0 0 1 12 8a4 4 0 0 1 7.2 2.2c0 5.2-7.2 9.6-7.2 9.6z" stroke={c} />,
+  pill: c => <><Rect x={3.6} y={9} width={16.8} height={6.6} rx={3.3} transform="rotate(-45 12 12.3)" stroke={c} /><Path d="m9.6 9.9 4.7 4.7" stroke={c} /></>,
+  scale: c => <><Rect x={4} y={4} width={16} height={16} rx={4} stroke={c} /><Path d="M8.5 10a4.6 4.6 0 0 1 7 0M12 10l1.4-1.8" stroke={c} /></>,
+  clock: c => <><Circle cx={12} cy={12} r={8.5} stroke={c} /><Path d="M12 7.5V12l3 2" stroke={c} /></>,
+  moon: c => <Path d="M19.5 14.2A7.5 7.5 0 0 1 9.8 4.5a7.5 7.5 0 1 0 9.7 9.7z" stroke={c} />,
   plus: c => <Path d="M12 5v14M5 12h14" stroke={c} />,
   chevron: c => <Path d="m9.5 6 6 6-6 6" stroke={c} />,
   back: c => <Path d="m14.5 6-6 6 6 6" stroke={c} />,

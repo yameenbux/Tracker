@@ -1,11 +1,12 @@
+import { EmptyState } from './States';
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
-import { behindBy, direction, GAIN_WARN_PCT, replanFromHere, sign, weightSeries } from '../core/plan';
+import { direction, lineStatus, GAIN_WARN_PCT, replanFromHere, sign, weightSeries } from '../core/plan';
 import { latestJump, projectedGoalDate, trendSeries, TrendPoint, weeklyRate } from '../core/trend';
 import { showChange, showAmount, showWeight } from '../core/units';
 import type { Plan, Settings, Unit, Weights } from '../core/types';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { Button, Card } from './ui';
 
 const change = (kg: number, unit: Unit, dp = 2) => showChange(kg, unit, dp);
@@ -17,12 +18,13 @@ const change = (kg: number, unit: Unit, dp = 2) => showChange(kg, unit, dp);
 export const TrendCard = memo(function TrendCard({ settings, weights, unit, onReplan, trend }: {
   settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void; trend?: TrendPoint[]; today?: string;
 }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const plan = settings.plan;
   const series = trend ?? trendSeries(weightSeries(plan, weights));
   if (series.length < 2) {
     return (
       <Card title="Your trend">
-        <Text style={s.empty}>Your trend appears after a couple of weigh-ins. Weighing in most days gives the clearest picture. Daily ups and downs get smoothed out.</Text>
+        <EmptyState icon="trend" title="Your trend starts after two weigh-ins" body="Weighing in most mornings gives the clearest picture. Daily ups and downs get smoothed out." />
       </Card>
     );
   }
@@ -36,7 +38,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
   const atGoal = d === 0 ? Math.abs(last.trend - plan.goalKg) <= 1 : (plan.goalKg - last.trend) * d <= 0;
   const tooFast = dir === 'gain' ? pct > GAIN_WARN_PCT && rate!.perWeek > 0 : dir === 'lose' ? pct > 1 && rate!.perWeek < 0 : false;
   // Well behind the line (over 1 kg and 1% of body weight): offer a fresh line from here instead of a guilt trip
-  const behind = behindBy(plan, last.trend);
+  const behind = lineStatus(plan, last.trend).off;
   const replan = rate && behind > Math.max(1, last.trend * 0.01) ? replanFromHere(plan, last.trend) : null;
 
   return (
@@ -100,7 +102,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
   );
 });
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', gap: 10, paddingHorizontal: 4 },
   cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 13, padding: 12 },
   k: { fontFamily: F.bodySemi, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: C.inkSoft, marginBottom: 5 },
@@ -108,12 +110,12 @@ const s = StyleSheet.create({
   pending: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft, marginTop: 4 },
   line: { fontFamily: F.body, fontSize: 14.5, color: C.ink, lineHeight: 20, paddingHorizontal: 4, marginTop: 12 },
   b: { fontFamily: F.bodyBold },
-  jump: { marginTop: 12, marginHorizontal: 4, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 12, padding: 12 },
-  jumpDown: { backgroundColor: C.mintBg, borderColor: '#BFEBD8' },
+  jump: { marginTop: 12, marginHorizontal: 4, backgroundColor: C.warnBg, borderWidth: 1, borderColor: C.warnLine, borderRadius: 12, padding: 12 },
+  jumpDown: { backgroundColor: C.mintBg, borderColor: C.mintLine },
   jumpTitle: { fontFamily: F.bodyBold, fontSize: 14, color: C.ink, marginBottom: 4 },
   jumpTxt: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, lineHeight: 18 },
-  replan: { marginTop: 12, marginHorizontal: 4, backgroundColor: C.panel, borderWidth: 1, borderColor: '#E4DAF2', borderRadius: 12, padding: 12 },
+  replan: { marginTop: 12, marginHorizontal: 4, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelEdge, borderRadius: 12, padding: 12 },
   replanTxt: { fontFamily: F.body, fontSize: 13.5, color: C.ink, lineHeight: 18 },
   foot: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 18, paddingHorizontal: 4, marginTop: 10 },
   empty: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19, paddingHorizontal: 4 },
-});
+}));

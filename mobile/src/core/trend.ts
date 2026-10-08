@@ -4,6 +4,9 @@ import type { WeightPoint } from './plan';
 
 /** Share of the gap to each new weigh-in that the trend moves, per day (Hacker's Diet uses 10%). */
 export const SMOOTHING = 0.1;
+/** How quickly the trend's own direction adapts, per day. Small, so one odd day can't tilt it. */
+export const SLOPE_SMOOTHING = 0.08;
+const MAX_SLOPE = 0.3;   // kg a day: no real trend moves faster; caps the effect of a wild entry
 /** Energy in 1 kg of body fat, roughly. Used to show why overnight jumps can't be fat. */
 export const KCAL_PER_KG_FAT = 7700;
 /** Weigh-ins this far apart or more (kg) within JUMP_MAX_DAYS get an explanation. */
@@ -13,18 +16,23 @@ export const JUMP_MAX_DAYS = 3;
 export interface TrendPoint extends WeightPoint { trend: number }
 
 /**
- * Exponentially smoothed trend. A gap of n days counts as n steps of smoothing,
- * so a weigh-in after a week away pulls the trend further than tomorrow's would.
+ * Smoothed trend that also follows direction (Holt's linear smoothing). Plain exponential smoothing always trails
+ * a steady loss by several days' worth (about 0.5 kg on a typical plan), so someone exactly on plan looked
+ * "behind the line". Tracking the slope removes that lag while still ignoring single-day water swings.
+ * A gap of n days counts as n steps, so a weigh-in after a week away pulls the trend further than tomorrow's would.
  */
 export function trendSeries(points: WeightPoint[]): TrendPoint[] {
   const out: TrendPoint[] = [];
   let prev: TrendPoint | null = null;
+  let slope = 0;                                            // kg per day
   for (const p of points) {
     let trend = p.kg;
     if (prev) {
       const days = Math.max(1, daysBetween(prev.d, p.d));
-      const alpha = 1 - Math.pow(1 - SMOOTHING, days);
-      trend = prev.trend + alpha * (p.kg - prev.trend);
+      const a = 1 - Math.pow(1 - SMOOTHING, days), b = 1 - Math.pow(1 - SLOPE_SMOOTHING, days);
+      const expected = prev.trend + slope * days;
+      trend = expected + a * (p.kg - expected);
+      slope = Math.max(-MAX_SLOPE, Math.min(MAX_SLOPE, slope + b * ((trend - prev.trend) / days - slope)));
     }
     const tp = { ...p, trend };
     out.push(tp);

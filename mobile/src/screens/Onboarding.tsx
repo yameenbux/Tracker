@@ -1,19 +1,21 @@
+import { habitIcon } from '../core/habitIcons';
+import { Tap } from '../components/Motion';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addDays, dateKey, longDate, mondayOf, parseKey } from '../core/dates';
-import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, PACES } from '../core/plan';
+import { addDays, dateKey, longDate, parseKey } from '../core/dates';
+import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, MAX_HABITS, PACES, SUGGESTED_HABITS } from '../core/plan';
 import { fmt, lbPart, parseWeightInput, plausible, rangeText, showAmount, showRangeError, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
-import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
+import { DoneInput, DoneWindow } from '../components/KeyboardDone';
 import { ProgressChart } from '../components/ProgressChart';
 import { Icon, IconName } from '../components/Icons';
-import { PlumbIcon } from '../components/Logo';
+import { TidemarkIcon } from '../components/Logo';
 import { Button } from '../components/ui';
-import { C, F } from '../theme';
+import { C, F, themed } from '../theme';
 
-type Step = 'welcome' | 'current' | 'goal' | 'pace' | 'plan' | 'lock';
+type Step = 'welcome' | 'current' | 'goal' | 'pace' | 'habits' | 'plan' | 'lock';
 
 /** Maintenance plans: how long to hold for. */
 const HOLD = [
@@ -36,7 +38,7 @@ function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onCh
   };
   const box = (i: 0 | 1, w: number, label: string, suffix: string) => (
     <View style={s.bigBox}>
-      <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'} inputAccessoryViewID={DONE_ID}
+      <DoneInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'}
         placeholder="0" placeholderTextColor={C.placeholder} autoFocus={i === 0} accessibilityLabel={label} />
       <Text style={s.bigUnit}>{suffix}</Text>
     </View>
@@ -56,7 +58,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const [startKg, setStartKg] = useState<number | null>(null);
   const [goalKg, setGoalKg] = useState<number | null>(null);
   const [pace, setPace] = useState<string>('');   // empty = the recommended option for the goal's direction
-  const [start, setStart] = useState(dateKey(mondayOf(new Date())));
+  const [start, setStart] = useState(dateKey(new Date()));   // today: a plan that began last Monday starts you "behind"
+  const [picked, setPicked] = useState<string[]>([]);        // habits chosen during setup (none by default)
   const [editStart, setEditStart] = useState(false);
 
   // Losing, gaining or holding: each gets its own choices on the "how fast" step
@@ -71,10 +74,11 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const draft = { startKg, goalKg, start, goalDate };
   const verdict = assessPlan(draft);
   const settings: Settings | null = verdict.ok
-    ? defaultSettings({ startKg: startKg!, goalKg: goalKg!, start, goalDate, targets: buildTargets(startKg!, goalKg!, start, goalDate) })
+    ? defaultSettings({ startKg: startKg!, goalKg: goalKg!, start, goalDate, targets: buildTargets(startKg!, goalKg!, start, goalDate) },
+                      SUGGESTED_HABITS.filter(h => picked.includes(h.id)))
     : null;
 
-  const order: Step[] = ['welcome', 'current', 'goal', 'pace', 'plan', ...(lockAvailable ? ['lock' as Step] : [])];
+  const order: Step[] = ['welcome', 'current', 'goal', 'pace', 'habits', 'plan', ...(lockAvailable ? ['lock' as Step] : [])];
   const idx = order.indexOf(step);
   const back = () => setStep(order[Math.max(0, idx - 1)]);
   const next = () => setStep(order[idx + 1]);
@@ -82,7 +86,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
 
   const goalNote = step === 'goal' && plausible(goalKg) && plausible(startKg)
     ? dir === 'gain' ? 'A gain plan: the line rises slowly, so most of it is muscle rather than fat.'
-      : dir === 'maintain' ? 'A maintenance plan: the line holds steady and Plumb shows how close you stay to it.'
+      : dir === 'maintain' ? 'A maintenance plan: the line holds steady and Tidemark shows how close you stay to it.'
       : null
     : null;
   const rate = (p: number) => {
@@ -91,6 +95,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   };
 
   return (
+    <DoneWindow>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[s.wrap, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 16 }]}>
       {step !== 'welcome' && (
         <View style={s.top}>
@@ -104,8 +109,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {step === 'welcome' && (
           <View style={{ paddingTop: 40 }}>
-            <PlumbIcon size={64} />
-            <Text style={[s.eyebrow, { marginTop: 22 }]}>Plumb</Text>
+            <TidemarkIcon size={64} />
+            <Text style={[s.eyebrow, { marginTop: 22 }]}>Tidemark</Text>
             <Text style={s.h1} accessibilityRole="header">A weight tracker that stays yours.</Text>
             {notice && (
               <View style={s.notice} accessibilityRole="alert"><Icon name="shield" size={20} color={C.warnInk} /><Text style={s.noticeTxt}>{notice}</Text></View>
@@ -177,6 +182,26 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           </>
         )}
 
+        {step === 'habits' && (
+          <>
+            <Text style={s.h2} accessibilityRole="header">Anything to tick off each day?</Text>
+            <Text style={s.sub}>Optional. Up to {MAX_HABITS} small habits, shown as how consistent you are, never as streaks. You can change them any time in Settings.</Text>
+            <View style={s.habitGrid} accessibilityRole="none">
+              {SUGGESTED_HABITS.map(h => {
+                const on = picked.includes(h.id), full = !on && picked.length >= MAX_HABITS;
+                return (
+                  <Tap key={h.id} disabled={full} onPress={() => setPicked(p => on ? p.filter(x => x !== h.id) : [...p, h.id])}
+                    style={[s.habitChip, on && s.habitChipOn, full && { opacity: 0.4 }]}
+                    accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled: full }} accessibilityLabel={h.name}>
+                    <Icon name={habitIcon(h.icon, h.name)} size={20} color={on ? C.onFill : C.plum2} />
+                    <Text style={[s.habitChipTxt, on && { color: C.onFill }]} numberOfLines={1}>{h.name}</Text>
+                  </Tap>
+                );
+              })}
+            </View>
+          </>
+        )}
+
         {step === 'plan' && settings && (
           <>
             <Text style={s.eyebrow}>Your plan is ready</Text>
@@ -199,7 +224,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
               <View style={s.whyBox}>
                 <Text style={s.whyBody}>
                   {dir === 'maintain'
-                    ? <>The dashed line stays at {showWeight(settings.plan.goalKg, unit)} until {longDate(settings.plan.goalDate)}. Plumb shows how far your trend drifts from it; within {unit === 'kg' ? 'about a kilo' : 'about 2 lb'} either way is normal day-to-day life.</>
+                    ? <>The dashed line stays at {showWeight(settings.plan.goalKg, unit)} until {longDate(settings.plan.goalDate)}. Tidemark shows how far your trend drifts from it; within {unit === 'kg' ? 'about a kilo' : 'about 2 lb'} either way is normal day-to-day life.</>
                     : <>Your pace is a share of body weight per week: {chosen.label} is {pct}%, so from {showWeight(settings.plan.startKg, unit)} that’s about {rate(pct)} a week.
                       {'\n\n'}Dividing the {showAmount(Math.abs(settings.plan.startKg - settings.plan.goalKg), unit)} you want to {dir === 'gain' ? 'gain' : 'lose'} by that pace gives {settings.plan.targets.length - 1} weeks, so the goal date is {longDate(settings.plan.goalDate)}.</>}
                   {'\n\n'}Your own weigh-ins are smoothed into a trend, so a salty dinner or a hard workout won’t knock you off the line.
@@ -212,8 +237,8 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'lock' && (
           <View style={{ paddingTop: 40 }}>
             <View style={s.lockBadge}><Icon name="lock" size={34} color={C.plum2} strokeWidth={2.2} /></View>
-            <Text style={s.h2} accessibilityRole="header">Lock Plumb with {lockName}?</Text>
-            <Text style={s.sub}>Your weight and habits are personal. With the lock on, Plumb asks for {lockName} each time it opens. You can change this in Settings.</Text>
+            <Text style={s.h2} accessibilityRole="header">Lock Tidemark with {lockName}?</Text>
+            <Text style={s.sub}>Your weight and habits are personal. With the lock on, Tidemark asks for {lockName} each time it opens. You can change this in Settings.</Text>
           </View>
         )}
       </ScrollView>
@@ -229,6 +254,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           {verdict.error && <Text style={s.err}>{verdict.error}</Text>}
           <Button label="See my plan" kind="primary" disabled={!!verdict.error} onPress={next} />
         </>}
+        {step === 'habits' && <Button label={picked.length ? `Next · ${picked.length} chosen` : 'Skip for now'} kind={picked.length ? 'primary' : 'ghost'} onPress={next} />}
         {step === 'plan' && (lockAvailable
           ? <Button label="Continue" kind="coral" onPress={next} />
           : <Button label="Start tracking" kind="coral" onPress={() => finish(false)} />)}
@@ -237,12 +263,12 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
           <Pressable onPress={() => finish(false)} style={s.secondary} accessibilityRole="button"><Text style={s.secondaryTxt}>Not now</Text></Pressable>
         </>}
       </View>
-      <KeyboardDone />
     </KeyboardAvoidingView>
+    </DoneWindow>
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 44 },
   backBtn: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
@@ -262,9 +288,13 @@ const s = StyleSheet.create({
   bigUnit: { fontFamily: F.bodySemi, fontSize: 18, color: C.inkSoft, marginLeft: 4 },
   note: { fontFamily: F.body, fontSize: 14.5, color: C.plum2, textAlign: 'center', lineHeight: 20, marginTop: 4, paddingHorizontal: 12 },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, textAlign: 'center', marginBottom: 10, lineHeight: 19 },
-  warn: { fontFamily: F.body, fontSize: 13, color: C.warnInk, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 12, padding: 12, lineHeight: 19, marginTop: 4 },
+  warn: { fontFamily: F.body, fontSize: 13, color: C.warnInk, backgroundColor: C.warnBg, borderWidth: 1, borderColor: C.warnLine, borderRadius: 12, padding: 12, lineHeight: 19, marginTop: 4 },
+  habitGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
+  habitChip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 48, paddingHorizontal: 14, borderRadius: 14, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.line },
+  habitChipOn: { backgroundColor: C.fill, borderColor: C.fill },
+  habitChipTxt: { fontFamily: F.bodySemi, fontSize: 14.5, color: C.ink, maxWidth: 220 },
   pace: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.line, borderRadius: 16, padding: 16, marginTop: 10 },
-  paceOn: { borderColor: C.plum2, backgroundColor: '#F7F3FB' },
+  paceOn: { borderColor: C.plum2, backgroundColor: C.paceOn },
   paceName: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
   paceMeta: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 3 },
   rec: { backgroundColor: C.mintBg, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
@@ -280,10 +310,10 @@ const s = StyleSheet.create({
   whyBox: { marginTop: 10, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14 },
   whyBody: { fontFamily: F.body, fontSize: 14, color: C.ink, lineHeight: 20 },
   lockBadge: { width: 72, height: 72, borderRadius: 20, backgroundColor: C.panel, alignItems: 'center', justifyContent: 'center' },
-  notice: { flexDirection: 'row', gap: 10, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 14, padding: 14, marginBottom: 14 },
+  notice: { flexDirection: 'row', gap: 10, backgroundColor: C.warnBg, borderWidth: 1, borderColor: C.warnLine, borderRadius: 14, padding: 14, marginBottom: 14 },
   noticeTxt: { flex: 1, fontFamily: F.body, fontSize: 14, color: C.warnInk, lineHeight: 20 },
   linkBtn: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
   footer: { paddingTop: 8 },
   secondary: { paddingVertical: 14, alignItems: 'center' },
   secondaryTxt: { fontFamily: F.bodyBold, fontSize: 14.5, color: C.ink },
-});
+}));

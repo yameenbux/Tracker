@@ -22,6 +22,7 @@ export function cleanSessionLog(obj: unknown): SessionLog {
     const src = (obj as any)[k];
     if (!src || typeof src !== 'object') continue;
     for (const name of Object.keys(src).slice(0, 40)) {
+      if (name === '__proto__' || name === 'constructor' || name === 'prototype') continue;
       const kg = numOrNull(src[name]?.kg);
       if (kg != null && kg >= 0 && kg <= 500) day[name.slice(0, 60)] = { kg: Math.round(kg * 100) / 100, done: src[name]?.done === true };   // keep what was typed (lb entries too)
     }

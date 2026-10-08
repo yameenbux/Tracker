@@ -1,11 +1,13 @@
 import { buildExportText, parseBackup } from './core/backup';
+import { isVault, MIN_PASSWORD, open, seal } from './core/vault';
+import { secureRandom } from './secureRandom';
 import { toCsv } from './core/csv';
 import { dateKey, parseKey, startOfDay } from './core/dates';
 import { DEFAULT_PREFS } from './core/storage';
-import { confirm, notify } from './dialogs';
+import { askPassword, choose, confirm, notify } from './dialogs';
 import { clearCache, pickBackupText, shareBackup } from './io';
 import { deleteAllPhotos, deletePhoto } from './photos';
-import { applyReminder } from './reminders';
+import { applyDoseReminders, applyReminder } from './reminders';
 import { eraseStorage, latestRescue, Tracker } from './store';
 
 type Show = (m: { message: string; action?: string; onAction?: () => void }) => void;
@@ -16,18 +18,25 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
 
   const restore = async () => {
     try {
-      const text = await pickBackupText();
+      let text = await pickBackupText();
       if (text == null) return;
+      if (isVault(text)) {
+        const pw = await askPassword('Backup password', 'This backup is protected. Enter the password it was saved with.');
+        if (pw == null) return;
+        show({ message: 'Unlocking backup…' });
+        await new Promise(r => setTimeout(r, 60));
+        text = open(text, pw);                                       // throws a readable message on a wrong password
+      }
       const b = parseBackup(text, state.settings);
       const nW = Object.keys(b.weights).length, nH = Object.keys(b.habits).length;
       const ok = await confirm('Restore this backup?',
-        `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Plumb.`, 'Restore');
+        `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Tidemark.`, 'Restore');
       if (!ok) return;
       await t.snapshot('before_restore');
       const before = state;
       // Photos aren't in backups, so the ones already on this phone are kept
-      t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, measurements: b.measurements, photos: state.photos,
-        intake: b.intake, lifts: b.lifts, unit: b.unit ?? state.unit });
+      t.replaceAll({ settings: b.settings, weights: b.weights, entries: b.entries, habits: b.habits, measurements: b.measurements, photos: state.photos,
+        intake: b.intake, lifts: b.lifts, doses: b.doses ?? {}, unit: b.unit ?? state.unit });
       done();
       show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo', onAction: () => t.replaceAll(before) });
     } catch (e) {
@@ -36,14 +45,28 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   };
 
   const exportCsv = async () => {
-    try { await shareBackup('plumb-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
+    try { await shareBackup('tidemark-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
     catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
 
   const exportData = async () => {
     if (!state.settings) return;
+    // A backup leaves the phone, so offer to lock it with a password first
+    const how = await choose('Protect this backup?', 'A password keeps the file private wherever it ends up. You’ll need it to restore, and it can’t be recovered if you forget it.',
+      [{ id: 'password', label: 'Add a password' }, { id: 'plain', label: 'No password' }]);
+    if (!how) return;
+    let text = buildExportText({ ...state, settings: state.settings });
+    if (how === 'password') {
+      const pw = await askPassword('Choose a password', `At least ${MIN_PASSWORD} characters.`);
+      if (pw == null) return;
+      if (pw.length < MIN_PASSWORD) { notify('Password too short', `Use at least ${MIN_PASSWORD} characters.`); return; }
+      if ((await askPassword('Type it again', 'To make sure there’s no typo.')) !== pw) { notify('Passwords didn’t match', 'Nothing was exported. Try again.'); return; }
+      show({ message: 'Locking your backup…' });
+      await new Promise(r => setTimeout(r, 60));                   // let the message paint before the (deliberately slow) key step
+      text = seal(text, pw, secureRandom);
+    }
     try {
-      await shareBackup('plumb-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings }));
+      await shareBackup('tidemark-' + dateKey(new Date()) + (how === 'password' ? '-protected' : '') + '.txt', text);
       // The share sheet closes the same way whether the file was saved or the sheet was cancelled, so ask
       if (await confirm('Did you save the backup?', 'Only say yes if the file went somewhere safe: Files, iCloud Drive, email or a computer.', 'Yes, it’s saved', false)) {
         t.setPrefs({ lastBackup: new Date().toISOString() });
@@ -56,7 +79,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   const exportRescued = async () => {
     const raw = await latestRescue();
     if (!raw) { notify('Nothing to export', 'There is no saved copy on this phone.'); return; }
-    try { await shareBackup('plumb-rescued-' + dateKey(new Date()) + '.txt', raw); }
+    try { await shareBackup('tidemark-rescued-' + dateKey(new Date()) + '.txt', raw); }
     catch { notify('Export failed', 'Nothing was shared. Try again.'); }
   };
 
@@ -71,13 +94,15 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
   };
 
   const eraseAll = async () => {
-    if (!(await confirm('Erase everything?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
-    if (!(await confirm('Are you sure?', 'Plumb will start again from setup.', 'Erase everything'))) return;
+    if (!(await confirm('Delete all your data?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
+    if (!(await confirm('Are you sure?', 'Tidemark will start again from setup.', 'Delete everything'))) return;
+    t.discardPending();   // a save still waiting must not bring the old data back after erasing
     if (!(await eraseStorage())) { notify('Couldn’t erase', 'Nothing was deleted. Try again.'); return; }
     for (const day of Object.values(state.photos)) for (const ref of Object.values(day)) if (ref) deletePhoto(ref);
     deleteAllPhotos();
     clearCache();                                  // exported files, picked backups, photo-picker leftovers
     await applyReminder({ ...prefs.reminder, on: false });
+    await applyDoseReminders(null, {});
     done();
     t.replaceAll({ settings: null, weights: {}, habits: {}, unit: state.unit, measurements: {}, photos: {}, intake: {}, lifts: {} });
     t.setPrefs({ ...DEFAULT_PREFS });

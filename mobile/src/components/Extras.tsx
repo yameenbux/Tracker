@@ -1,5 +1,7 @@
+import { EmptyState } from './States';
+import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { estimateExpenditure, intakeForPace, CAL_MIN_DAYS, CAL_WINDOW } from '../core/calories';
 import { addDays, dateKey, DAY_ABBR, longDate, parseKey, startOfDay } from '../core/dates';
 import { habitInsight, INSIGHT_MIN_WEEKS, MILESTONE_TEXT, weeksOfData } from '../core/insights';
@@ -8,10 +10,10 @@ import { exerciseName, lastLift, suggestNext } from '../core/progression';
 import { trendSeries, TrendPoint } from '../core/trend';
 import { KG_PER_LB, num, showChange, showAmount } from '../core/units';
 import type { HabitLog, Session, Settings, TrackerState, Unit, Weights } from '../core/types';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { fieldStyles } from './Fields';
 import { Icon } from './Icons';
-import { DONE_ID } from './KeyboardDone';
+import { DoneInput } from './KeyboardDone';
 import { Sheet } from './Sheet';
 import { Button, Card } from './ui';
 
@@ -41,6 +43,7 @@ export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }
 /** Habit ↔ trend comparisons, only once there is enough data, worded as observations. */
 // Memoised: the habit/trend comparison walks every week for every habit
 export const PatternsCard = memo(function PatternsCard({ settings, weights, habits, unit, trend }: { settings: Settings; weights: Weights; habits: HabitLog; unit: Unit; trend?: TrendPoint[]; today?: string }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const series = trend ?? trendSeries(weightSeries(settings.plan, weights));
   const have = weeksOfData(settings.plan, series);
   if (!settings.habits.length) return null;
@@ -54,10 +57,10 @@ export const PatternsCard = memo(function PatternsCard({ settings, weights, habi
   const found = settings.habits.map(h => ({ h, ins: habitInsight(settings.plan, series, habits, h.id) })).filter(x => x.ins);
   return (
     <Card title="Patterns">
-      {found.length === 0 && <Text style={s.muted}>No clear pattern yet. Each habit needs at least 3 weeks done 5+ days and 3 weeks not.</Text>}
+      {found.length === 0 && <EmptyState compact icon="mind" title="No clear pattern yet" body="Each habit needs at least 3 weeks done 5+ days and 3 weeks not." />}
       {found.map(({ h, ins }) => (
         <View key={h.id} style={s.pat}>
-          <Text style={s.patTitle}>{h.icon} {h.name}</Text>
+          <View style={s.patHead}><Icon name={habitIcon(h.icon, h.name)} size={16} color={C.plum2} /><Text style={s.patTitle}>{h.name}</Text></View>
           <Text style={s.patTxt}>
             Weeks with {ins!.threshold}+ days: <Text style={s.b}>{change(ins!.withRate, unit)}/week</Text> ({ins!.withWeeks} weeks).{'\n'}
             Other weeks: <Text style={s.b}>{change(ins!.withoutRate, unit)}/week</Text> ({ins!.withoutWeeks} weeks).
@@ -106,11 +109,11 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
         <View style={s.dayTabs} accessibilityRole="tablist" accessibilityLabel="Day">
           {(['today', 'yesterday'] as const).map(w => (
             <Pressable key={w} onPress={() => { if (w !== which && !invalid) { commit(); setWhich(w); } }} hitSlop={4} style={[s.dayTab, which === w && s.dayTabOn]} accessibilityRole="tab" accessibilityState={{ selected: which === w }}>
-              <Text style={[s.dayTabTxt, which === w && { color: '#fff' }]}>{w === 'today' ? 'Today' : 'Yesterday'}</Text>
+              <Text style={[s.dayTabTxt, which === w && { color: C.onFill }]}>{w === 'today' ? 'Today' : 'Yesterday'}</Text>
             </Pressable>
           ))}
         </View>
-        <TextInput key={day} value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal" inputAccessoryViewID={DONE_ID}
+        <DoneInput key={day} value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal"
           returnKeyType="done" maxFontSizeMultiplier={1.4}
           placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.calIn]} accessibilityLabel={`Calories eaten, ${which}`} />
       </View>
@@ -123,9 +126,9 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
       <Text style={s.line}>
         {est
           ? <>From what you ate and how your trend moved over {est.window} days, you burn about <Text style={s.b}>{est.tdee.toLocaleString()} kcal a day</Text>. Your plan’s pace means eating around <Text style={s.b}>{intakeForPace(est.tdee, pace).toLocaleString()} kcal</Text>.</>
-          : <>Log {CAL_MIN_DAYS} of the last {CAL_WINDOW} days and Plumb estimates what you really burn, from your own data rather than a formula.</>}
+          : <>Log {CAL_MIN_DAYS} of the last {CAL_WINDOW} days and Tidemark estimates what you really burn, from your own data rather than a formula.</>}
       </Text>
-      {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low.</Text>}
+      {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low. An estimate, not medical advice: talk to a GP or dietitian before big changes.</Text>}
     </Card>
   );
 }
@@ -177,12 +180,12 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
                 {sug ? (sug.reason === 'increase' ? ` · try ${toU(sug.kg)} ${L}` : ' · repeat until every rep is done') : ''}
               </Text>
             </View>
-            <TextInput value={rows[n].txt} onChangeText={v => setRows(r => ({ ...r, [n]: { ...r[n], txt: v } }))} keyboardType="decimal-pad" inputAccessoryViewID={DONE_ID}
+            <DoneInput value={rows[n].txt} onChangeText={v => setRows(r => ({ ...r, [n]: { ...r[n], txt: v } }))} keyboardType="decimal-pad"
               placeholder={L} placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.liftIn, bad.includes(n) && { borderColor: C.danger }]}
               maxFontSizeMultiplier={1.4} accessibilityLabel={`${n} weight in ${unit === 'kg' ? 'kilograms' : 'pounds'}`} />
             <Pressable onPress={() => setRows(r => ({ ...r, [n]: { ...r[n], done: !r[n].done } }))} style={[s.liftDone, rows[n].done && s.liftDoneOn]}
               accessibilityRole="checkbox" accessibilityState={{ checked: rows[n].done }} accessibilityLabel={`${n}: all reps done`}>
-              <Icon name="check" size={18} color={rows[n].done ? '#fff' : C.inkSoft} strokeWidth={2.6} />
+              <Icon name="check" size={18} color={rows[n].done ? C.onAccent : C.inkSoft} strokeWidth={2.6} />
             </Pressable>
           </View>
         );
@@ -192,22 +195,23 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
   );
 }
 
-const s = StyleSheet.create({
-  mile: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: C.mintBg, borderWidth: 1, borderColor: '#BFEBD8', borderRadius: 16, padding: 14, marginBottom: 16 },
-  mileIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+const s = themed(() => StyleSheet.create({
+  mile: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: C.mintBg, borderWidth: 1, borderColor: C.mintLine, borderRadius: 16, padding: 14, marginBottom: 16 },
+  mileIcon: { width: 34, height: 34, borderRadius: 10, backgroundColor: C.raised, alignItems: 'center', justifyContent: 'center' },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, marginTop: 8, lineHeight: 19, paddingHorizontal: 4 },
   mileTitle: { fontFamily: F.display, fontSize: 16, color: C.ink },
   mileTxt: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19, marginTop: 3 },
   muted: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, lineHeight: 18, paddingHorizontal: 4 },
   pat: { paddingHorizontal: 4, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
-  patTitle: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink, marginBottom: 3 },
+  patHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
+  patTitle: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink },
   patTxt: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19 },
   b: { fontFamily: F.bodyBold, color: C.ink },
   foot: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 16, paddingHorizontal: 4, marginTop: 8 },
   calRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, marginBottom: 8 },
   dayTabs: { flexDirection: 'row', backgroundColor: C.chip, borderRadius: 999, padding: 3 },
   dayTab: { minHeight: 38, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999 },
-  dayTabOn: { backgroundColor: C.ink },
+  dayTabOn: { backgroundColor: C.fill },
   dayTabTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   calIn: { flex: 1, minWidth: 0, fontFamily: F.displaySemi, textAlign: 'right' },
   calStats: { flexDirection: 'row', gap: 10, paddingHorizontal: 4, marginTop: 10 },
@@ -221,4 +225,4 @@ const s = StyleSheet.create({
   liftIn: { width: 72, textAlign: 'right', fontFamily: F.displaySemi },
   liftDone: { width: 44, height: 44, borderRadius: 9, borderWidth: 1.5, borderColor: C.control, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
   liftDoneOn: { backgroundColor: C.mintInk, borderColor: C.mintInk },
-});
+}));

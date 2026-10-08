@@ -1,7 +1,8 @@
-# Generates the Plumb brand marks as SVG.
-# The mark: daily weigh-ins scatter, the trend eases down and settles on the goal line, and today is marked where it lands.
+# Generates the Tidemark brand marks as SVG.
+# The mark (direction A, "calming waves"): daily weigh-ins are the waves; they calm, and what's left is the trend, one
+# flat line, with today marked where it lands. Read the trend, not the waves.
 # Usage: python3 make_logo.py <out-dir>   (needs `pip install fonttools` and mobile/node_modules for the font)
-import math, os, sys
+import os, sys
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 
@@ -11,23 +12,16 @@ FONT = os.path.join(HERE, '../mobile/node_modules/@expo-google-fonts/space-grote
 PLUM1, CORAL, AMBER, PAPER = '#2A1E45', '#FF6B5E', '#FFA24B', '#FBF7F3'
 
 # ---- geometry (1024 grid) ----
-P0, C1, C2, P3 = (204, 318), (352, 600), (548, 706), (806, 706)   # trend: steep at first, settles on the goal
-GOAL_Y = 706
-TREND = f'M{P0[0]} {P0[1]} C{C1[0]} {C1[1]} {C2[0]} {C2[1]} {P3[0]} {P3[1]}'
+X0, X1 = 210, 814                  # waves span
+WAVES = ((318, 120, 0.34), (500, 60, 0.62))   # (baseline y, amplitude, opacity): the second is calmer and stronger
+LINE_Y, LINE_END, TODAY = 690, 760, (788, 690)
+STROKE, LINE_STROKE, TODAY_R = 76, 92, 72   # weights tuned so the mark still reads at 29 px
 
-def bez(t):
-    return tuple((1 - t) ** 3 * P0[i] + 3 * (1 - t) ** 2 * t * C1[i] + 3 * (1 - t) * t ** 2 * C2[i] + t ** 3 * P3[i] for i in (0, 1))
-
-def tangent(t):
-    a, b = bez(max(0, t - 0.01)), bez(min(1, t + 0.01))
-    dx, dy = b[0] - a[0], b[1] - a[1]; n = math.hypot(dx, dy)
-    return dx / n, dy / n
-
-# four weigh-ins, alternating either side of the trend
-DOTS = []
-for t, side in ((0.16, -1), (0.36, 1), (0.56, -1), (0.76, 1)):
-    (x, y), (tx, ty) = bez(t), tangent(t)
-    DOTS.append((round(x - ty * 92 * side, 1), round(y + tx * 92 * side, 1)))
+def wave(y, amp, n=3):
+    w = (X1 - X0) / n
+    d = f'M{X0} {y} Q {X0 + w / 2:.1f} {y - amp} {X0 + w:.1f} {y}'
+    for i in range(2, n + 1): d += f' T {X0 + i * w:.1f} {y}'
+    return d
 
 def defs(u):
     return (f'<defs><linearGradient id="bg{u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#352657"/>'
@@ -36,18 +30,22 @@ def defs(u):
             f'<stop offset="1" stop-color="{CORAL}" stop-opacity="0"/></radialGradient>'
             f'<radialGradient id="sheen{u}" cx="0.3" cy="0" r="0.8"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.08"/>'
             f'<stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>'
-            f'<linearGradient id="tr{u}" gradientUnits="userSpaceOnUse" x1="{P0[0]}" y1="{P0[1]}" x2="{P3[0]}" y2="{P3[1]}">'
+            f'<linearGradient id="tr{u}" gradientUnits="userSpaceOnUse" x1="{X0}" y1="{LINE_Y}" x2="{TODAY[0]}" y2="{LINE_Y}">'
             f'<stop offset="0" stop-color="{AMBER}"/><stop offset="1" stop-color="{CORAL}"/></linearGradient></defs>')
 
 def mark(u, mono=None):
     ink = mono or PAPER
-    goal = (f'<path d="M196 {GOAL_Y} H828" stroke="{ink}" stroke-opacity="{0.5 if mono else 0.22}" stroke-width="18" '
-            f'stroke-linecap="round" stroke-dasharray="0 46"/>')
-    dots = ''.join(f'<circle cx="{x}" cy="{y}" r="34" fill="{ink}" opacity="{0.55 if mono else 0.42}"/>' for x, y in DOTS)
-    trend = f'<path d="{TREND}" fill="none" stroke="{mono or f"url(#tr{u})"}" stroke-width="84" stroke-linecap="round"/>'
-    today = (f'<circle cx="{P3[0]}" cy="{P3[1]}" r="70" fill="{mono}"/>' if mono else
-             f'<circle cx="{P3[0]}" cy="{P3[1]}" r="70" fill="{PAPER}"/><circle cx="{P3[0]}" cy="{P3[1]}" r="28" fill="{CORAL}"/>')
-    return goal + dots + trend + today
+    waves = ''.join(f'<path d="{wave(y, amp)}" fill="none" stroke="{ink}" stroke-opacity="{min(1, op + 0.12) if mono else op}" '
+                    f'stroke-width="{STROKE}" stroke-linecap="round"/>' for y, amp, op in WAVES)
+    # in one colour the line stops short of the ring (a gap instead of the paper halo), or it would fill the ring's hole
+    end = TODAY[0] - TODAY_R - LINE_STROKE // 2 - 26 if mono else LINE_END
+    line = (f'<path d="M{X0} {LINE_Y} H{end}" stroke="{mono or f"url(#tr{u})"}" stroke-width="{LINE_STROKE}" '
+            f'stroke-linecap="round"/>')
+    cx, cy = TODAY
+    # One colour: today becomes a ring, so it still stands apart from the line it sits on
+    today = (f'<circle cx="{cx}" cy="{cy}" r="{TODAY_R - 21}" fill="none" stroke="{mono}" stroke-width="42"/>' if mono else
+             f'<circle cx="{cx}" cy="{cy}" r="{TODAY_R}" fill="{PAPER}"/><circle cx="{cx}" cy="{cy}" r="{round(TODAY_R * 0.41)}" fill="{CORAL}"/>')
+    return waves + line + today
 
 def svg(inner, w=1024, h=1024, vb='0 0 1024 1024'):
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="{vb}">{inner}</svg>'
@@ -62,13 +60,13 @@ def mark_only(u, scale=1.0, mono=None):
     t = f'translate({512 - 512 * scale} {512 - 512 * scale}) scale({scale})'
     return svg(defs(u) + f'<g transform="{t}">{mark(u, mono)}</g>')
 
-# ---- wordmark: "plumb" in Space Grotesk Bold, outlined so it needs no font ----
+# ---- wordmark: "tidemark" in Space Grotesk Bold, outlined so it needs no font ----
 font = TTFont(FONT); gs = font.getGlyphSet(); cmap = font.getBestCmap()
 asc, desc = font['hhea'].ascent, -font['hhea'].descent
 
 def word(ink):
     x, parts = 0, []
-    for ch in 'plumb':
+    for ch in 'tidemark':
         g = gs[cmap[ord(ch)]]; pen = SVGPathPen(gs); g.draw(pen)
         parts.append(f'<path transform="translate({x} {asc}) scale(1 -1)" d="{pen.getCommands()}" fill="{ink}"/>')
         x += g.width
@@ -91,13 +89,13 @@ def wordmark(ink, height=200):
     return svg(w_paths, f'{height * vb_w / vb_h:.0f}', height, f'{-pad} {-pad} {vb_w} {vb_h}')
 
 files = {
-    'plumb-app-icon.svg': icon('a'),
-    'plumb-app-icon-rounded.svg': icon('b', rounded=True),
-    'plumb-mark.svg': mark_only('c'),
-    'plumb-mark-mono.svg': mark_only('d', mono='#FFFFFF'),
-    'plumb-wordmark.svg': wordmark(PLUM1),
-    'plumb-lockup.svg': lockup('e', PLUM1),
-    'plumb-lockup-on-plum.svg': lockup('f', PAPER, page=PLUM1),
+    'tidemark-app-icon.svg': icon('a'),
+    'tidemark-app-icon-rounded.svg': icon('b', rounded=True),
+    'tidemark-mark.svg': mark_only('c'),
+    'tidemark-mark-mono.svg': mark_only('d', mono='#FFFFFF'),
+    'tidemark-wordmark.svg': wordmark(PLUM1),
+    'tidemark-lockup.svg': lockup('e', PLUM1),
+    'tidemark-lockup-on-plum.svg': lockup('f', PAPER, page=PLUM1),
 }
 os.makedirs(OUT, exist_ok=True)
 for name, s in files.items():
@@ -117,4 +115,4 @@ assets = {
 }
 for name, s in assets.items():
     open(os.path.join(A, name), 'w').write(s)
-print('wrote', len(files), 'brand files and', len(assets), 'asset sources; dots', DOTS)
+print('wrote', len(files), 'brand files and', len(assets), 'asset sources')

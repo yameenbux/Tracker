@@ -1,4 +1,6 @@
 // Backup format is shared with the web app (index.html), so a .txt exported from either one restores in the other.
+import { cleanEntries, dailyWeights, WeighIn } from './entries';
+import { cleanDoses } from './medication';
 import { dateKey, longDate, shortDate } from './dates';
 import { legacySettings, LEGACY_START } from './legacy';
 import { cleanMeasurements, MEASURES } from './body';
@@ -6,11 +8,11 @@ import { cleanIntake } from './calories';
 import { cleanSessionLog } from './progression';
 import { cleanHabits, cleanWeights, latestWeight, mergeLegacyActuals, normalizeSettings, weekDate } from './plan';
 import { fmt, showWeight, toStLb } from './units';
-import type { HabitLog, Measurements, Settings, TrackerState, Unit, Weights } from './types';
+import type { DoseLog, HabitLog, Measurements, Settings, TrackerState, Unit, Weights } from './types';
 
 /** What a backup holds. Photos are not included: they stay on the device (they'd make the file huge). */
 export interface Restored { settings: Settings; weights: Weights; habits: HabitLog; measurements: Measurements;
-  intake: TrackerState['intake']; lifts: TrackerState['lifts']; unit?: Unit }
+  intake: TrackerState['intake']; lifts: TrackerState['lifts']; unit?: Unit; entries?: WeighIn[]; doses?: DoseLog }
 
 /**
  * Accepts a .txt export (reads the JSON after the "raw backup" line) or a bare JSON file.
@@ -31,17 +33,20 @@ export function parseBackup(text: string, current: Settings | null): Restored {
   if (raw.version === 2) {
     const settings = normalizeSettings(raw.settings);
     if (!settings) throw new Error('The plan in that backup is incomplete.');
-    return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), measurements: cleanMeasurements(raw.measurements),
-             intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit };
+    // Newer backups also carry timestamped weigh-ins; when they do, the day map is rebuilt from them
+    const entries = cleanEntries(raw.entries) ?? undefined;
+    return { settings, weights: entries ? dailyWeights(entries) : cleanWeights(raw.weights), habits: cleanHabits(raw.habits),
+             measurements: cleanMeasurements(raw.measurements), intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit,
+             ...(entries ? { entries } : {}), ...(raw.doses ? { doses: cleanDoses(raw.doses) } : {}) };
   }
   // Old web-app exports: identified by their weight fields, never by habits alone
   if (raw.actuals || raw.dailyW) {
     const weights = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
     const habits = cleanHabits(raw.habits);
     if (!Object.keys(weights).length && !Object.keys(habits).length) throw new Error('That backup has no weigh-ins or habits in it.');
-    return { settings: current ?? legacySettings(), weights, habits, measurements: {}, intake: {}, lifts: {}, unit };
+    return { settings: current ?? legacySettings(weights), weights, habits, measurements: {}, intake: {}, lifts: {}, unit };
   }
-  throw new Error("That file doesn't look like a Plumb backup.");
+  throw new Error("That file doesn't look like a Tidemark backup.");
 }
 
 const pad = (s: unknown, n: number) => { const t = String(s); return t + ' '.repeat(Math.max(0, n - t.length)); };
@@ -50,7 +55,7 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   const { settings, weights, habits, unit, measurements, intake, lifts } = state;
   const plan = settings.plan;
   const L: string[] = [];
-  L.push('PLUMB EXPORT');
+  L.push('TIDEMARK EXPORT');
   L.push('Generated: ' + now.toLocaleString());
   L.push('');
   // kg first (the tables below are in kg), then the same weight in the unit you use
@@ -92,6 +97,6 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   L.push('Progress photos are kept on your phone and are not included in this file.');
   L.push('');
   L.push('--- raw backup (keep this to restore) ---');
-  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, intake, lifts, unit }));
+  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, intake, lifts, unit, entries: state.entries, doses: state.doses }));
   return L.join('\n');
 }

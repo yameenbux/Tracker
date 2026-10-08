@@ -3,65 +3,80 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plumb · Privacy policy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Hanken+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+<title>Tidemark · Privacy policy</title>
+<meta name="color-scheme" content="light dark">
 <style>
-  :root { --bg: #FBF7F3; --ink: #241B33; --soft: #6E6577; --line: #EFE6DC; --accent: #C93A26; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 'Hanken Grotesk', system-ui, sans-serif; }
+  /* System fonts only: this page loads nothing from anyone else, so reading it tells no third party you were here */
+  :root { --bg: #FBF7F3; --ink: #241B33; --soft: #6E6577; --line: #EFE6DC; --accent: #C93A26; --box: #FFFFFF; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121019; --ink: #F2EEF6; --soft: #ADA5B8; --line: #2E2938; --accent: #FF8D7D; --box: #1C1925; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 -apple-system, system-ui, 'Segoe UI', sans-serif; }
   main { max-width: 680px; margin: 0 auto; padding: 48px 20px 72px; }
-  h1 { font: 700 36px/1.15 'Space Grotesk', sans-serif; letter-spacing: -0.5px; margin: 8px 0 4px; }
-  h2 { font: 600 20px/1.3 'Space Grotesk', sans-serif; margin: 32px 0 6px; }
+  h1 { font: 700 36px/1.15 -apple-system, system-ui, sans-serif; letter-spacing: -0.5px; margin: 8px 0 4px; }
+  h2 { font: 600 20px/1.3 -apple-system, system-ui, sans-serif; margin: 32px 0 6px; }
   .eyebrow { font-weight: 600; font-size: 13px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--accent); }
   .muted { color: var(--soft); }
-  .box { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-top: 20px; }
+  .box { background: var(--box); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-top: 20px; }
   a { color: var(--accent); }
   li { margin: 6px 0; }
 </style>
 </head>
 <body>
 <main>
-  <div class="eyebrow">Plumb</div>
+  <div class="eyebrow">Tidemark</div>
   <h1>Privacy policy</h1>
-  <p class="muted">Last updated 7 October 2026</p>
+  <p class="muted">Last updated 8 October 2026</p>
 
   <div class="box">
-    <strong>The short version:</strong> Plumb doesn’t collect, send or sell any of your data. There is no account and no server.
+    <strong>The short version:</strong> Tidemark doesn’t collect, send or sell any of your data. There is no account and no server.
     Everything you enter stays on your iPhone unless you choose to export it.
   </div>
 
-  <h2>What Plumb stores</h2>
-  <p>Your plan, weigh-ins, habit ticks, measurements, calorie numbers, session weights and progress photos. All of it is stored
-     only on your device, inside Plumb’s private storage. Progress photos are kept inside the app and are never added to your photo library.</p>
+  <h2>What Tidemark stores</h2>
+  <p>Your plan, weigh-ins, habit ticks, measurements, calorie numbers, session weights, progress photos and, if you use it, the medication you track and the doses you mark as taken. All of it is stored
+     only on your device, inside Tidemark’s private storage. Progress photos are kept inside the app and are never added to your photo library.</p>
 
-  <h2>What Plumb sends</h2>
-  <p>Nothing. Plumb has no analytics, no advertising, no tracking and no third-party SDKs that collect data. It doesn’t need an internet connection to work.</p>
+  <h2>What Tidemark sends</h2>
+  <p>Nothing. Tidemark has no analytics, no advertising, no tracking and no third-party SDKs that collect data. It doesn’t need an internet connection to work.</p>
 
   <h2>Permissions</h2>
   <ul>
-    <li><strong>Face ID / Touch ID</strong> (optional) locks the app. The check is done by iOS; Plumb never sees your face or fingerprint data.</li>
-    <li><strong>Camera and photos</strong> (optional) are used only when you add a progress photo. The photo is copied into Plumb’s private storage.</li>
-    <li><strong>Notifications</strong> (optional) are used only for the daily weigh-in reminder, which is scheduled on your phone.</li>
+    <li><strong>Face ID / Touch ID</strong> (optional) locks the app. The check is done by iOS; Tidemark never sees your face or fingerprint data.</li>
+    <li><strong>Camera and photos</strong> (optional) are used only when you add a progress photo. The photo is copied into Tidemark’s private storage.</li>
+    <li><strong>Notifications</strong> (optional) are used only for the daily weigh-in reminder and, if you turn it on, a dose-day reminder. Both are scheduled on your phone.</li>
   </ul>
 
   <h2>Backups and exports</h2>
-  <p>When you tap Export, Plumb creates a file and opens the iOS share sheet. Where that file goes (Files, iCloud Drive, email) is your choice,
+  <p>When you tap Export, Tidemark creates a file and opens the iOS share sheet. Where that file goes (Files, iCloud Drive, email) is your choice,
      and it is then handled by that service. Photos are not included in backups.</p>
 
+  <h2>How your data is protected</h2>
+  <ul>
+    <li>Tidemark’s storage uses iOS’s strongest file protection: while your iPhone is locked, its data is encrypted and can’t be read, even by Tidemark.</li>
+    <li>With the optional lock on, Tidemark asks for Face ID (or your passcode) every time you come back to it.</li>
+    <li>The app switcher shows a blank Tidemark screen, never your numbers.</li>
+    <li>Reminders never show a weight, a medication name or any other detail on your lock screen, just a nudge.</li>
+    <li>Backups can be locked with a password (XChaCha20-Poly1305 encryption, key derived with scrypt). Without the password the file can't be read, by anyone, including us. A backup saved without a password, and the CSV spreadsheet, are plain text, so keep those somewhere private. Export files are deleted from Tidemark as soon as the share sheet closes.</li>
+  </ul>
+
   <h2>Device backups</h2>
-  <p>If you use iCloud Backup or back up your iPhone to a computer, iOS includes Plumb’s data in that backup, as it does for every app.
-     This is controlled by your iPhone settings, not by Plumb.</p>
+  <p>If you use iCloud Backup or back up your iPhone to a computer, iOS includes Tidemark’s data in that backup, as it does for every app.
+     This is controlled by your iPhone settings, not by Tidemark.</p>
 
   <h2>Deleting your data</h2>
-  <p>Settings → Erase everything removes all of Plumb’s data and photos from your phone. Deleting the app also deletes it.</p>
+  <p>Tidemark has no account, so there is no account to delete: all your data is on your phone. Settings → Delete all my data removes all of it, photos included, immediately and permanently. Deleting the app also deletes it. Nothing is held anywhere else, so there is nothing for us to delete on a server.</p>
 
   <h2>Children</h2>
-  <p>Plumb isn’t directed at children under 13.</p>
+  <p>Tidemark isn’t directed at children under 13.</p>
 
   <h2>Changes and contact</h2>
-  <p>If this policy changes, the new version will be posted on this page with a new date. Questions:
-     <a href="https://github.com/yameenbux/Tracker/issues">open an issue on GitHub</a>.</p>
+  <p>If this policy changes, the new version will be posted on this page with a new date.</p>
+  <p>Questions, support or a privacy request: email <a href="mailto:yameen@ysbdesigns.uk">yameen@ysbdesigns.uk</a>.</p>
+
+  <h2>Not medical advice</h2>
+  <p>Tidemark’s targets, trends and calorie estimates are general guidance worked out from the numbers you enter. They aren’t medical advice;
+     talk to a GP or dietitian before big changes, especially if you’re pregnant or have a health condition.</p>
 </main>
 </body>
 </html>

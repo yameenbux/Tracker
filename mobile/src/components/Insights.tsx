@@ -1,15 +1,17 @@
+import { Tap } from './Motion';
+import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { DAY_ABBR, dateKey, parseKey } from '../core/dates';
 import { consistency } from '../core/insights';
-import { toggleHabit } from '../core/plan';
+import { toggleHabit, extent } from '../core/plan';
 import { changeTable, habitGrid } from '../core/summary';
 import type { TrendPoint } from '../core/trend';
 import { showChange } from '../core/units';
 import type { HabitLog, Settings, Unit } from '../core/types';
 import { tick } from '../feel';
-import { C, F } from '../theme';
+import { C, F, themed, useScheme } from '../theme';
 import { Icon, IconName } from './Icons';
 import { Card } from './ui';
 
@@ -18,7 +20,7 @@ export function Sparkline({ points, width = 120, height = 34, color = C.graphCor
   if (points.length < 2) return <View style={{ height }} />;
   const t0 = points[0].d.getTime(), t1 = points[points.length - 1].d.getTime();
   const vals = points.map(p => p.trend);
-  const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(hi - lo, 0.3);
+  const [lo, hi] = extent(vals), span = Math.max(hi - lo, 0.3);
   const x = (p: TrendPoint) => 3 + (width - 6) * (t1 === t0 ? 1 : (p.d.getTime() - t0) / (t1 - t0));
   const y = (v: number) => 3 + (height - 6) * (1 - (v - lo) / span);
   const d = points.map((p, i) => `${i ? 'L' : 'M'}${x(p).toFixed(1)},${y(p.trend).toFixed(1)}`).join(' ');
@@ -38,7 +40,7 @@ export function Tile({ icon, label, value, valueColor, sub, spark, children, onP
 }) {
   const [w, setW] = useState(0);
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.tile, pressed && { opacity: 0.7 }]}
+    <Tap onPress={onPress} style={s.tile}
       accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint={`Opens ${label}`}>
       <View style={s.tileHead}>
         <Icon name={icon} size={16} color={C.inkSoft} />
@@ -50,7 +52,7 @@ export function Tile({ icon, label, value, valueColor, sub, spark, children, onP
       <View style={{ marginTop: 'auto', paddingTop: 10 }} onLayout={e => setW(e.nativeEvent.layout.width)}>
         {spark && w > 0 ? <Sparkline points={spark} width={w} /> : children}
       </View>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -70,6 +72,7 @@ export function WeekDots({ log, ids, today = new Date() }: { log: HabitLog; ids:
 
 /** Trend change over 3, 7, 14 and 30 days (Bevel-style table). */
 export const ChangeTable = memo(function ChangeTable({ series, unit, d = -1 }: { series: TrendPoint[]; unit: Unit; today?: string; d?: -1 | 0 | 1 }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const rows = changeTable(series);
   return (
     <Card title="Trend change">
@@ -93,6 +96,7 @@ export const ChangeTable = memo(function ChangeTable({ series, unit, d = -1 }: {
 
 /** 30-day dot grid per habit (MacroFactor-style), with the consistency figure beside it. */
 export const HabitGrids = memo(function HabitGrids({ settings, habits }: { settings: Settings; habits: HabitLog; today?: string }) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   if (!settings.habits.length) return null;
   return (
     <Card title="Last 30 days">
@@ -103,7 +107,7 @@ export const HabitGrids = memo(function HabitGrids({ settings, habits }: { setti
         return (
           <View key={h.id} style={s.gridRow} accessible accessibilityLabel={`${h.name}: done ${m.done} of the last ${m.of} days, ${pct} percent`}>
             <View style={s.gridHead}>
-              <Text style={s.gridName} numberOfLines={1}>{h.icon}  {h.name}</Text>
+              <Icon name={habitIcon(h.icon, h.name)} size={16} color={C.plum2} /><Text style={s.gridName} numberOfLines={1}>{h.name}</Text>
               <Text style={s.gridPct}>{pct}%</Text>
             </View>
             <View style={s.grid}>
@@ -130,12 +134,12 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
         {settings.habits.map(h => {
           const on = !!habits[key]?.[h.id];
           return (
-            <Pressable key={h.id} onPress={() => { tick(); onChange(toggleHabit(habits, key, h.id)); }} style={[s.chip, on && s.chipOn]}
+            <Tap key={h.id} onPress={() => { tick(); onChange(toggleHabit(habits, key, h.id)); }} style={[s.chip, on && s.chipOn]}
               accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={h.name}>
-              <Text style={s.chipIcon}>{h.icon}</Text>
-              <Text style={[s.chipTxt, on && { color: C.ink }]} numberOfLines={1}>{h.name}</Text>
-              {on && <Icon name="check" size={16} color={C.ink} strokeWidth={2.6} />}
-            </Pressable>
+              <Icon name={habitIcon(h.icon, h.name)} size={18} color={on ? C.onDone : C.plum2} />
+              <Text style={[s.chipTxt, on && { color: C.onDone }]} numberOfLines={1}>{h.name}</Text>
+              {on && <Icon name="check" size={16} color={C.onDone} strokeWidth={2.6} />}
+            </Tap>
           );
         })}
       </View>
@@ -152,34 +156,33 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
   );
 }
 
-const s = StyleSheet.create({
+const s = themed(() => StyleSheet.create({
   tile: { flex: 1, minHeight: 150, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 },
   tileHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tileLabel: { flex: 1, fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   tileValue: { fontFamily: F.display, fontSize: 24, color: C.ink, marginTop: 10, letterSpacing: -0.3 },
   tileSub: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 2, lineHeight: 17 },
   dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.chip },
-  dotOn: { backgroundColor: C.coralInk },
-  dotSome: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.coralInk },
+  dotOn: { backgroundColor: C.done },
+  dotSome: { backgroundColor: C.raised, borderWidth: 2, borderColor: C.done },
   table: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
   cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
   cellK: { fontFamily: F.bodySemi, fontSize: 11, color: C.inkSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
   cellV: { fontFamily: F.display, fontSize: 15, marginTop: 4 },
   foot: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, lineHeight: 17, paddingHorizontal: 4, marginTop: 10 },
   gridRow: { paddingHorizontal: 4, paddingVertical: 8 },
-  gridHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  gridHead: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 8 },
   gridName: { flex: 1, fontFamily: F.bodySemi, fontSize: 14, color: C.ink },
   gridPct: { fontFamily: F.display, fontSize: 14, color: C.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
   cellDot: { width: '8.4%', aspectRatio: 1, borderRadius: 5, backgroundColor: C.chip },
-  cellOn: { backgroundColor: C.coralInk },
+  cellOn: { backgroundColor: C.done },
   cellOff: { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.line, borderStyle: 'dashed' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.control },
-  chipOn: { backgroundColor: C.coral, borderColor: C.coralInk },
-  chipIcon: { fontSize: 16 },
+  chipOn: { backgroundColor: C.done, borderColor: C.done },
   chipTxt: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink, maxWidth: 150 },
   sess: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginHorizontal: 2, padding: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },
   sessK: { fontFamily: F.bodySemi, fontSize: 11, color: C.plum2, textTransform: 'uppercase', letterSpacing: 0.8 },
   sessV: { fontFamily: F.displaySemi, fontSize: 15, color: C.ink, marginTop: 2 },
-});
+}));
