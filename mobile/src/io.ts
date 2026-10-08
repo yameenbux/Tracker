@@ -1,5 +1,5 @@
 import * as DocumentPicker from 'expo-document-picker';
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
@@ -16,8 +16,18 @@ export async function shareBackup(filename: string, text: string, kind: 'text' |
   const file = new File(Paths.cache, filename);
   file.create({ overwrite: true });
   file.write(text);
-  await Sharing.shareAsync(file.uri, { mimeType, UTI: kind === 'csv' ? 'public.comma-separated-values-text' : 'public.plain-text',
-                                       dialogTitle: kind === 'csv' ? 'Tracker data (CSV)' : 'Tracker backup' });
+  try {
+    await Sharing.shareAsync(file.uri, { mimeType, UTI: kind === 'csv' ? 'public.comma-separated-values-text' : 'public.plain-text',
+                                         dialogTitle: kind === 'csv' ? 'Plumb data (CSV)' : 'Plumb backup' });
+  } finally {
+    try { if (file.exists) file.delete(); } catch { /* the share target already has its copy */ }   // don't leave copies behind
+  }
+}
+
+/** Deletes everything in the app's cache folder: export files, picked backups, photo-picker temp files. */
+export function clearCache(): void {
+  if (Platform.OS === 'web') return;
+  try { for (const item of new Directory(Paths.cache).list()) { try { item.delete(); } catch { /* in use */ } } } catch { /* no cache */ }
 }
 
 /** Lets the user pick a backup file; resolves to its text, or null if they cancelled. */
@@ -26,5 +36,6 @@ export async function pickBackupText(): Promise<string | null> {
   if (res.canceled || !res.assets.length) return null;
   const asset = res.assets[0];
   if (Platform.OS === 'web' && asset.file) return asset.file.text();
-  return new File(asset.uri).text();
+  const f = new File(asset.uri);
+  try { return await f.text(); } finally { try { if (f.exists) f.delete(); } catch { /* temp copy */ } }
 }

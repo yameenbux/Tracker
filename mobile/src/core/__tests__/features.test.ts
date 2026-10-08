@@ -56,6 +56,15 @@ describe('re-plan from here', () => {
     expect(r.targets.length - 1 - 8).toBe(Math.ceil(6 / pace));       // 15 weeks of loss at the old pace
     expect(r.goalDate > plan.goalDate).toBe(true);
   });
+  test('after the plan has ended, the new line starts this week and the goal date is in the future', () => {
+    const late = new Date(2027, 2, 1);   // 8 weeks after the old goal date (week 25)
+    const r = replanFromHere(plan, 92, late)!;
+    expect(r.targets.slice(0, 18)).toEqual(plan.targets);
+    expect(r.targets.slice(18, 25).every(v => v === 88)).toBe(true);   // the gap is held at the old goal
+    expect(r.targets[25]).toBe(92);
+    expect(r.targets[r.targets.length - 1]).toBe(88);
+    expect(r.goalDate > '2027-03-01').toBe(true);
+  });
   test('nothing to re-plan once at goal; behindBy compares the trend to today\'s target', () => {
     expect(replanFromHere(plan, 88, today)).toBeNull();
     expect(behindBy(plan, 94, today)).toBeCloseTo(94 - (95 - 8 * 7 / 17), 1);
@@ -145,6 +154,17 @@ describe('progression and CSV', () => {
     expect(suggestNext(lastLift(log, 'Goblet squat', '2026-10-19'))).toEqual({ kg: 22.5, reason: 'repeat' });
     expect(suggestNext({ kg: 8, done: true })).toEqual({ kg: 9, reason: 'increase' });
     expect(suggestNext(null)).toBeNull();
+  });
+  test('imperial lifters get plate-sized pound steps, and pound entries survive a reload exactly', () => {
+    const lb = (n: number) => n * 0.45359237;
+    const next = suggestNext({ kg: lb(100), done: true }, 'imp')!;
+    expect(Math.round(next.kg / 0.45359237 * 2) / 2).toBe(105);
+    const small = suggestNext({ kg: lb(30), done: true }, 'imp')!;
+    expect(Math.round(small.kg / 0.45359237 * 2) / 2).toBe(32.5);
+    for (const v of [35, 67.5, 105, 142.5]) {
+      const kept = cleanSessionLog({ '2026-10-01': { Squat: { kg: lb(v), done: true } } })['2026-10-01'].Squat.kg;
+      expect(Math.round(kept / 0.45359237 * 2) / 2).toBe(v);
+    }
   });
   test('CSV has one row per date with blanks where nothing was logged', () => {
     expect(toCsv({ '2026-10-01': 90.5 }, { '2026-10-02': { waist: 95 } }, { '2026-10-01': 1900 }))

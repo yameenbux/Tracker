@@ -5,7 +5,7 @@ import { cleanMeasurements, MEASURES } from './body';
 import { cleanIntake } from './calories';
 import { cleanSessionLog } from './progression';
 import { cleanHabits, cleanWeights, latestWeight, mergeLegacyActuals, normalizeSettings, weekDate } from './plan';
-import { fmt, toStLb } from './units';
+import { fmt, showWeight, toStLb } from './units';
 import type { HabitLog, Measurements, Settings, TrackerState, Unit, Weights } from './types';
 
 /** What a backup holds. Photos are not included: they stay on the device (they'd make the file huge). */
@@ -26,7 +26,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     try { raw = JSON.parse(t); break; } catch { /* keep looking */ }
   }
   if (!raw || typeof raw !== 'object') throw new Error("Couldn't find any backup data in that file.");
-  const unit = raw.unit === 'kg' || raw.unit === 'imp' ? raw.unit : undefined;
+  const unit = raw.unit === 'kg' || raw.unit === 'imp' || raw.unit === 'lb' ? raw.unit : undefined;
 
   if (raw.version === 2) {
     const settings = normalizeSettings(raw.settings);
@@ -34,12 +34,14 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), measurements: cleanMeasurements(raw.measurements),
              intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit };
   }
-  if (raw.actuals || raw.dailyW || raw.habits) {
-    const settings = current ?? legacySettings();
+  // Old web-app exports: identified by their weight fields, never by habits alone
+  if (raw.actuals || raw.dailyW) {
     const weights = mergeLegacyActuals(raw.actuals, cleanWeights(raw.dailyW), LEGACY_START);
-    return { settings, weights, habits: cleanHabits(raw.habits), measurements: {}, intake: {}, lifts: {}, unit };
+    const habits = cleanHabits(raw.habits);
+    if (!Object.keys(weights).length && !Object.keys(habits).length) throw new Error('That backup has no weigh-ins or habits in it.');
+    return { settings: current ?? legacySettings(), weights, habits, measurements: {}, intake: {}, lifts: {}, unit };
   }
-  throw new Error("That file doesn't look like a Tracker backup.");
+  throw new Error("That file doesn't look like a Plumb backup.");
 }
 
 const pad = (s: unknown, n: number) => { const t = String(s); return t + ' '.repeat(Math.max(0, n - t.length)); };
@@ -48,13 +50,15 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   const { settings, weights, habits, unit, measurements, intake, lifts } = state;
   const plan = settings.plan;
   const L: string[] = [];
-  L.push('TRACKER EXPORT');
+  L.push('PLUMB EXPORT');
   L.push('Generated: ' + now.toLocaleString());
   L.push('');
-  L.push('Goal:  ' + fmt(plan.goalKg) + ' kg  (' + toStLb(plan.goalKg, 0).replace(/\.0/, '') + ')  by ' + longDate(plan.goalDate));
-  L.push('Start: ' + fmt(plan.startKg) + ' kg  on ' + longDate(plan.start));
+  // kg first (the tables below are in kg), then the same weight in the unit you use
+  const both = (kg: number) => fmt(kg) + ' kg  (' + (unit === 'lb' ? showWeight(kg, 'lb') : toStLb(kg, 0)) + ')';
+  L.push('Goal:  ' + both(plan.goalKg) + '  by ' + longDate(plan.goalDate));
+  L.push('Start: ' + both(plan.startKg) + '  on ' + longDate(plan.start));
   const lw = latestWeight(plan, weights);
-  if (lw) L.push('Latest: ' + fmt(lw.kg) + ' kg  (' + longDate(lw.k) + ')');
+  if (lw) L.push('Latest: ' + both(lw.kg) + '  on ' + longDate(lw.k));
   L.push('');
   L.push('WEEKLY WEIGH-INS (kg)');
   L.push(pad('Week', 6) + pad('Date', 9) + pad('Target', 9) + pad('Actual', 9) + 'vs');

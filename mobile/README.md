@@ -1,6 +1,6 @@
-# Tracker — iPhone app
+# Plumb — iPhone app
 
-The native version of Tracker, built with Expo (React Native) so it can be developed without a Mac.
+The native version of Tracker, now called **Plumb**, built with Expo (React Native) so it can be developed without a Mac.
 Same idea as the web app: no account, nothing leaves the phone, and the target line is a guide, not a verdict.
 
 ## Try it on your iPhone (free, no Apple developer account)
@@ -23,42 +23,36 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
 
 ## What's in it
 
-- **Setup**: one question per screen — current weight, goal, then a pace (Gentle / Steady / Brisk / Fast,
-  as a share of body weight per week). Steady (0.5%) is recommended; Fast warns that it's hard to hold.
-- **Dashboard**: current weight and progress, an event countdown, a chart with 4-week / 12-week / whole-plan views,
-  this week's habits with sessions and meals, and a list of weigh-ins (tap one to edit or delete).
-- **+ Log weight**: one tap from anywhere on the dashboard.
-- **Trend weight**: a smoothed trend through your weigh-ins, your real weekly rate, an "at this pace" goal date,
-  and a plain explanation when the scale jumps (an overnight +0.8 kg would need ~6,000 kcal of fat, so it's water).
-- **Body**: waist, hips, chest and arm measurements with change since your first, and Front / Side / Back progress
-  photos with a then-and-now comparison. Photos stay inside the app (never the camera roll) and are not in backups.
-- **Small touches**: habit ticks spring in with a light haptic, saving gives a success buzz, and the current weight
-  and progress bar animate to new values. All motion is skipped when iOS "Reduce Motion" is on.
-- **Consistency, not streaks**: each habit shows the last 7 days and a 30-day percentage, so one missed day doesn't
-  wipe out a good month. After 8 weeks of weigh-ins, **Patterns** compares your trend in weeks you kept a habit with
-  weeks you didn't — worded as what happened alongside it, not proof it caused it.
-- **Milestones**: a calm note each time your *trend* passes another quarter of the way to goal.
-- **Adaptive plan**: planned maintenance breaks (the line holds flat), and "Re-plan from here" when your trend is well
-  behind — same weekly pace, new goal date, history kept.
-- **Calories (optional)**: one number a day. After 14 logged days in 3 weeks, Tracker estimates what you really burn
-  from your intake and trend change, and what to eat for your plan's pace.
-- **Session progression**: log the weight used for each exercise; after a session where you hit every rep it
-  suggests a small increase (+2.5 kg, or +1 kg under 20 kg).
-- **Settings**: plan, event, habits, weekly sessions, meals, Face ID lock, export (backup or CSV) / restore / clear.
-- **Face ID lock** (optional, offered at the end of setup): no account, nothing to remember.
+- **Setup**: one question per screen — current weight, goal, then a pace (Gentle / Steady / Brisk / Fast, as a share of
+  body weight per week), with a "How is this worked out?" explainer. Optional Face ID lock at the end.
+- **Today**: current weight and progress, insight tiles (trend with sparkline, weekly pace and goal date, habits,
+  body or calories) that open their tab, today's habits as one-tap ticks, and an event countdown.
+- **Trend**: trend weight and the honest weekly rate, a 3 / 7 / 14 / 30-day change table, the chart (4W / 12W / Plan),
+  the jump explainer, "Re-plan from here", and the full weigh-in history (tap to edit).
+- **Habits**: this week's checklist with sessions and meals, 30-day dot grids (consistency, not streaks), and Patterns
+  after 8 weeks.
+- **Body**: waist/hips/chest/arm measurements, private progress photos with then-and-now, and optional calories with an
+  estimate of what you really burn.
+- **Log weight** (the + in the tab bar): opens on your last weight with −/+ steppers, so most weigh-ins are two taps.
+  Deleting shows an Undo.
+- **Settings**: an iOS grouped list — plan and breaks, event, units, habits, sessions, meals, calories, a daily weigh-in
+  reminder, Face ID lock, export (backup or CSV), restore, clear, erase everything, privacy policy.
+- **Safety**: saved data that can't be read is copied aside rather than overwritten; a snapshot is taken before restore;
+  the lock hides everything (including the app-switcher preview).
 - **Backups** use the same format as the web app, so a `.txt` exported from the website restores here, and the other way round.
 
 ## Not in this version yet
 
-- **Apple Health import** — Expo Go can't use HealthKit. Needs the Apple Developer Program (£79/year)
+- **Apple Health sync** — Expo Go can't use HealthKit. Needs the Apple Developer Program (£79/year)
   and a development build with EAS. Planned as step 2b.
+- **Dark mode** — the app is light-only by choice for now (`userInterfaceStyle: "light"`); the icon has dark and tinted variants.
 - **iCloud sync and widgets** — also need a development build.
 - Weight gain / maintenance goals.
 
 ## Development
 
 ```bash
-npm test            # unit tests for the plan maths, units and backups (src/core)
+npm test            # unit tests (src/core) plus UI and storage tests (src/__tests__)
 npm run typecheck
 npx expo lint
 npx expo export --platform web   # web build, used for screenshot testing

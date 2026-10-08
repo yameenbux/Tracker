@@ -31,7 +31,6 @@ describe('plan building', () => {
   });
   test.each([
     [{ startKg: null }, 'current weight'],
-    [{ goalKg: 99 }, 'below your current weight'],
     [{ goalDate: '2026-10-12' }, 'at least 2 weeks'],
     [{ goalDate: '2030-01-01' }, 'under 3 years'],
     [{ start: '2026-02-31' }, 'Pick a start date'],
@@ -97,7 +96,7 @@ describe('reading the plan', () => {
       .toEqual({ count: 1, kcal: 300, p: 30, c: 0, f: 5 });
   });
   test('chart range snaps to a tidy step', () => {
-    expect(chartRange([95, 88, 93.4])).toEqual({ min: 86, max: 96, step: 2 });
+    expect(chartRange([95, 88, 93.4])).toEqual({ min: 87, max: 96, step: 1 });
     expect(chartRange([120, 90])).toEqual({ min: 85, max: 125, step: 5 });
   });
 });

@@ -1,0 +1,87 @@
+import { buildExportText, parseBackup } from './core/backup';
+import { toCsv } from './core/csv';
+import { dateKey, parseKey, startOfDay } from './core/dates';
+import { DEFAULT_PREFS } from './core/storage';
+import { confirm, notify } from './dialogs';
+import { clearCache, pickBackupText, shareBackup } from './io';
+import { deleteAllPhotos, deletePhoto } from './photos';
+import { applyReminder } from './reminders';
+import { eraseStorage, latestRescue, Tracker } from './store';
+
+type Show = (m: { message: string; action?: string; onAction?: () => void }) => void;
+
+/** Backup, restore, export, clear and erase — every action that moves or removes data in bulk. */
+export function useDataActions(t: Tracker, show: Show, done: () => void) {
+  const { state, prefs } = t;
+
+  const restore = async () => {
+    try {
+      const text = await pickBackupText();
+      if (text == null) return;
+      const b = parseBackup(text, state.settings);
+      const nW = Object.keys(b.weights).length, nH = Object.keys(b.habits).length;
+      const ok = await confirm('Restore this backup?',
+        `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Plumb.`, 'Restore');
+      if (!ok) return;
+      await t.snapshot('before_restore');
+      const before = state;
+      // Photos aren't in backups, so the ones already on this phone are kept
+      t.replaceAll({ settings: b.settings, weights: b.weights, habits: b.habits, measurements: b.measurements, photos: state.photos,
+        intake: b.intake, lifts: b.lifts, unit: b.unit ?? state.unit });
+      done();
+      show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo', onAction: () => t.replaceAll(before) });
+    } catch (e) {
+      notify("Couldn't restore", e instanceof Error ? e.message : "That file couldn't be read.");
+    }
+  };
+
+  const exportCsv = async () => {
+    try { await shareBackup('plumb-' + dateKey(new Date()) + '.csv', toCsv(state.weights, state.measurements, state.intake), 'csv'); }
+    catch { notify('Export failed', 'Nothing was shared. Try again.'); }
+  };
+
+  const exportData = async () => {
+    if (!state.settings) return;
+    try {
+      await shareBackup('plumb-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings }));
+      // The share sheet closes the same way whether the file was saved or the sheet was cancelled, so ask
+      if (await confirm('Did you save the backup?', 'Only say yes if the file went somewhere safe: Files, iCloud Drive, email or a computer.', 'Yes, it’s saved', false)) {
+        t.setPrefs({ lastBackup: new Date().toISOString() });
+        show({ message: 'Backup saved' });
+      }
+    } catch { notify('Export failed', 'Nothing was shared. Try again.'); }
+  };
+
+  /** Shares the untouched copy of data that couldn't be read, so nothing is ever truly lost. */
+  const exportRescued = async () => {
+    const raw = await latestRescue();
+    if (!raw) { notify('Nothing to export', 'There is no saved copy on this phone.'); return; }
+    try { await shareBackup('plumb-rescued-' + dateKey(new Date()) + '.txt', raw); }
+    catch { notify('Export failed', 'Nothing was shared. Try again.'); }
+  };
+
+  const reset = async () => {
+    const s = state.settings;
+    if (!s) return;
+    if (!(await confirm('Clear all weigh-ins and habit ticks?', 'Your plan, sessions and meals are kept. Export a backup first if you might want this data back.', 'Clear'))) return;
+    const before = state;
+    t.replaceAll({ ...state, weights: parseKey(s.plan.start) <= startOfDay() ? { [s.plan.start]: s.plan.startKg } : {}, habits: {} });
+    done();
+    show({ message: 'Weigh-ins and ticks cleared', action: 'Undo', onAction: () => t.replaceAll(before) });
+  };
+
+  const eraseAll = async () => {
+    if (!(await confirm('Erase everything?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
+    if (!(await confirm('Are you sure?', 'Plumb will start again from setup.', 'Erase everything'))) return;
+    if (!(await eraseStorage())) { notify('Couldn’t erase', 'Nothing was deleted. Try again.'); return; }
+    for (const day of Object.values(state.photos)) for (const ref of Object.values(day)) if (ref) deletePhoto(ref);
+    deleteAllPhotos();
+    clearCache();                                  // exported files, picked backups, photo-picker leftovers
+    await applyReminder({ ...prefs.reminder, on: false });
+    done();
+    t.replaceAll({ settings: null, weights: {}, habits: {}, unit: state.unit, measurements: {}, photos: {}, intake: {}, lifts: {} });
+    t.setPrefs({ ...DEFAULT_PREFS });
+  };
+
+  return { restore, exportCsv, exportData, exportRescued, reset, eraseAll };
+}

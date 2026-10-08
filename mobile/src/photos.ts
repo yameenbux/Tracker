@@ -26,7 +26,7 @@ export async function addPhoto(source: 'camera' | 'library', dateKey: string, po
                                                   base64: Platform.OS === 'web' };
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) throw new Error('Tracker needs camera access to take progress photos. You can allow it in the iPhone Settings app.');
+    if (!perm.granted) throw new Error('Plumb needs camera access to take progress photos. You can allow it in the iPhone Settings app.');
   }
   const res = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
   if (res.canceled || !res.assets.length) return null;
@@ -41,4 +41,10 @@ export async function addPhoto(source: 'camera' | 'library', dateKey: string, po
 export function deletePhoto(ref: string): void {
   if (Platform.OS === 'web' || ref.startsWith('data:')) return;
   try { const f = new File(photoDir(), ref); if (f.exists) f.delete(); } catch { /* already gone */ }
+}
+
+/** Deletes every stored progress photo (used by "Erase everything"). */
+export function deleteAllPhotos(): void {
+  if (Platform.OS === 'web') return;
+  try { const dir = new Directory(Paths.document, 'photos'); if (dir.exists) dir.delete(); } catch { /* nothing to delete */ }
 }

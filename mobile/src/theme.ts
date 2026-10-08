@@ -10,9 +10,22 @@ export const C = {
   coral: '#FF6B5E',
   amber: '#FFA24B',
   mint: '#12B886',
+  mintInk: '#06704F',     // mint for text: passes WCAG AA on white and on mintBg
+  danger: '#B2392A',      // destructive text, AA on white and coralBg
+  placeholder: '#857B8F',
+  control: '#8F8276',          // borders of inputs, checkboxes, radios, switch tracks: 3:1 on white
+  graphAmber: '#D9701F',       // chart / mark colours that keep 3:1 against white
+  graphCoral: '#E8553F',
+  graphMint: '#0E9F73',      // 3.6:1 on paper: readable, still clearly a hint
+  panelAlt: '#EDE6F6',
+  mintPanel: '#E6F4EC',
+  heroGood: '#7FF0C8',
+  heroOver: '#FFB0A6',
+  coralInk: '#C93A26',    // coral for text and warnings: passes WCAG AA on white
   mintBg: '#E4F7EF',
   coralBg: '#FFEAE6',
   target: '#C9BFD6',
+  targetLine: '#9385A8',      // the chart's dashed target line: 3:1 on white
   chip: '#F0E8E0',
   todayBg: '#FFF3EF',
   panel: '#F7F3FB',

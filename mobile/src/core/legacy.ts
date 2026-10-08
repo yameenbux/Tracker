@@ -13,10 +13,10 @@ export function legacySettings(): Settings {
     },
     event: null,
     habits: [
-      { id: 'water', icon: '💧', short: '3 L', name: 'Water 3 L' },
-      { id: 'steps', icon: '👟', short: '8K', name: 'Steps 8k' },
+      // Same ids as the old programme so restored ticks line up; names kept generic
+      { id: 'water', icon: '💧', short: 'WATER', name: 'Water' },
+      { id: 'steps', icon: '👟', short: 'STEPS', name: 'Steps' },
       { id: 'workout', icon: '🏋', short: 'WORK', name: 'Workout' },
-      { id: 'sex', icon: '❤️', short: 'SEX', name: 'Intimacy' },
     ],
     sessions: { 0: { title: '', items: [], note: '' }, 1: { title: '', items: [], note: '' }, 2: { title: '', items: [], note: '' },
                 3: { title: '', items: [], note: '' }, 4: { title: '', items: [], note: '' }, 5: { title: '', items: [], note: '' },
