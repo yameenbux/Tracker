@@ -1,11 +1,12 @@
 // Reading saved data back safely: every field is cleaned, older versions load, and junk is rejected rather than half-used.
+import { cleanEntries, dailyWeights, fromWeights } from './entries';
 import { cleanMeasurements, cleanPhotos } from './body';
 import { cleanIntake } from './calories';
 import { cleanHabits, cleanWeights, normalizeSettings } from './plan';
 import { cleanSessionLog } from './progression';
 import type { TrackerState } from './types';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;   // 3: timestamped weigh-ins (entries) alongside the day map
 
 export interface Reminder { on: boolean; hour: number; minute: number }
 export interface Prefs {
@@ -37,8 +38,8 @@ export function cleanPrefs(p: any): Prefs {
 }
 
 /**
- * Brings a save written by an older version up to the current shape. Version 1 saves had no `v` and the same fields,
- * so there is nothing to change yet; future format changes add a step here.
+ * Brings a save written by an older version up to the current shape. Versions 1 and 2 had the same fields and no
+ * `entries`; hydrate() builds those from the day map, so no step is needed here. Future format changes add one.
  */
 export function migrate(s: any): any {
   const v = Number.isInteger(s.v) ? s.v : 1;
@@ -51,9 +52,12 @@ export function hydrate(raw: string): TrackerState {
   const parsed = JSON.parse(raw);
   if (!parsed || typeof parsed !== 'object') throw new Error('not an object');
   const s = migrate(parsed);
+  // Version 3 saves carry timestamped weigh-ins; older ones only a day map, which becomes one reading a day
+  const entries = cleanEntries(s.entries) ?? fromWeights(cleanWeights(s.weights));
   return {
     settings: normalizeSettings(s.settings),
-    weights: cleanWeights(s.weights),
+    weights: dailyWeights(entries),
+    entries,
     habits: cleanHabits(s.habits),
     unit: s.unit === 'imp' || s.unit === 'lb' ? s.unit : 'kg',
     measurements: cleanMeasurements(s.measurements),

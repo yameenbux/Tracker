@@ -1,4 +1,5 @@
 // Backup format is shared with the web app (index.html), so a .txt exported from either one restores in the other.
+import { cleanEntries, dailyWeights, WeighIn } from './entries';
 import { dateKey, longDate, shortDate } from './dates';
 import { legacySettings, LEGACY_START } from './legacy';
 import { cleanMeasurements, MEASURES } from './body';
@@ -10,7 +11,7 @@ import type { HabitLog, Measurements, Settings, TrackerState, Unit, Weights } fr
 
 /** What a backup holds. Photos are not included: they stay on the device (they'd make the file huge). */
 export interface Restored { settings: Settings; weights: Weights; habits: HabitLog; measurements: Measurements;
-  intake: TrackerState['intake']; lifts: TrackerState['lifts']; unit?: Unit }
+  intake: TrackerState['intake']; lifts: TrackerState['lifts']; unit?: Unit; entries?: WeighIn[] }
 
 /**
  * Accepts a .txt export (reads the JSON after the "raw backup" line) or a bare JSON file.
@@ -31,8 +32,11 @@ export function parseBackup(text: string, current: Settings | null): Restored {
   if (raw.version === 2) {
     const settings = normalizeSettings(raw.settings);
     if (!settings) throw new Error('The plan in that backup is incomplete.');
-    return { settings, weights: cleanWeights(raw.weights), habits: cleanHabits(raw.habits), measurements: cleanMeasurements(raw.measurements),
-             intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit };
+    // Newer backups also carry timestamped weigh-ins; when they do, the day map is rebuilt from them
+    const entries = cleanEntries(raw.entries) ?? undefined;
+    return { settings, weights: entries ? dailyWeights(entries) : cleanWeights(raw.weights), habits: cleanHabits(raw.habits),
+             measurements: cleanMeasurements(raw.measurements), intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit,
+             ...(entries ? { entries } : {}) };
   }
   // Old web-app exports: identified by their weight fields, never by habits alone
   if (raw.actuals || raw.dailyW) {
@@ -92,6 +96,6 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   L.push('Progress photos are kept on your phone and are not included in this file.');
   L.push('');
   L.push('--- raw backup (keep this to restore) ---');
-  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, intake, lifts, unit }));
+  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, intake, lifts, unit, entries: state.entries }));
   return L.join('\n');
 }
