@@ -6,7 +6,7 @@ import { habitInsight, INSIGHT_MIN_WEEKS, MILESTONE_TEXT, weeksOfData } from '..
 import { lossWeeks, weightSeries } from '../core/plan';
 import { exerciseName, lastLift, suggestNext } from '../core/progression';
 import { trendSeries, TrendPoint } from '../core/trend';
-import { KG_PER_LB, num, showChange, showWeight } from '../core/units';
+import { KG_PER_LB, num, showChange, showAmount } from '../core/units';
 import type { HabitLog, Session, Settings, TrackerState, Unit, Weights } from '../core/types';
 import { C, F } from '../theme';
 import { fieldStyles } from './Fields';
@@ -30,7 +30,7 @@ export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }
         <Text style={s.mileTxt}>
           {quarter === 4
             ? 'Your trend has reached your goal. Holding it here for a few weeks is the next win.'
-            : `Your trend is down ${showWeight(lost, unit).replace(/^0 st /, '')} from where you started. That's real change, not a good day on the scale.`}
+            : `Your trend has moved ${showAmount(Math.abs(lost), unit)} ${lost >= 0 ? 'down' : 'up'} from where you started. That's real change, not a good day on the scale.`}
         </Text>
       </View>
       <Pressable onPress={onDismiss} hitSlop={13} accessibilityRole="button" accessibilityLabel="Dismiss milestone"><Icon name="close" size={18} color={C.inkSoft} /></Pressable>

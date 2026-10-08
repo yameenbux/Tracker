@@ -2,8 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAY_ABBR, dateKey, daysBetween, longDate, parseKey } from '../core/dates';
-import { targetAt, weekFraction, weightSeries } from '../core/plan';
-import { KG_PER_LB, MAX_KG, MIN_KG, plausible, showDiff, showWeight } from '../core/units';
+import { direction, sign, targetAt, weekFraction, weightSeries } from '../core/plan';
+import { KG_PER_LB, MAX_KG, MIN_KG, plausible, showDiff, showAmount, showWeight } from '../core/units';
 import { tick } from '../feel';
 import { Icon } from './Icons';
 import { Sheet } from './Sheet';
@@ -50,12 +50,12 @@ export function EntriesList({ settings, weights, unit, onEdit }: {
         return (
           <Pressable key={p.k} onPress={() => onEdit(p.k)} style={({ pressed }) => [s.entry, pressed && { opacity: 0.6 }]}
             accessibilityRole="button" accessibilityHint="Edits this weigh-in"
-            accessibilityLabel={`${showWeight(p.kg, unit)} on ${DAY_ABBR[p.d.getDay()]} ${longDate(p.k)}, ${Math.abs(diff) <= 0.05 ? 'on target' : `${showWeight(Math.abs(diff), unit).replace(/^0 st /, '')} ${diff > 0 ? 'above' : 'below'} target`}`}>
+            accessibilityLabel={`${showWeight(p.kg, unit)} on ${DAY_ABBR[p.d.getDay()]} ${longDate(p.k)}, ${Math.abs(diff) <= 0.05 ? 'on target' : `${showAmount(Math.abs(diff), unit)} ${diff > 0 ? 'above' : 'below'} target`}`}>
             <View style={{ flex: 1 }}>
               <Text style={s.eW}>{showWeight(p.kg, unit)}</Text>
               <Text style={s.eD}>{DAY_ABBR[p.d.getDay()]} {longDate(p.k)} · week {wk}</Text>
             </View>
-            <Pill kg={diff} text={showDiff(diff, unit)} />
+            <Pill kg={diff} text={showDiff(diff, unit)} d={sign(direction(plan)) as -1 | 0 | 1} />
             <Icon name="chevron" size={18} color={C.inkSoft} />
           </Pressable>
         );
@@ -114,7 +114,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
         <Text style={s.dateLabel}>Date</Text>
         <DateInput value={key} onChange={setKey} label="Weigh-in date" min={minKey} max={today} />
       </View>
-      {kg != null && !ok && (kg > MAX_KG || kg >= 10) && <Text style={s.err}>Enter a weight between {unit === 'kg' ? `${MIN_KG} and ${MAX_KG} kg` : 'about 4 and 55 stone'}.</Text>}
+      {kg != null && !ok && (kg > MAX_KG || kg >= 10) && <Text style={s.err}>Enter a weight between {unit === 'kg' ? `${MIN_KG} and ${MAX_KG} kg` : unit === 'lb' ? 'about 55 and 770 lb' : 'about 4 and 55 stone'}.</Text>}
       {future && <Text style={s.err}>That date is in the future.</Text>}
       {early && <Text style={s.err}>That’s before your plan started ({longDate(minKey)}). Change the start date in Settings to log earlier days.</Text>}
       {clash && <Text style={s.hint}>You already logged {showWeight(weights[key], unit)} on {longDate(key)}. Saving replaces it.</Text>}

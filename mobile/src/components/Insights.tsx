@@ -69,14 +69,15 @@ export function WeekDots({ log, ids, today = new Date() }: { log: HabitLog; ids:
 }
 
 /** Trend change over 3, 7, 14 and 30 days (Bevel-style table). */
-export const ChangeTable = memo(function ChangeTable({ series, unit }: { series: TrendPoint[]; unit: Unit; today?: string }) {
+export const ChangeTable = memo(function ChangeTable({ series, unit, d = -1 }: { series: TrendPoint[]; unit: Unit; today?: string; d?: -1 | 0 | 1 }) {
   const rows = changeTable(series);
   return (
     <Card title="Trend change">
       <View style={s.table}>
         {rows.map(r => {
           const c = r.change;
-          const color = c == null ? C.inkSoft : c < -0.05 ? C.mintInk : c > 0.05 ? C.coralInk : C.ink;
+          // Green when it moved the way the plan wants (down when losing, up when gaining); holding: neutral
+          const color = c == null ? C.inkSoft : d === 0 ? C.ink : c * d > 0.05 ? C.mintInk : c * d < -0.05 ? C.coralInk : C.ink;
           return (
             <View key={r.days} style={s.cell} accessible accessibilityLabel={`${r.days} days: ${c == null ? 'not enough data' : showChange(c, unit, 1)}`}>
               <Text style={s.cellK}>{r.days} days</Text>

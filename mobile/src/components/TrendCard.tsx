@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
-import { behindBy, replanFromHere, weightSeries } from '../core/plan';
+import { behindBy, direction, GAIN_WARN_PCT, replanFromHere, sign, weightSeries } from '../core/plan';
 import { latestJump, projectedGoalDate, trendSeries, TrendPoint, weeklyRate } from '../core/trend';
-import { showChange, showWeight } from '../core/units';
+import { showChange, showAmount, showWeight } from '../core/units';
 import type { Plan, Settings, Unit, Weights } from '../core/types';
 import { C, F } from '../theme';
 import { Button, Card } from './ui';
@@ -31,6 +31,10 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
   const eta = projectedGoalDate(last.trend, plan.goalKg, rate);
   const jump = latestJump(series);
   const pct = rate ? Math.abs(rate.perWeek) / last.trend * 100 : 0;
+  const dir = direction(plan), d = sign(dir);
+  const along = rate ? rate.perWeek * (d || -1) : 0;              // + when moving the way the plan wants
+  const atGoal = d === 0 ? Math.abs(last.trend - plan.goalKg) <= 1 : (plan.goalKg - last.trend) * d <= 0;
+  const tooFast = dir === 'gain' ? pct > GAIN_WARN_PCT && rate!.perWeek > 0 : dir === 'lose' ? pct > 1 && rate!.perWeek < 0 : false;
   // Well behind the line (over 1 kg and 1% of body weight): offer a fresh line from here instead of a guilt trip
   const behind = behindBy(plan, last.trend);
   const replan = rate && behind > Math.max(1, last.trend * 0.01) ? replanFromHere(plan, last.trend) : null;
@@ -45,23 +49,29 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
         <View style={s.cell}>
           <Text style={s.k}>Per week</Text>
           {rate
-            ? <Text style={[s.big, { color: rate.perWeek < -0.05 ? C.mintInk : rate.perWeek > 0.05 ? C.coralInk : C.ink }]}>{change(rate.perWeek, unit)}</Text>
+            ? <Text style={[s.big, { color: d === 0 ? C.ink : along > 0.05 ? C.mintInk : along < -0.05 ? C.coralInk : C.ink }]}>{change(rate.perWeek, unit)}</Text>
             : <Text style={s.pending}>Not enough data yet</Text>}
         </View>
       </View>
 
       <Text style={s.line}>
-        {rate
-          ? eta
-            ? <>At this pace you reach {showWeight(plan.goalKg, unit)} around <Text style={s.b}>{longDate(eta)}</Text>
-                {eta <= plan.goalDate ? ', ahead of plan.' : ` (plan: ${longDate(plan.goalDate)}).`}</>
-            : rate.perWeek > 0.05
-              ? <>Your trend has crept up over the last {rate.days} days. One or two weeks like this is normal; a month is worth a look.</>
-              : last.trend <= plan.goalKg
-                ? <>You’re at your goal. Holding it for a few weeks is the next win.</>
-                : <>Your trend is roughly flat over the last {rate.days} days.</>
-          : <>The weekly rate shows once you have 4 weigh-ins spread over 10 days or more.</>}
-        {rate && pct > 1 ? ' That pace is above 1% of body weight a week; going a little slower protects muscle.' : ''}
+        {!rate
+          ? <>The weekly rate shows once you have 4 weigh-ins spread over 10 days or more.</>
+          : dir === 'maintain'
+            ? atGoal
+              ? <>You’re holding within a kilo of {showWeight(plan.goalKg, unit)}. That’s what maintenance looks like.</>
+              : <>Your trend has drifted {showAmount(Math.abs(last.trend - plan.goalKg), unit)} {last.trend > plan.goalKg ? 'above' : 'below'} where you’re holding. Small, steady corrections work better than a crash week.</>
+            : atGoal
+              ? <>You’re at your goal. Holding it for a few weeks is the next win.</>
+              : eta
+                ? <>At this pace you reach {showWeight(plan.goalKg, unit)} around <Text style={s.b}>{longDate(eta)}</Text>
+                    {eta <= plan.goalDate ? ', ahead of plan.' : ` (plan: ${longDate(plan.goalDate)}).`}</>
+                : along < -0.05
+                  ? <>Your trend has moved {dir === 'lose' ? 'up' : 'down'} over the last {rate.days} days. One or two weeks like this is normal; a month is worth a look.</>
+                  : <>Your trend is roughly flat over the last {rate.days} days.</>}
+        {rate && tooFast ? (dir === 'gain'
+          ? ' That’s above 0.5% of body weight a week; slower gains are more muscle and less fat.'
+          : ' That pace is above 1% of body weight a week; going a little slower protects muscle.') : ''}
       </Text>
 
       {jump && (
@@ -79,7 +89,7 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
       {replan && onReplan && (
         <View style={s.replan}>
           <Text style={s.replanTxt}>
-            Your trend is {showWeight(behind, unit).replace(/^0 st /, '')} behind the line. That’s normal; life happens. A new line from where you are keeps the same weekly pace and moves your goal date to <Text style={{ fontFamily: F.bodyBold }}>{longDate(replan.goalDate)}</Text>.
+            Your trend is {showAmount(behind, unit)} behind the line. That’s normal; life happens. A new line from where you are keeps the same weekly pace and moves your goal date to <Text style={{ fontFamily: F.bodyBold }}>{longDate(replan.goalDate)}</Text>.
           </Text>
           <Button label="Re-plan from here" kind="primary" small onPress={() => onReplan(replan)} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
         </View>

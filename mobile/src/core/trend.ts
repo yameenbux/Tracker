@@ -56,8 +56,10 @@ export function weeklyRate(points: WeightPoint[], today: Date = new Date(), wind
 
 /** Date the goal would be reached at the current rate, or null if not heading there (or already there). */
 export function projectedGoalDate(trendNow: number, goalKg: number, rate: Rate | null, today: Date = new Date()): string | null {
-  if (!rate || rate.perWeek > -0.05 || trendNow <= goalKg) return null;   // flat, rising, or done
-  const weeks = (trendNow - goalKg) / -rate.perWeek;
+  if (!rate || Math.abs(trendNow - goalKg) < 0.1) return null;              // no rate yet, or already there
+  const towards = goalKg < trendNow ? -rate.perWeek : rate.perWeek;         // speed in the goal's direction
+  if (towards < 0.05) return null;                                          // flat, or heading the other way
+  const weeks = Math.abs(trendNow - goalKg) / towards;
   if (weeks > 260) return null;                                            // > 5 years: not a useful date
   return dateKey(addDays(startOfDay(today), Math.ceil(weeks * 7)));
 }

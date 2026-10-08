@@ -124,3 +124,55 @@ describe('chart grid', () => {
     expect(chartRange([92, 87]).step).toBe(1);
   });
 });
+
+describe('gain and maintain goals', () => {
+  const P = jest.requireActual('../plan');
+  const T = jest.requireActual('../trend');
+  const I = jest.requireActual('../insights');
+  const gain = { start: '2026-01-05', startKg: 60, goalKg: 64, goalDate: '2026-05-04' };
+  test('direction is worked out from the goal', () => {
+    expect(P.direction({ startKg: 90, goalKg: 80 })).toBe('lose');
+    expect(P.direction({ startKg: 60, goalKg: 64 })).toBe('gain');
+    expect(P.direction({ startKg: 70, goalKg: 70.3 })).toBe('maintain');
+  });
+  test('a gain plan is valid, rises week by week, and warns above 0.5% a week', () => {
+    const v = P.assessPlan(gain);
+    expect(v.ok).toBe(true);
+    const t = P.buildTargets(gain.startKg, gain.goalKg, gain.start, gain.goalDate);
+    expect(t[0]).toBe(60);
+    expect(t[t.length - 1]).toBe(64);
+    expect(t[5]).toBeGreaterThan(t[1]);
+    expect(P.assessPlan({ ...gain, goalDate: '2026-02-16' }).warn).toBe(true);
+  });
+  test('maintenance is a flat line with no pace and no milestones', () => {
+    const m = { start: '2026-01-05', startKg: 70, goalKg: 70, goalDate: '2026-04-06' };
+    const v = P.assessPlan(m);
+    expect(v.ok && v.perWeek).toBe(0);
+    expect(new Set(P.buildTargets(70, 70, m.start, m.goalDate)).size).toBe(1);
+    expect(I.milestoneQuarter({ ...m, targets: [] }, 69)).toBe(0);
+  });
+  test('when gaining, below the line is behind and the goal date projects upwards', () => {
+    const plan = { ...gain, targets: P.buildTargets(60, 64, gain.start, gain.goalDate) };
+    const at = new Date(2026, 1, 16);                     // week 6: target ≈ 61.4
+    expect(P.behindBy(plan, 60.5, at)).toBeGreaterThan(0);
+    expect(P.behindBy(plan, 62.5, at)).toBeLessThan(0);
+    expect(T.projectedGoalDate(62, 64, { perWeek: 0.25, days: 28, count: 10 }, at)).not.toBeNull();
+    expect(T.projectedGoalDate(62, 64, { perWeek: -0.2, days: 28, count: 10 }, at)).toBeNull();
+    expect(I.milestoneQuarter(plan, 62.1)).toBe(2);
+  });
+  test('re-planning a gain plan keeps the pace and moves the date', () => {
+    const plan = { ...gain, targets: P.buildTargets(60, 64, gain.start, gain.goalDate) };
+    const next = P.replanFromHere(plan, 60.5, new Date(2026, 2, 2));
+    expect(next).not.toBeNull();
+    expect(next.goalDate > plan.goalDate).toBe(true);
+    expect(P.replanFromHere(plan, 64.5, new Date(2026, 2, 2))).toBeNull();
+  });
+});
+
+describe('pounds-only unit', () => {
+  const U = jest.requireActual('../units');
+  test('shows and parses plain pounds', () => {
+    expect(U.showWeight(90.7185, 'lb')).toBe('200.0 lb');
+    expect(U.parseWeightInput('lb', '200')).toBeCloseTo(90.718474, 5);
+  });
+});

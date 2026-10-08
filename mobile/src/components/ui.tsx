@@ -41,8 +41,9 @@ export function Tabs<T extends string>({ value, options, onChange, label }: { va
   );
 }
 
-export function Pill({ kg, text }: { kg: number | null; text: string }) {
-  const good = kg != null && kg <= 0.05;
+/** Weigh-in vs the target line. `d` is the plan's direction (−1 losing, +1 gaining, 0 holding). */
+export function Pill({ kg, text, d = -1 }: { kg: number | null; text: string; d?: -1 | 0 | 1 }) {
+  const good = kg != null && (d === 0 ? Math.abs(kg) <= 1 : kg * d >= -0.05);
   return (
     <View style={[s.pill, kg == null ? null : good ? s.pillGood : s.pillOver]}>
       <Text style={[s.pillTxt, { color: kg == null ? C.inkSoft : good ? C.mintInk : C.danger }]}>{text}</Text>

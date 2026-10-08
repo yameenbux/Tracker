@@ -66,6 +66,19 @@ export function buildTargets(startKg: number, goalKg: number, start: string, goa
   return t;
 }
 
+// ---- goal direction ----
+// A plan can lose, gain or hold weight. Everything that says "ahead", "behind", "good" or "to go" asks this.
+export type Direction = 'lose' | 'gain' | 'maintain';
+/** Goals within half a kilo of the start are maintenance. */
+export function direction(p: { startKg: number; goalKg: number }): Direction {
+  const d = p.goalKg - p.startKg;
+  return Math.abs(d) < 0.5 ? 'maintain' : d > 0 ? 'gain' : 'lose';
+}
+/** +1 when the plan goes up, −1 when it goes down, 0 when it holds. */
+export const sign = (dir: Direction) => (dir === 'gain' ? 1 : dir === 'lose' ? -1 : 0);
+/** Weekly gain above this share of body weight is mostly fat, so it gets the same "slow down" note as fast loss. */
+export const GAIN_WARN_PCT = 0.5;
+
 export interface PlanDraft { startKg: number | null; goalKg: number | null; start: string; goalDate: string; breaks?: PlanBreak[] }
 export type PlanAssessment =
   | { ok: false; error: string }
@@ -75,16 +88,17 @@ export type PlanAssessment =
 export function assessPlan(p: PlanDraft): PlanAssessment {
   if (!plausible(p.startKg)) return { ok: false, error: 'Enter your current weight.' };
   if (!plausible(p.goalKg)) return { ok: false, error: 'Enter a goal weight.' };
-  if (p.goalKg >= p.startKg) return { ok: false, error: 'This version tracks weight loss, so the goal needs to be below your current weight.' };
   if (!validKey(p.start) || !validKey(p.goalDate)) return { ok: false, error: 'Pick a start date and a goal date.' };
   const weeks = weeksBetween(p.start, p.goalDate);
   if (weeks < 2) return { ok: false, error: 'The goal date needs to be at least 2 weeks after the start.' };
   if (weeks > 156) return { ok: false, error: 'Keep the plan under 3 years — you can always start a new one after.' };
-  const losing = lossWeeks(p.start, p.goalDate, p.breaks);
-  if (losing < 2) return { ok: false, error: 'The breaks leave less than 2 weeks of loss. Move the goal date later.' };
-  const perWeek = (p.startKg - p.goalKg) / losing;   // pace in the weeks that aren't breaks
+  const dir = direction({ startKg: p.startKg, goalKg: p.goalKg });
+  if (dir === 'maintain') return { ok: true, weeks, perWeek: 0, pct: 0, warn: false };
+  const moving = lossWeeks(p.start, p.goalDate, p.breaks);
+  if (moving < 2) return { ok: false, error: 'The breaks leave less than 2 weeks to make progress. Move the goal date later.' };
+  const perWeek = Math.abs(p.startKg - p.goalKg) / moving;   // pace in the weeks that aren't breaks
   const pct = perWeek / p.startKg * 100;
-  return { ok: true, weeks, perWeek, pct, warn: pct > 1 };
+  return { ok: true, weeks, perWeek, pct, warn: pct > (dir === 'gain' ? GAIN_WARN_PCT : 1) };
 }
 
 /** Fill in anything missing or malformed, so bad storage or a hand-edited backup can't break rendering. */
@@ -236,12 +250,13 @@ export function cleanBreaks(v: unknown): PlanBreak[] {
  * Returns null if already at (or below) goal.
  */
 export function replanFromHere(plan: Plan, trendNow: number, today: Date = new Date()): Plan | null {
-  if (trendNow <= plan.goalKg) return null;
+  const d = sign(direction(plan));
+  if (d === 0 || (plan.goalKg - trendNow) * d <= 0) return null;    // maintaining, or already at the goal
   const breaks = plan.breaks ?? [];
   const lw = Math.max(1, lossWeeks(plan.start, plan.goalDate, breaks));
-  const pace = (plan.startKg - plan.goalKg) / lw;
+  const pace = Math.abs(plan.startKg - plan.goalKg) / lw;
   const i0 = Math.max(0, Math.min(plan.targets.length - 1, Math.floor(weekFraction(plan, today))));
-  const needed = Math.max(2, Math.ceil((trendNow - plan.goalKg) / pace - 1e-9));
+  const needed = Math.max(2, Math.ceil(Math.abs(plan.goalKg - trendNow) / pace - 1e-9));
   let total = i0, counted = 0;
   while (counted < needed && total < i0 + 156) { total++; if (!isBreakStep(plan.start, breaks, total)) counted++; }
   const goalDate = dateKey(weekDate(plan, total));
@@ -265,9 +280,14 @@ export function onlyBreaksChanged(old: Plan, p: PlanDraft): boolean {
   return planChanged(old, p) && !planChanged({ ...old, breaks: [] }, { ...p, breaks: [] });
 }
 
-/** How far the trend is above the target line today (kg; negative = ahead). */
+/**
+ * How far the trend is behind the target line today, in kg (negative = ahead).
+ * Losing: above the line is behind. Gaining: below it is behind. Maintaining: any distance from the line.
+ */
 export function behindBy(plan: Plan, trendNow: number, today: Date = new Date()): number {
-  return trendNow - targetAt(plan, today);
+  const off = trendNow - targetAt(plan, today);
+  const d = sign(direction(plan));
+  return d === 0 ? Math.abs(off) : -d * off;
 }
 
 /** Chart y-range: fits targets and weights, snapped to a tidy step. */
@@ -290,11 +310,16 @@ export const PACES = [
   { id: 'fast', label: 'Fast', pct: 1.0 },
 ] as const;
 export type PaceId = (typeof PACES)[number]['id'];
+/** Weekly gain as a share of body weight: slow gains keep it mostly muscle rather than fat. */
+export const GAIN_PACES = [
+  { id: 'lean', label: 'Lean', pct: 0.25, recommended: true },
+  { id: 'steady', label: 'Steady', pct: 0.5 },
+] as const;
 
 /** Goal date for a pace: whole weeks needed at that rate, at least 2, at most 156. */
 export function goalDateForPace(startKg: number, goalKg: number, start: string, pct: number): string {
   const perWeek = startKg * pct / 100;
-  const weeks = Math.min(156, Math.max(2, Math.ceil((startKg - goalKg) / perWeek - 1e-9)));
+  const weeks = Math.min(156, Math.max(2, Math.ceil(Math.abs(startKg - goalKg) / perWeek - 1e-9)));
   return dateKey(addDays(parseKey(start), weeks * 7));
 }
 

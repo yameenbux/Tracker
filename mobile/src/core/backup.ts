@@ -26,7 +26,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     try { raw = JSON.parse(t); break; } catch { /* keep looking */ }
   }
   if (!raw || typeof raw !== 'object') throw new Error("Couldn't find any backup data in that file.");
-  const unit = raw.unit === 'kg' || raw.unit === 'imp' ? raw.unit : undefined;
+  const unit = raw.unit === 'kg' || raw.unit === 'imp' || raw.unit === 'lb' ? raw.unit : undefined;
 
   if (raw.version === 2) {
     const settings = normalizeSettings(raw.settings);

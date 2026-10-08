@@ -292,8 +292,8 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
           </View>
           <View style={[s.preview, !verdict.ok ? s.prevErr : verdict.warn ? s.prevWarn : null]}>
             <Text style={[s.prevTxt, !verdict.ok ? { color: C.danger } : verdict.warn ? { color: C.warnInk } : null]}>
-              {!verdict.ok ? verdict.error : `${verdict.weeks + 1} weeks · about ${rate} a week (${fmt(verdict.pct, 2)}% of body weight).` +
-                (verdict.warn ? "\nThat's faster than ~1% a week, which most people find hard to sustain." : '')}
+              {!verdict.ok ? verdict.error : verdict.perWeek === 0 ? `Holding steady for ${verdict.weeks} weeks.` : `${verdict.weeks + 1} weeks · about ${rate} a week (${fmt(verdict.pct, 2)}% of body weight).` +
+                (verdict.warn ? (plan.goalKg! > plan.startKg! ? '\nGaining faster than ~0.5% a week is mostly fat rather than muscle.' : "\nThat's faster than ~1% a week, which most people find hard to sustain.") : '')}
             </Text>
           </View>
           {hidden > hiddenBefore && <Text style={[s.hint, { color: C.warnInk }]}>{hidden - hiddenBefore} weigh-in{hidden - hiddenBefore === 1 ? '' : 's'} before the new start date will be hidden from the trend and history. They stay in your backups and CSV, and come back if you move the start earlier again.</Text>}

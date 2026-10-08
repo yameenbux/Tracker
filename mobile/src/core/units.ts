@@ -34,7 +34,7 @@ export function round2(kg: number): number { return Math.round(kg * 100) / 100; 
 
 /** "83.0 kg" or "13 st 1 lb" */
 export function showWeight(kg: number, unit: Unit): string {
-  return unit === 'kg' ? fmt(kg) + ' kg' : toStLb(kg, 0);
+  return unit === 'kg' ? fmt(kg) + ' kg' : unit === 'lb' ? fmt(toLbNum(kg)) + ' lb' : toStLb(kg, 0);
 }
 /** Signed difference, e.g. "+0.4" kg or "+0.9" lb */
 export function showDiff(kg: number, unit: Unit): string {
@@ -45,6 +45,7 @@ export function showDiff(kg: number, unit: Unit): string {
 /** Parse what the user typed. kg: one field. imp: stone + pounds fields. Returns kg, null for empty, NaN for junk. */
 export function parseWeightInput(unit: Unit, a: string, b = ''): number | null {
   if (unit === 'kg') return a.trim() === '' ? null : num(a);
+  if (unit === 'lb') return a.trim() === '' ? null : num(a) * KG_PER_LB;
   const st = num(a), lb = num(b);
   if (isNaN(st) && isNaN(lb)) return null;
   return stLbToKg(isNaN(st) ? 0 : st, isNaN(lb) ? 0 : lb);
@@ -56,4 +57,9 @@ export function showChange(kg: number, unit: Unit, dp = 2): string {
   const places = unit === 'kg' ? dp : 1;
   const sign = Math.abs(v) < 0.5 * 10 ** -places ? '' : v > 0 ? '+' : '−';
   return sign + Math.abs(v).toFixed(places) + (unit === 'kg' ? ' kg' : ' lb');
+}
+
+/** A weight amount (a difference, not a body weight): "1.2 kg", "5 lb" rather than "0 st 5 lb". */
+export function showAmount(kg: number, unit: Unit): string {
+  return showWeight(kg, unit).replace(/^0 st /, '');
 }

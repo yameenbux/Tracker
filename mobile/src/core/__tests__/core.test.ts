@@ -31,7 +31,6 @@ describe('plan building', () => {
   });
   test.each([
     [{ startKg: null }, 'current weight'],
-    [{ goalKg: 99 }, 'below your current weight'],
     [{ goalDate: '2026-10-12' }, 'at least 2 weeks'],
     [{ goalDate: '2030-01-01' }, 'under 3 years'],
     [{ start: '2026-02-31' }, 'Pick a start date'],

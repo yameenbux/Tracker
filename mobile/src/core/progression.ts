@@ -43,10 +43,10 @@ const KG_PER_LB = 0.45359237;
  * Next time: add a small step after a completed session, otherwise repeat the weight.
  * Steps match real plates in the unit the person lifts in: +1 / +2.5 kg, or +2.5 / +5 lb.
  */
-export function suggestNext(last: SetLog | null, unit: 'kg' | 'imp' = 'kg'): { kg: number; reason: 'increase' | 'repeat' } | null {
+export function suggestNext(last: SetLog | null, unit: 'kg' | 'imp' | 'lb' = 'kg'): { kg: number; reason: 'increase' | 'repeat' } | null {
   if (!last || last.kg <= 0) return null;
   if (!last.done) return { kg: last.kg, reason: 'repeat' };
-  if (unit === 'imp') {
+  if (unit !== 'kg') {
     const lb = Math.round(last.kg / KG_PER_LB * 2) / 2;
     return { kg: Math.round((lb + (lb < 45 ? 2.5 : 5)) * KG_PER_LB * 100) / 100, reason: 'increase' };
   }

@@ -3,10 +3,10 @@ import { measureSummary, showLength } from '../core/body';
 import { estimateExpenditure } from '../core/calories';
 import { DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { consistency, milestoneQuarter } from '../core/insights';
-import { behindBy } from '../core/plan';
+import { behindBy, direction, sign } from '../core/plan';
 import { backupDue, daysSince, recentTrend } from '../core/summary';
 import { projectedGoalDate, Rate, TrendPoint } from '../core/trend';
-import { showChange, showWeight } from '../core/units';
+import { showChange, showAmount, showWeight } from '../core/units';
 import type { Settings, Unit } from '../core/types';
 import { BodyCard } from '../components/Body';
 import { EntriesList, EventCard } from '../components/Entries';
@@ -57,6 +57,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const waist = measureSummary(state.measurements, 'waist');
   const tdee = settings.trackCalories ? estimateExpenditure(state.intake, series) : null;
   const behind = trendNow != null ? behindBy(settings.plan, trendNow) : 0;
+  const d = sign(direction(settings.plan));
 
   return (
     <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={openSettings} scrollTop={scrollTop}>
@@ -73,10 +74,10 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
           a11y={last ? `Trend weight ${showWeight(last.trend, unit)}` : 'Trend weight, not enough data yet'} />
         <Tile icon="target" label="Pace" onPress={() => go('trend')}
           value={rate ? showChange(rate.perWeek, unit, 2) : '—'}
-          valueColor={rate ? (rate.perWeek < -0.05 ? C.mintInk : rate.perWeek > 0.05 ? C.coralInk : C.ink) : C.inkSoft}
+          valueColor={rate ? (d === 0 ? C.ink : rate.perWeek * d > 0.05 ? C.mintInk : rate.perWeek * d < -0.05 ? C.coralInk : C.ink) : C.inkSoft}
           sub={rate ? (eta ? `a week · goal around ${shortDate(parseKey(eta))}` : 'a week') : '4 weigh-ins over 10 days'}
           a11y={rate ? `Pace ${showChange(rate.perWeek, unit, 2)} a week${eta ? ', goal around ' + longDate(eta) : ''}` : 'Pace, not enough data yet'}>
-          {behind > 0.05 ? <Text style={s.tileNote}>{showWeight(behind, unit).replace(/^0 st /, '')} behind the line</Text>
+          {behind > (d === 0 ? 1 : 0.3) ? <Text style={s.tileNote}>{showAmount(behind, unit)} {d === 0 ? 'off your weight' : 'behind the line'}</Text>
             : last ? <Text style={[s.tileNote, { color: C.mintInk }]}>On the line</Text> : null}
         </Tile>
       </View>
@@ -113,7 +114,7 @@ export function TrendTab({ t, settings, series, today, scrollTop, openSettings, 
   return (
     <TabScreen eyebrow={`${settings.plan.targets.length}-week plan`} title="Trend" onSettings={openSettings} scrollTop={scrollTop}>
       <TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} today={today} />
-      {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} />}
+      {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} d={sign(direction(settings.plan)) as -1 | 0 | 1} />}
       <ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} />
       <SectionLabel>History</SectionLabel>
       <EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} />

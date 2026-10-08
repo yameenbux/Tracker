@@ -48,7 +48,7 @@ export function hydrate(raw: string): TrackerState {
     settings: normalizeSettings(s.settings),
     weights: cleanWeights(s.weights),
     habits: cleanHabits(s.habits),
-    unit: s.unit === 'imp' ? 'imp' : 'kg',
+    unit: s.unit === 'imp' || s.unit === 'lb' ? s.unit : 'kg',
     measurements: cleanMeasurements(s.measurements),
     photos: cleanPhotos(s.photos),
     intake: cleanIntake(s.intake),

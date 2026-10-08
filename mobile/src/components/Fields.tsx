@@ -2,7 +2,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, TextStyle, View } from 'react-native';
 import { dateKey, parseKey, validKey } from '../core/dates';
-import { fmt, lbPart, parseWeightInput, stPart } from '../core/units';
+import { fmt, lbPart, parseWeightInput, stPart, toLbNum } from '../core/units';
 import type { Unit } from '../core/types';
 import { DONE_ID } from './KeyboardDone';
 import { C, F } from '../theme';
@@ -11,10 +11,11 @@ import { C, F } from '../theme';
 export function UnitToggle({ unit, onChange }: { unit: Unit; onChange: (u: Unit) => void }) {
   return (
     <View style={s.seg} accessibilityRole="radiogroup">
-      {(['kg', 'imp'] as Unit[]).map(u => (
+      {(['kg', 'imp', 'lb'] as Unit[]).map(u => (
         <Pressable key={u} onPress={() => onChange(u)} style={[s.segBtn, unit === u && s.segOn]}
-          accessibilityRole="radio" accessibilityState={{ checked: unit === u }}>
-          <Text style={[s.segTxt, unit === u && s.segTxtOn]}>{u === 'kg' ? 'kg' : 'st / lb'}</Text>
+          accessibilityRole="radio" accessibilityState={{ checked: unit === u }}
+          accessibilityLabel={u === 'kg' ? 'Kilograms' : u === 'imp' ? 'Stones and pounds' : 'Pounds'}>
+          <Text style={[s.segTxt, unit === u && s.segTxtOn]}>{u === 'kg' ? 'kg' : u === 'imp' ? 'st / lb' : 'lb'}</Text>
         </Pressable>
       ))}
     </View>
@@ -23,7 +24,7 @@ export function UnitToggle({ unit, onChange }: { unit: Unit; onChange: (u: Unit)
 
 function textsFor(unit: Unit, kg: number | null): [string, string] {
   if (kg == null) return ['', ''];
-  return unit === 'kg' ? [fmt(kg), ''] : [String(stPart(kg)), fmt(lbPart(kg))];
+  return unit === 'kg' ? [fmt(kg), ''] : unit === 'lb' ? [fmt(toLbNum(kg)), ''] : [String(stPart(kg)), fmt(lbPart(kg))];
 }
 
 /**
@@ -57,13 +58,13 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
   const box: TextStyle[] = [s.wIn, small ? s.wInSmall : null, big ? s.wInBig : null].filter(Boolean) as TextStyle[];
   const w = (n: number, sm: number, bg: number) => ({ width: big ? bg : small ? sm : n });
 
-  if (unit === 'kg') {
+  if (unit === 'kg' || unit === 'lb') {
     return (
       <View style={s.wRow}>
         <TextInput style={[...box, w(84, 66, 132)]} value={txt[0]} onChangeText={v => edit(0, v)} autoFocus={autoFocus}
           maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus inputAccessoryViewID={DONE_ID} keyboardType="decimal-pad"
-          placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + ' in kilograms'} />
-        <Text style={s.unit}>kg</Text>
+          placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={label + (unit === 'kg' ? ' in kilograms' : ' in pounds')} />
+        <Text style={s.unit}>{unit}</Text>
       </View>
     );
   }

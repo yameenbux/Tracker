@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, dateKey, longDate, mondayOf, parseKey } from '../core/dates';
-import { assessPlan, buildTargets, defaultSettings, goalDateForPace, PACES, PaceId } from '../core/plan';
-import { fmt, lbPart, parseWeightInput, plausible, showWeight, stPart, toLbNum } from '../core/units';
+import { assessPlan, buildTargets, defaultSettings, direction, GAIN_PACES, goalDateForPace, PACES } from '../core/plan';
+import { fmt, lbPart, parseWeightInput, plausible, showAmount, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit } from '../core/types';
 import { DateInput, UnitToggle } from '../components/Fields';
 import { DONE_ID, KeyboardDone } from '../components/KeyboardDone';
@@ -15,9 +15,16 @@ import { C, F } from '../theme';
 
 type Step = 'welcome' | 'current' | 'goal' | 'pace' | 'plan' | 'lock';
 
+/** Maintenance plans: how long to hold for. */
+const HOLD = [
+  { id: 'hold8', label: '8 weeks', weeks: 8 },
+  { id: 'hold12', label: '12 weeks', weeks: 12, recommended: true },
+  { id: 'hold26', label: '6 months', weeks: 26 },
+];
+
 /** Large single-number entry, like the setup screens in Yazio/BitePal. */
 function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onChange: (kg: number | null) => void }) {
-  const init = (): [string, string] => kg == null ? ['', ''] : unit === 'kg' ? [fmt(kg), ''] : [String(stPart(kg)), fmt(lbPart(kg))];
+  const init = (): [string, string] => kg == null ? ['', ''] : unit === 'kg' ? [fmt(kg), ''] : unit === 'lb' ? [fmt(toLbNum(kg)), ''] : [String(stPart(kg)), fmt(lbPart(kg))];
   const [t, setT] = useState<[string, string]>(init);
   const [seenUnit, setSeenUnit] = useState(unit);
   if (unit !== seenUnit) { setSeenUnit(unit); setT(init()); }   // re-express the same weight when the unit flips
@@ -34,8 +41,8 @@ function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onCh
       <Text style={s.bigUnit}>{suffix}</Text>
     </View>
   );
-  return unit === 'kg'
-    ? <View style={s.bigRow}>{box(0, 150, 'Weight in kilograms', 'kg')}</View>
+  return unit === 'kg' || unit === 'lb'
+    ? <View style={s.bigRow}>{box(0, 150, unit === 'kg' ? 'Weight in kilograms' : 'Weight in pounds', unit)}</View>
     : <View style={s.bigRow}>{box(0, 70, 'Stone', 'st')}{box(1, 100, 'Pounds', 'lb')}</View>;
 }
 
@@ -48,12 +55,19 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const [step, setStep] = useState<Step>('welcome');
   const [startKg, setStartKg] = useState<number | null>(null);
   const [goalKg, setGoalKg] = useState<number | null>(null);
-  const [pace, setPace] = useState<PaceId>('steady');
+  const [pace, setPace] = useState<string>('');   // empty = the recommended option for the goal's direction
   const [start, setStart] = useState(dateKey(mondayOf(new Date())));
   const [editStart, setEditStart] = useState(false);
 
-  const pct = PACES.find(p => p.id === pace)!.pct;
-  const goalDate = startKg && goalKg ? goalDateForPace(startKg, goalKg, start, pct) : dateKey(addDays(parseKey(start), 112));
+  // Losing, gaining or holding: each gets its own choices on the "how fast" step
+  const dir = plausible(startKg) && plausible(goalKg) ? direction({ startKg, goalKg }) : 'lose';
+  const options: { id: string; label: string; pct?: number; weeks?: number; recommended?: boolean }[] =
+    dir === 'gain' ? [...GAIN_PACES] : dir === 'maintain' ? HOLD : [...PACES];
+  const chosen = options.find(o => o.id === pace) ?? options.find(o => o.recommended) ?? options[0];
+  const pct = chosen.pct ?? 0;
+  const dateFor = (o: typeof chosen) => !startKg || !goalKg ? null
+    : o.weeks ? dateKey(addDays(parseKey(start), o.weeks * 7)) : goalDateForPace(startKg, goalKg, start, o.pct!);
+  const goalDate = dateFor(chosen) ?? dateKey(addDays(parseKey(start), 112));
   const draft = { startKg, goalKg, start, goalDate };
   const verdict = assessPlan(draft);
   const settings: Settings | null = verdict.ok
@@ -66,7 +80,12 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
   const next = () => setStep(order[idx + 1]);
   const finish = (lock: boolean) => settings && onDone(settings, lock);
 
-  const goalErr = step === 'goal' && plausible(goalKg) && plausible(startKg) && goalKg! >= startKg! ? 'This version is for losing weight, so pick a goal below your current weight.' : null;
+  const goalErr = null;
+  const goalNote = step === 'goal' && plausible(goalKg) && plausible(startKg)
+    ? dir === 'gain' ? 'A gain plan: the line rises slowly, so most of it is muscle rather than fat.'
+      : dir === 'maintain' ? 'A maintenance plan: the line holds steady and Plumb shows how close you stay to it.'
+      : null
+    : null;
   const rate = (p: number) => {
     const kgw = (startKg ?? 0) * p / 100;
     return unit === 'kg' ? fmt(kgw, 2) + ' kg' : toLbNum(kgw).toFixed(1) + ' lb';
@@ -120,31 +139,34 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
             <Text style={s.sub}>Starting from {startKg ? showWeight(startKg, unit) : '—'}.</Text>
             <BigWeight unit={unit} kg={goalKg} onChange={setGoalKg} />
             {goalErr && <Text style={s.err}>{goalErr}</Text>}
+            {goalNote && <Text style={s.note}>{goalNote}</Text>}
           </>
         )}
 
         {step === 'pace' && (
           <>
-            <Text style={s.h2}>How fast?</Text>
-            <Text style={s.sub}>Slower plans are easier to stick to — and sticking to it is what matters.</Text>
-            {PACES.map(p => {
-              const on = p.id === pace;
-              const d = startKg && goalKg ? goalDateForPace(startKg, goalKg, start, p.pct) : null;
+            <Text style={s.h2}>{dir === 'maintain' ? 'For how long?' : 'How fast?'}</Text>
+            <Text style={s.sub}>{dir === 'maintain' ? 'Pick a stretch to hold for. You can always extend it.'
+              : dir === 'gain' ? 'Slow gains are mostly muscle; fast gains are mostly fat.'
+              : 'Slower plans are easier to stick to — and sticking to it is what matters.'}</Text>
+            {options.map(p => {
+              const on = p.id === chosen.id;
+              const d = dateFor(p);
               return (
                 <Pressable key={p.id} onPress={() => setPace(p.id)} style={[s.pace, on && s.paceOn]}
                   accessibilityRole="radio" accessibilityState={{ checked: on }}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Text style={[s.paceName, on && { color: C.plum2 }]}>{p.label}</Text>
-                      {'recommended' in p && <View style={s.rec}><Text style={s.recTxt}>Recommended</Text></View>}
+                      {p.recommended && <View style={s.rec}><Text style={s.recTxt}>Recommended</Text></View>}
                     </View>
-                    <Text style={s.paceMeta}>~{rate(p.pct)} a week{d ? ' · goal by ' + longDate(d) : ''}</Text>
+                    <Text style={s.paceMeta}>{p.weeks ? `until ${d ? longDate(d) : '—'}` : `~${rate(p.pct!)} a week${d ? ' · goal by ' + longDate(d) : ''}`}</Text>
                   </View>
                   <View style={[s.radio, on && s.radioOn]} />
                 </Pressable>
               );
             })}
-            {pace === 'fast' && <Text style={s.warn}>1% of body weight a week is the upper end. Most people can’t hold it for long, and it costs more muscle. Fine for a short push.</Text>}
+            {chosen.id === 'fast' && <Text style={s.warn}>1% of body weight a week is the upper end. Most people can’t hold it for long, and it costs more muscle. Fine for a short push.</Text>}
             <View style={s.startRow}>
               <Text style={s.sub}>Starting {longDate(start)}</Text>
               <Pressable onPress={() => setEditStart(e => !e)} style={s.linkBtn} accessibilityRole="button" accessibilityLabel={editStart ? 'Done changing start date' : 'Change start date'}>
@@ -158,12 +180,12 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
         {step === 'plan' && settings && (
           <>
             <Text style={s.eyebrow}>Your plan is ready</Text>
-            <Text style={s.h2}>Reach <Text style={{ color: C.coralInk }}>{showWeight(settings.plan.goalKg, unit)}</Text> by {longDate(settings.plan.goalDate)}</Text>
+            <Text style={s.h2}>{dir === 'maintain' ? 'Hold ' : 'Reach '}<Text style={{ color: C.coralInk }}>{showWeight(settings.plan.goalKg, unit)}</Text> {dir === 'maintain' ? 'until' : 'by'} {longDate(settings.plan.goalDate)}</Text>
             <View style={{ marginTop: 16 }}>
               <ProgressChart settings={settings} weights={{ [start]: settings.plan.startKg }} unit={unit} fixedRange />
             </View>
             {[
-              `${settings.plan.targets.length} weeks at about ${rate(pct)} a week`,
+              dir === 'maintain' ? `${settings.plan.targets.length - 1} weeks holding steady` : `${settings.plan.targets.length - 1} weeks at about ${rate(pct)} a week`,
               'Weigh in most mornings: more weigh-ins, clearer trend',
               'Habits, sessions and meals can be added later in Settings',
             ].map(t => (
@@ -176,9 +198,11 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
             {why && (
               <View style={s.whyBox}>
                 <Text style={s.whyBody}>
-                  Your pace is a share of body weight per week: {PACES.find(x => x.id === pace)!.label} is {pct}%, so from {showWeight(settings.plan.startKg, unit)} that’s about {rate(pct)} a week.
-                  {'\n\n'}Dividing the {showWeight(settings.plan.startKg - settings.plan.goalKg, unit).replace(/^0 st /, '')} you want to lose by that pace gives {settings.plan.targets.length - 1} weeks, so the goal date is {longDate(settings.plan.goalDate)}.
-                  {'\n\n'}The dashed line drops by the same amount each week. Your own weigh-ins are smoothed into a trend, so a salty dinner or a hard workout won’t knock you off it.
+                  {dir === 'maintain'
+                    ? <>The dashed line stays at {showWeight(settings.plan.goalKg, unit)} until {longDate(settings.plan.goalDate)}. Plumb shows how far your trend drifts from it; within about a kilo either way is normal day-to-day life.</>
+                    : <>Your pace is a share of body weight per week: {chosen.label} is {pct}%, so from {showWeight(settings.plan.startKg, unit)} that’s about {rate(pct)} a week.
+                      {'\n\n'}Dividing the {showAmount(Math.abs(settings.plan.startKg - settings.plan.goalKg), unit)} you want to {dir === 'gain' ? 'gain' : 'lose'} by that pace gives {settings.plan.targets.length - 1} weeks, so the goal date is {longDate(settings.plan.goalDate)}.</>}
+                  {'\n\n'}Your own weigh-ins are smoothed into a trend, so a salty dinner or a hard workout won’t knock you off the line.
                 </Text>
               </View>
             )}
@@ -236,6 +260,7 @@ const s = StyleSheet.create({
   bigBox: { flexDirection: 'row', alignItems: 'baseline', borderBottomWidth: 2, borderBottomColor: C.control, paddingBottom: 6 },
   bigIn: { fontFamily: F.display, fontSize: 56, color: C.ink, textAlign: 'center', padding: 0 },
   bigUnit: { fontFamily: F.bodySemi, fontSize: 18, color: C.inkSoft, marginLeft: 4 },
+  note: { fontFamily: F.body, fontSize: 14.5, color: C.plum2, textAlign: 'center', lineHeight: 20, marginTop: 4, paddingHorizontal: 12 },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, textAlign: 'center', marginBottom: 10, lineHeight: 19 },
   warn: { fontFamily: F.body, fontSize: 13, color: C.warnInk, backgroundColor: C.warnBg, borderWidth: 1, borderColor: '#F2E0B5', borderRadius: 12, padding: 12, lineHeight: 19, marginTop: 4 },
   pace: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.card, borderWidth: 1.5, borderColor: C.line, borderRadius: 16, padding: 16, marginTop: 10 },
