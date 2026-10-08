@@ -10,14 +10,17 @@ export interface PeriodChange { days: number; change: number | null }
 
 /**
  * How much the trend moved over each period up to today (Bevel-style change table).
- * A period is blank when there is no trend yet at its start, so a two-week-old plan never shows a made-up 30-day figure.
+ * A period is blank when there is no trend yet at its start, so a two-week-old plan never shows a made-up 30-day figure,
+ * and when no weigh-in falls inside it, so ten days away never reads as "no change this week".
  */
 export function changeTable(series: TrendPoint[], today: Date = new Date(), periods: readonly number[] = CHANGE_PERIODS): PeriodChange[] {
   const end = startOfDay(today);
   const now = trendAt(series, end);
   return periods.map(days => {
-    const then = trendAt(series, addDays(end, -days));
-    return { days, change: now != null && then != null ? now - then : null };
+    const from = addDays(end, -days);
+    const then = trendAt(series, from);
+    const weighed = series.some(p => p.d > from && p.d <= end);
+    return { days, change: now != null && then != null && weighed ? now - then : null };
   });
 }
 

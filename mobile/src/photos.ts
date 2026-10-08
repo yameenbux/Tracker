@@ -4,7 +4,8 @@ import { Platform } from 'react-native';
 import type { Pose } from './core/types';
 
 // Progress photos live in the app's private documents folder, never in the camera roll.
-// The web preview has no file system, so there a photo is kept inline as image data.
+// The web preview has no file system and its storage holds about 5 MB, which a few photos would fill (and then every
+// save would fail), so it can't add photos. Ones already kept inline as image data still show.
 function photoDir(): Directory {
   const dir = new Directory(Paths.document, 'photos');
   if (!dir.exists) dir.create({ intermediates: true });
@@ -19,11 +20,11 @@ export function photoUri(ref: string): string {
 
 /**
  * Takes or picks a photo, copies it into private storage and returns its file name.
- * Returns null if cancelled; throws with a readable message if permission is refused.
+ * Returns null if cancelled; throws with a readable message if permission is refused or this is the web preview.
  */
 export async function addPhoto(source: 'camera' | 'library', dateKey: string, pose: Pose): Promise<string | null> {
-  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: 'images', quality: 0.7, allowsEditing: true, aspect: [3, 4],
-                                                  base64: Platform.OS === 'web' };
+  if (Platform.OS === 'web') throw new Error('Progress photos need the iPhone app. The web preview can’t store them.');
+  const opts: ImagePicker.ImagePickerOptions = { mediaTypes: 'images', quality: 0.7, allowsEditing: true, aspect: [3, 4] };
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) throw new Error('Tidemark needs camera access to take progress photos. You can allow it in the iPhone Settings app.');
@@ -31,7 +32,6 @@ export async function addPhoto(source: 'camera' | 'library', dateKey: string, po
   const res = source === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
   if (res.canceled || !res.assets.length) return null;
   const asset = res.assets[0];
-  if (Platform.OS === 'web') return asset.base64 ? `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}` : asset.uri;
   const name = `p-${dateKey}-${pose}-${Date.now().toString(36)}.jpg`;
   const picked = new File(asset.uri);
   await picked.copy(new File(photoDir(), name));
