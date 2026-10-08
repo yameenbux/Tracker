@@ -47,11 +47,13 @@ const light = {
   toastAct: '#FFB3A8',         // the toast's action, on `fill`
   tipTrend: '#FFC2A3',         // trend value in the chart tooltip, on `fill`
   raised: '#FFFFFF',           // small white discs: milestone icon, chart dot, half-done habit dot
-  bar: 'rgba(251,247,243,0.97)', barLine: '#D9CFC4',   // tab bar, compact title, sheet headers
+  // Tab bar, compact title, sheet headers. Opaque: there's no blur (expo-blur isn't installed), and a bare 0.96 alpha just shows content through
+  bar: '#FBF7F3', barLine: '#D9CFC4',
   warnLine: '#F2E0B5', mintLine: '#BFEBD8', panelEdge: '#E4DAF2', paceOn: '#F7F3FB',
   backdrop: 'rgba(36,27,51,0.38)', scrim: 'rgba(36,27,51,0.72)',
   keyBar: '#F2EDE8', keyBarLine: '#CFC5BB',
   sheetEdge: 'transparent',
+  empty: '#D9CFC4',            // an unticked day in the 30-day grid: about 1.5:1 on the card, visible but quiet
 };
 
 /** Dark palette: plum-black surfaces, light ink, and accents lifted to keep WCAG AA (text 4.5:1, marks 3:1). */
@@ -99,8 +101,9 @@ const dark: typeof light = {
   toastAct: '#5A3896',         // plum, not red: Undo isn't destructive
   tipTrend: '#B2392A',
   sheetEdge: '#3A3348',        // a hairline so a sheet's top edge reads against the dimmed screen
+  empty: '#3E3849',
   raised: '#1C1925',
-  bar: 'rgba(18,16,25,0.96)', barLine: '#2E2938',
+  bar: '#121019', barLine: '#2E2938',
   warnLine: '#4A3B1C', mintLine: '#22473A', panelEdge: '#3A3150', paceOn: '#251E36',
   backdrop: 'rgba(0,0,0,0.55)', scrim: 'rgba(0,0,0,0.6)',
   keyBar: '#2C2C2E', keyBarLine: '#3A3A3C',   // matches the iOS dark keyboard

@@ -74,13 +74,12 @@ extras for people who want them.
 
 > [!IMPORTANT]
 > **Everything in green is built, tested and working. It is not on the App Store
-> yet.** The web app is live at
-> [yameenbux.github.io/Tracker](https://yameenbux.github.io/Tracker/) and the
-> iPhone app runs in Expo Go, but there has been no signed iPhone build: the
-> Apple Developer enrolment for YSB Ventures Ltd is in review. Until there is,
-> three things are written and unit-tested but **not yet proven on a device**:
-> buying and restoring Plus, iOS file encryption while the phone is locked, and
-> the production hardening plugin.
+> yet.** The iPhone app runs in Expo Go, and there's a web build the owner uses for
+> testing, but there has been no signed iPhone build: the Apple Developer
+> enrolment for YSB Ventures Ltd is in review. Until there is, three things are
+> written and unit-tested but **not yet proven on a device**: buying and restoring
+> Plus, iOS file encryption while the phone is locked, and the production
+> hardening plugin.
 >
 > **Apple Health, iCloud sync and widgets are not built.** They stay tagged "in
 > development" here until they are real. Do not describe them anywhere,
@@ -159,13 +158,13 @@ outside service it talks to.
 | Layer | What and why |
 | :--- | :--- |
 | **TypeScript 6** | Every file. Health numbers are not a place for `undefined` |
-| **Expo SDK 57** · React Native 0.86 · React 19 | One codebase for the iPhone app and the web app, developed without a Mac |
+| **Expo SDK 57** · React Native 0.86 · React 19 | One codebase for the iPhone app and a web test build, developed without a Mac |
 | **`src/core`** | Plain TypeScript with no React: trend, plan, medication, backups, Plus. Close to fully unit-tested |
 | **react-native-svg** | The charts are drawn by hand. No chart library, so nothing to fight in dark mode or with large text |
 | **AsyncStorage** + files | On the phone, encrypted by iOS while it's locked (`NSFileProtectionComplete`) |
 | **@noble** scrypt and XChaCha20-Poly1305 | Password-protected backups, with audited libraries and the system's own randomness |
 | **StoreKit 2** via `expo-iap` | Plus is sold by Apple. No account, no server, no purchase SDK |
-| **GitHub Actions → Pages** | Tests every push, publishes the web app from `main`, checks the site every 6 hours |
+| **GitHub Actions → Pages** | Tests every push, publishes the privacy policy and the web test build from `main`, checks the site every 6 hours |
 
 ---
 
@@ -203,20 +202,30 @@ npx expo lint
 CI runs all three on every push (`.github/workflows/ci.yml`) and fails if test
 coverage drops below the floor set in `mobile/package.json`.
 
-### Deploying the web app
+### Deploying the website
 
-`.github/workflows/pages.yml` builds the web app on every push to `main` and
-publishes it with the privacy policy and the classic tracker:
+`.github/workflows/pages.yml` runs on every push to `main` and publishes:
 
 | Address | What it is |
 | :--- | :--- |
-| `/Tracker/` | The app. In Safari on an iPhone: Share → Add to Home Screen for a full-screen app |
-| `/Tracker/privacy.html` | The privacy policy the app and the App Store link to |
-| `/Tracker/classic/` | The original tracker, kept for anyone still using it. `noindex` |
+| `/Tracker/` | The website: what Tidemark does, Free and Plus, support questions and the full privacy policy. Use it as the App Store **Support URL** |
+| `/Tracker/privacy.html` | The privacy policy on its own, which every app build links to. This is the page that has to stay up |
+| `/Tracker/app/` | The web build of the app: the owner's private test tool, not a product. `noindex`, and not linked from anywhere |
+| `/Tracker/classic/` | The original tracker, kept for the owner's old data. `noindex` |
+
+The web build is not offered to anyone, so the privacy policy doesn't cover it.
+It keeps its data in the browser's storage for `yameenbux.github.io`, which any
+other site published from that GitHub account can read, so use it with test
+data, not real medication records. Photos are switched off on web, because they
+would fill the browser's storage.
 
 **Settings → Pages → Source** must be **GitHub Actions**, not a branch.
-`site-check.yml` loads all three every 6 hours and fails, which makes GitHub
-email you, if one is down.
+The website is `site/index.html`. The privacy section is filled in from
+`privacy.html` when the site is built, so edit the policy in one place only.
+
+`site-check.yml` loads the main pages every 6 hours and fails, which makes GitHub
+email you, if one is down. Only the deploy job can publish: the build job, which
+installs packages, gets read access only, and every action is pinned to a commit.
 
 > [!CAUTION]
 > **`WEB_BASE_URL` decides every address in the web build.** The workflow sets it
@@ -301,11 +310,12 @@ and the privacy policy, and nowhere else needs changing if it moves.
 ## Before a release
 
 > [!WARNING]
-> **The privacy policy doesn't yet name who runs the app.** UK GDPR requires the
-> notice to name the organisation, and the Companies Act requires the company's
-> full name, number and registered office on its website. Add YSB Ventures Ltd's
-> number and registered office to `privacy.html` before the App Store listing
-> goes live.
+> **The website doesn't show the registered office address yet.** The Companies
+> Act requires a company's website to show its name, number and registered
+> office. The name and number are on the site and in the privacy policy. The
+> registered office is the owner's home, so it stays off this public repo until
+> the company moves to a registered office service; then add that address to
+> the site footer and the policy.
 
 In App Store Connect, once the developer account is approved:
 

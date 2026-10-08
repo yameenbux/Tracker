@@ -88,6 +88,21 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
   const box: TextStyle[] = [s.wIn, small ? s.wInSmall : null, big ? s.wInBig : null].filter(Boolean) as TextStyle[];
   const w = (n: number, sm: number, bg: number) => ({ width: big ? bg : small ? sm : n });
 
+  // The big entry (log sheet): the unit sits inside the field, at a readable size, next to the number
+  if (big) {
+    const field = (i: 0 | 1, u: string, width: number, a11y: string, pad: 'number-pad' | 'decimal-pad', focus?: boolean) => (
+      <View style={s.bigBox}>
+        <DoneInput style={[s.wIn, s.wInBig, s.bigIn, { width }]} value={txt[i]} onChangeText={v => edit(i, v)} autoFocus={focus}
+          maxFontSizeMultiplier={1.4} onFocus={() => setFocused(true)} onBlur={end} selectTextOnFocus keyboardType={pad}
+          placeholder="—" placeholderTextColor={C.placeholder} accessibilityLabel={a11y} />
+        <Text style={s.bigUnit} maxFontSizeMultiplier={1.4} importantForAccessibility="no" accessibilityElementsHidden>{u}</Text>
+      </View>
+    );
+    return unit === 'imp'
+      ? <View style={s.wRow}>{field(0, 'st', 44, label + ' stone', 'number-pad', autoFocus)}{field(1, 'lb', 66, label + ' pounds', 'decimal-pad')}</View>
+      : field(0, unit, 96, label + (unit === 'kg' ? ' in kilograms' : ' in pounds'), 'decimal-pad', autoFocus);
+  }
+
   if (unit === 'kg' || unit === 'lb') {
     return (
       <View style={s.wRow}>
@@ -161,6 +176,10 @@ const s = themed(() => StyleSheet.create({
   wInSmall: { fontSize: 15, paddingVertical: 5, borderRadius: 8 },
   wInBig: { fontFamily: F.display, fontSize: 30, minHeight: 60, borderRadius: 14, textAlign: 'center', paddingHorizontal: 6 },
   unit: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
+  bigBox: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg, borderWidth: 1, borderColor: C.control,
+            borderRadius: 14, minHeight: 60, paddingHorizontal: 12 },
+  bigIn: { borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0, textAlign: 'right' },
+  bigUnit: { fontFamily: F.bodySemi, fontSize: 20, color: C.inkSoft, marginLeft: 6 },
   fld: { gap: 5, flex: 1, minWidth: 0 },
   fLabel: { fontFamily: F.bodyBold, fontSize: 11.5, letterSpacing: 0.8, textTransform: 'uppercase', color: C.inkSoft },
   fIn: fieldStyles.fIn,

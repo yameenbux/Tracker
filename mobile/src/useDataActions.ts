@@ -1,5 +1,5 @@
 import { buildExportText, parseBackup } from './core/backup';
-import { isVault, MIN_PASSWORD, open, seal } from './core/vault';
+import { isVault, MIN_PASSWORD, openAsync, sealAsync } from './core/vault';
 import { secureRandom } from './secureRandom';
 import { toCsv } from './core/csv';
 import { dateKey, parseKey, startOfDay } from './core/dates';
@@ -9,7 +9,7 @@ import { clearCache, pickBackupText, shareBackup } from './io';
 import { deleteAllPhotos, deletePhoto } from './photos';
 import { applyDoseReminders, applyReminder } from './reminders';
 import { FEATURES } from './features';
-import { eraseStorage, latestRescue, Tracker } from './store';
+import { eraseStorage, latestRescue, latestSnapshot, Tracker } from './store';
 
 type Show = (m: { message: string; action?: string; onAction?: () => void }) => void;
 
@@ -27,20 +27,22 @@ export function useDataActions(t: Tracker, show: Show, done: () => void, plus = 
         if (pw == null) return;
         show({ message: 'Unlocking backup…' });
         await new Promise(r => setTimeout(r, 60));
-        text = open(text, pw);                                       // throws a readable message on a wrong password
+        text = await openAsync(text, pw);                             // throws a readable message on a wrong password
       }
       const b = parseBackup(text, state.settings);
       const nW = Object.keys(b.weights).length, nH = Object.keys(b.habits).length;
       const ok = await confirm('Restore this backup?',
         `${nW} weigh-in${nW === 1 ? '' : 's'} and ${nH} day${nH === 1 ? '' : 's'} of habits.\n\nThis replaces everything currently in Tidemark.`, 'Restore');
       if (!ok) return;
-      await t.snapshot('before_restore');
+      const saved = await t.snapshot('before_restore');
       const before = state;
       // Photos aren't in backups, so the ones already on this phone are kept
       t.replaceAll({ settings: b.settings, weights: b.weights, entries: b.entries, habits: b.habits, measurements: b.measurements, photos: state.photos,
         intake: b.intake, lifts: b.lifts, doses: b.doses ?? {}, unit: b.unit ?? state.unit });
       done();
-      show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo', onAction: () => t.replaceAll(before) });
+      // Undo puts back the newest snapshot (what was here before this restore), or the copy in memory if it wasn't written
+      show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo',
+        onAction: async () => t.replaceAll((saved && (await latestSnapshot())) || before) });
     } catch (e) {
       notify("Couldn't restore", e instanceof Error ? e.message : "That file couldn't be read.");
     }
@@ -65,7 +67,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void, plus = 
       if ((await askPassword('Type it again', 'To make sure there’s no typo.')) !== pw) { notify('Passwords didn’t match', 'Nothing was exported. Try again.'); return; }
       show({ message: 'Locking your backup…' });
       await new Promise(r => setTimeout(r, 60));                   // let the message paint before the (deliberately slow) key step
-      text = seal(text, pw, secureRandom);
+      text = await sealAsync(text, pw, secureRandom);
     }
     try {
       await shareBackup('tidemark-' + dateKey(new Date()) + (how === 'password' ? '-protected' : '') + '.txt', text);
@@ -107,7 +109,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void, plus = 
     await applyDoseReminders(null, {});
     done();
     t.replaceAll({ settings: null, weights: {}, habits: {}, unit: state.unit, measurements: {}, photos: {}, intake: {}, lifts: {} });
-    t.setPrefs({ ...DEFAULT_PREFS });
+    t.setPrefs({ ...DEFAULT_PREFS, plus: prefs.plus });   // Plus belongs to the Apple ID, not the data
   };
 
   return { restore, exportCsv, exportData, exportRescued, reset, eraseAll };

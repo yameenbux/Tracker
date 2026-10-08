@@ -5,7 +5,7 @@ import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { DAY_ABBR, dateKey, parseKey } from '../core/dates';
+import { DAY_ABBR, dateKey, parseKey, shortDate } from '../core/dates';
 import { consistency } from '../core/insights';
 import { toggleHabit, extent } from '../core/plan';
 import { changeTable, habitGrid } from '../core/summary';
@@ -36,13 +36,14 @@ export function Sparkline({ points, width = 120, height = 34, color = C.graphCor
 }
 
 /** Two-across summary tile that opens its detail tab (MacroFactor-style). */
-export function Tile({ icon, label, value, valueColor, sub, spark, children, onPress, a11y }: {
+export function Tile({ icon, label, value, valueColor, sub, spark, children, onPress, a11y, wide }: {
   icon: IconName; label: string; value: string; valueColor?: string; sub?: string; spark?: TrendPoint[];
   children?: React.ReactNode; onPress: () => void; a11y: string;
+  wide?: boolean;   // one tile per row (very large text)
 }) {
   const [w, setW] = useState(0);
   return (
-    <Tap onPress={onPress} style={s.tile}
+    <Tap onPress={onPress} style={[s.tile, wide && s.tileWide]}
       accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint={`Opens ${label}`}>
       <View style={s.tileHead}>
         <Icon name={icon} size={16} color={C.inkSoft} />
@@ -102,11 +103,14 @@ export const HabitGrids = memo(function HabitGrids({ settings, habits }: { setti
   const { plus } = usePlus();
   const habitsShown = (x: Settings) => usableHabits(x.habits, plus);   // free: the first few; the rest are kept
   if (!habitsShown(settings).length) return null;
+  const now = new Date(), from = habitGrid({}, '', 30, now)[0].key;
   return (
     <Card title="Last 30 days">
+      {/* The time axis: squares run oldest to newest, and today's is outlined */}
+      <Text style={s.axis} maxFontSizeMultiplier={1.5}>{shortDate(parseKey(from))} → today, left to right</Text>
       {habitsShown(settings).map(h => {
-        const grid = habitGrid(habits, h.id, 30, new Date(), settings.plan.start);
-        const m = consistency(habits, h.id, 30, new Date(), settings.plan.start);
+        const grid = habitGrid(habits, h.id, 30, now, settings.plan.start);
+        const m = consistency(habits, h.id, 30, now, settings.plan.start);
         const pct = m.of ? Math.round(m.done / m.of * 100) : 0;
         return (
           <View key={h.id} style={s.gridRow} accessible accessibilityLabel={`${h.name}: done ${m.done} of the last ${m.of} days, ${pct} percent`}>
@@ -115,7 +119,7 @@ export const HabitGrids = memo(function HabitGrids({ settings, habits }: { setti
               <Text style={s.gridPct}>{pct}%</Text>
             </View>
             <View style={s.grid}>
-              {grid.map(d => <View key={d.key} style={[s.cellDot, !d.counted ? s.cellOff : d.done ? s.cellOn : null]} />)}
+              {grid.map((d, i) => <View key={d.key} style={[s.cellDot, !d.counted ? s.cellOff : d.done ? s.cellOn : null, i === grid.length - 1 && s.cellToday]} />)}
             </View>
           </View>
         );
@@ -164,11 +168,12 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
 
 const s = themed(() => StyleSheet.create({
   tile: { flex: 1, minHeight: 150, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14 },
+  tileWide: { flex: 0, flexGrow: 0, flexBasis: 'auto', minHeight: 0 },
   tileHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tileLabel: { flex: 1, fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   tileValue: { fontFamily: F.display, fontSize: 24, color: C.ink, marginTop: 10, letterSpacing: -0.3 },
   tileSub: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 2, lineHeight: 17 },
-  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.chip },
+  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.empty },
   dotOn: { backgroundColor: C.done },
   dotSome: { backgroundColor: C.raised, borderWidth: 2, borderColor: C.done },
   table: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
@@ -181,8 +186,10 @@ const s = themed(() => StyleSheet.create({
   gridName: { flex: 1, fontFamily: F.bodySemi, fontSize: 14, color: C.ink },
   gridPct: { fontFamily: F.display, fontSize: 14, color: C.ink },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
-  cellDot: { width: '8.4%', aspectRatio: 1, borderRadius: 5, backgroundColor: C.chip },
+  cellDot: { width: '8.4%', aspectRatio: 1, borderRadius: 5, backgroundColor: C.empty },
   cellOn: { backgroundColor: C.done },
+  cellToday: { borderWidth: 2, borderColor: C.ink },
+  axis: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, paddingHorizontal: 4, marginTop: -4 },
   cellOff: { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.line, borderStyle: 'dashed' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 2 },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14, borderRadius: 999, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.control },

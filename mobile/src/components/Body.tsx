@@ -7,7 +7,7 @@ import { weightSeries } from '../core/plan';
 import { trendSeries, TrendPoint } from '../core/trend';
 import { num, showWeight } from '../core/units';
 import type { MeasureKey, Measurements, PhotoLog, Pose, Settings, Unit, Weights } from '../core/types';
-import { confirm } from '../dialogs';
+import { confirm, notify } from '../dialogs';
 import { addPhoto, deletePhoto, photoUri } from '../photos';
 import { C, F, themed, useScheme } from '../theme';
 import { DateInput, Field, fieldStyles } from './Fields';
@@ -167,7 +167,7 @@ function MeasureSheet({ unit, onUnit, measurements, onSave, onClose }: {
   const [then, setThen] = useState<null | { run: () => void }>(null);   // animate away, then save
   return (
     <Sheet title="Measurements" onClose={() => (then ? then.run() : onClose())} closing={!!then} footer={<>
-      <Button label="Save" kind="coral" disabled={bad || !any || !!then} onPress={() => setThen({ run: () => onSave(setMeasureDay(measurements, k, values)) })} />
+      <Button label="Save" disabled={bad || !any || !!then} onPress={() => setThen({ run: () => onSave(setMeasureDay(measurements, k, values)) })} />
       {existing && <Button label={`Delete ${longDate(k)}`} kind="danger" style={{ marginTop: 8 }}
         onPress={() => confirmDelete('Delete these measurements?', `Removes everything measured on ${longDate(k)}.`, () => setThen({ run: () => onSave(setMeasureDay(measurements, k, null)) }))} />}
     </>}>
@@ -203,7 +203,7 @@ function PhotoSheet({ photos, onChange, onClose }: { photos: PhotoLog; onChange:
       if (day[pose]) deletePhoto(day[pose]!);
       onChange(setPhotoRef(photos, k, pose, ref));
     } catch (e) {
-      Alert.alert("Couldn't add the photo", e instanceof Error ? e.message : 'Please try again.');
+      notify('Couldn’t add the photo', e instanceof Error ? e.message : 'Please try again.');
     } finally { setBusy(false); }
   };
   const tap = (pose: Pose) => {

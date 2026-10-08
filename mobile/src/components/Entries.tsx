@@ -3,7 +3,7 @@ import { FadeIn, Tap } from './Motion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { DAY_ABBR, dateKey, daysBetween, longDate, parseKey } from '../core/dates';
+import { DAY_ABBR, dateKey, daysBetween, longDate, parseKey, shortDate } from '../core/dates';
 import { weekFraction, weightSeries } from '../core/plan';
 import { trendSeries, TrendPoint } from '../core/trend';
 import { plausible, rangeText, showRangeError, stepWeight, showWeight } from '../core/units';
@@ -117,7 +117,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
   return (
     <Sheet title={editing ? 'Edit weigh-in' : 'Log weight'} onClose={() => (then ? then.run() : onClose())} closing={!!then}
       footer={<>
-        <Button label={clash ? 'Save and replace' : 'Save'} kind="coral" disabled={!valid || !!then} onPress={() => { if (valid) setThen({ run: () => onSave(key, kg!) }); }} />
+        <Button label={clash ? 'Save and replace' : 'Save'} disabled={!valid || !!then} onPress={() => { if (valid) setThen({ run: () => onSave(key, kg!) }); }} />
         {editing && <Button label="Delete weigh-in" kind="danger" disabled={!!then} onPress={() => setThen({ run: () => onDelete(initialKey!) })} style={{ marginTop: 8 }} />}
       </>}>
       <View style={s.stepRow}>
@@ -133,7 +133,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
           <Icon name="plus" size={24} color={C.ink} strokeWidth={2.4} />
         </Tap>
       </View>
-      {!editing && lastKey && kg != null && <Text style={s.hint}>Starts from your last weigh-in ({showWeight(weights[lastKey], unit)}, {longDate(lastKey)}). Nudge it or type over it.</Text>}
+      {!editing && lastKey && kg != null && <Text style={s.hint}>Last: {showWeight(weights[lastKey], unit)} on {lastKey.slice(0, 4) === today.slice(0, 4) ? shortDate(parseKey(lastKey)) : longDate(lastKey)}</Text>}
       <View style={s.dateRow}>
         <Text style={s.dateLabel}>Date</Text>
         <DateInput value={key} onChange={setKey} label="Weigh-in date" min={minKey} max={today} />

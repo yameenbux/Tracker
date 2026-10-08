@@ -39,15 +39,19 @@ export interface StorePurchase {
   purchaseState?: string;
   expirationDateIOS?: number | null;
   revocationDateIOS?: number | null;
+  renewalInfoIOS?: { gracePeriodExpirationDate?: number | null } | null;
 }
 
-/** Plus from the store's current purchases: a lifetime purchase, or a subscription that hasn't expired. */
+/**
+ * Plus from the store's current purchases: a lifetime purchase, or a subscription that hasn't expired. A renewal
+ * that failed to charge keeps Plus until Apple's billing grace period ends.
+ */
 export function plusFrom(purchases: StorePurchase[], now: number = Date.now()): PlusStatus {
   let best: PlusStatus = { ...NO_PLUS, checkedAt: now };
   for (const p of purchases) {
     if (!ALL_PLUS_IDS.includes(p.productId) || p.revocationDateIOS || (p.purchaseState && p.purchaseState !== 'purchased')) continue;
     if (p.productId === PLUS_PRODUCTS.lifetime) return { active: true, productId: p.productId, expires: null, checkedAt: now };
-    const exp = p.expirationDateIOS ?? null;
+    const exp = Math.max(p.expirationDateIOS ?? 0, p.renewalInfoIOS?.gracePeriodExpirationDate ?? 0) || null;
     if (exp != null && exp > now && (!best.active || (best.expires ?? 0) < exp)) best = { active: true, productId: p.productId, expires: exp, checkedAt: now };
   }
   return best;
@@ -57,10 +61,14 @@ export function plusFrom(purchases: StorePurchase[], now: number = Date.now()): 
 // is a few hours late) isn't locked out; the next check with Apple settles it.
 export const OFFLINE_GRACE_MS = 3 * 86400000;
 
-/** Whether the saved status still counts, with no store check (offline, or before the store answers). */
+/**
+ * Whether the saved status still counts, with no store check (offline, or before the store answers). A clock set
+ * back to more than a day before Apple's last check can't keep a subscription going (lifetime is unaffected).
+ */
 export function plusActive(s: PlusStatus | null | undefined, now: number = Date.now()): boolean {
   if (!s?.active) return false;
-  return s.expires == null || s.expires + OFFLINE_GRACE_MS > now;
+  if (s.expires == null) return true;
+  return s.expires + OFFLINE_GRACE_MS > now && (s.checkedAt == null || now >= s.checkedAt - 86400000);
 }
 
 /** Untrusted saved status (device preferences). */

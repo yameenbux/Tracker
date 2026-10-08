@@ -132,15 +132,30 @@ function Main() {
   const series = useMemo(() => (settings ? trendSeries(weightSeries(settings.plan, state.weights)) : []), [settings, state.weights]);
   const rate = useMemo(() => (today ? weeklyRate(series) : null), [series, today]);   // the 28-day window moves with the date
 
+  // Any open sheets close when the app locks (and don't reopen on unlock); a tapped reminder's log sheet opens after it.
+  // Reacting to the lock (owned by useLock) after the commit; the sheets aren't rendered while locked anyway.
+  useEffect(() => {
+    if (!lock.locked) return;
+    setShowSettings(false); setLog(null); setLift(null);   // eslint-disable-line react-hooks/set-state-in-effect
+  }, [lock.locked]);
+  useEffect(() => {
+    if (lock.locked || !settings || pendingLog == null) return;
+    setPendingLog(null); setShowSettings(false); setTab('today'); setLog({ key: null, n: pendingLog });   // eslint-disable-line react-hooks/set-state-in-effect
+  }, [lock.locked, settings, pendingLog]);
+
   if (!t.ready) return <TodaySkeleton />;
   if (t.loadFailed) return <LoadFailedScreen onRetry={t.retryLoad} />;
 
   // The lock comes before everything else that shows data, onboarding included (a recovered setup shows weigh-in counts).
-  // While locked, render nothing but the lock: no data underneath for VoiceOver, and any open sheets close.
-  // (Adjusting state during render is React's documented pattern for reacting to a changed value without an extra pass.)
-  if (lock.locked && (showSettings || log || lift)) { setShowSettings(false); setLog(null); setLift(null); }   // don't reopen them on unlock
-  if (!lock.locked && settings && pendingLog != null) { setPendingLog(null); setShowSettings(false); setTab('today'); setLog({ key: null, n: pendingLog }); }
-  if (lock.locked) return <LockScreen lockName={lock.lockName} onUnlock={lock.tryUnlock} />;
+  // While locked, render nothing but the lock: no data underneath for VoiceOver. Plus still listens to the store, so a
+  // purchase that completes while locked (e.g. approved in a banking app) is finished and unlocks.
+  if (lock.locked) {
+    return (
+      <PlusProvider status={prefs.plus} onStatus={onPlusStatus} locked>
+        <LockScreen lockName={lock.lockName} onUnlock={lock.tryUnlock} />
+      </PlusProvider>
+    );
+  }
 
   if (!settings) {
     const kept = Object.keys(state.weights).length;
@@ -207,7 +222,7 @@ function Main() {
               if (moved) delete after[moved.k];
               const wk = changeTable(trendSeries(weightSeries(settings.plan, after)), new Date(), [7])[0].change;
               show({ message: `${showWeight(kg, state.unit)} saved for ${k === today ? 'today' : longDate(k)}`
-                       + (wk != null ? ` · trend ${showChange(wk, state.unit)} this week` : ''),
+                       + (wk != null ? ` · trend ${showChange(wk, state.unit, 1)} this week` : ''),
                      ...(replaced != null || moved ? { action: 'Undo', onAction: undo } : {}) });
             }}
             onDelete={k => {

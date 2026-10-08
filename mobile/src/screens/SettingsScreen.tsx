@@ -26,7 +26,7 @@ import { PRIVACY_URL, SUPPORT_EMAIL } from '../support';
 import { PaywallSlot, usePlus } from '../plus';
 import { FREE_HABITS, PLUS_PRODUCTS } from '../core/plus';
 import { useReducedMotion } from '../motion';
-import { allowReminders, DOSE_HOUR, timeLabel } from '../reminders';
+import { allowReminders, DOSE_HOUR, remindersSetUntil, timeLabel } from '../reminders';
 import { AppearancePref, C, F, themed, useScheme } from '../theme';
 
 
@@ -149,6 +149,9 @@ export function SettingsScreen(p: SettingsProps) {
   const plan = settings.plan;
   const sessionDays = DAY_ORDER.filter(d => settings.sessions[d].title || settings.sessions[d].items.length).length;
   const backupDays = daysSince(p.lastBackup);
+  // Reminders are scheduled a few weeks ahead and topped up when Tidemark opens; say how far, so a long break isn't a surprise
+  const until = remindersSetUntil(p.reminder, FEATURES.medication && plus ? settings.medication : null, p.doses, p.weights[dateKey(new Date())] != null);
+  const reminderEnd = until ? ` Reminders are set up to ${shortDate(until)}; opening Tidemark adds more.` : '';
   const version = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
   const build = Application.nativeBuildVersion ?? Constants.expoConfig?.ios?.buildNumber;
 
@@ -168,19 +171,6 @@ export function SettingsScreen(p: SettingsProps) {
         </View>
       </View>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        <Group title="Tidemark Plus">
-          {plus ? <>
-            <Row icon="check" label="Plus" value={plusApi.status?.productId === PLUS_PRODUCTS.lifetime ? 'Lifetime' : plusApi.status?.productId === PLUS_PRODUCTS.yearly ? 'Yearly' : plusApi.status?.productId === PLUS_PRODUCTS.monthly ? 'Monthly' : 'Active'}
-              last={plusApi.status?.productId === PLUS_PRODUCTS.lifetime || !plusApi.storeAvailable} />
-            {plusApi.storeAvailable && plusApi.status?.productId !== PLUS_PRODUCTS.lifetime &&
-              <Row icon="calendar" label="Manage subscription" onPress={plusApi.manage} hint="Opens your App Store subscriptions" last />}
-          </> : <>
-            <Row icon="flag" label="Get Plus" value="See plans" onPress={() => openPaywall()} hint="Medication log, 6 habits, measurements, photos, calories"
-              last={!plusApi.storeAvailable} />
-            {plusApi.storeAvailable && <Row icon="download" label="Restore purchases" onPress={() => { plusApi.restore(); }} hint="If you’ve bought Plus before" last />}
-          </>}
-        </Group>
-
         <Group title="Plan">
           <Row icon="target" label="Goal" value={`${showWeight(plan.goalKg, unit)} · ${longDate(plan.goalDate)}`} onPress={() => setPage('plan')} hint="Edit your plan" />
           <Row icon="calendar" label="Planned breaks" value={plan.breaks?.length ? String(plan.breaks.length) : 'None'} onPress={() => setPage('plan')} />
@@ -195,7 +185,9 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
 {FEATURES.medication &&           <Row icon="pill" label="Medication" value={!plus ? 'Plus' : settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
             onPress={() => (plus ? setPage('medication') : openPaywall('medication'))} />}
-          <SwitchRow icon="flame" label="Calorie estimate" value={plus && settings.trackCalories === true} onChange={v => (plus ? commit({ trackCalories: v }) : openPaywall('calories'))} last />
+          {/* Free: a plain row that says it's Plus, not a switch that opens a sales sheet */}
+          {plus ? <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
+            : <Row icon="flame" label="Calorie estimate" value="Plus" onPress={() => openPaywall('calories')} hint="Part of Tidemark Plus" last />}
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
 
@@ -204,14 +196,28 @@ export function SettingsScreen(p: SettingsProps) {
         </Group>
 
         <Group title="Reminder" footer={p.reminderBlocked ? 'Notifications for Tidemark are switched off in iOS Settings, so no reminder will appear until they’re allowed again.'
-          : 'A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.'}>
+          : 'A gentle daily notification. It’s scheduled on this phone; nothing is sent anywhere.' + reminderEnd}>
           <SwitchRow icon="bell" label="Daily weigh-in reminder" value={p.reminder.on} onChange={on => p.onReminderChange({ ...p.reminder, on })} last={!p.reminder.on} />
           {p.reminderBlocked && <Row icon="info" label="Allow notifications" value="iOS Settings" onPress={() => Linking.openSettings().catch(() => {})} hint="Opens Tidemark’s page in iOS Settings" />}
           {p.reminder.on && <Row icon="calendar" label="Time" last right={<TimeInput hour={p.reminder.hour} minute={p.reminder.minute}
             onChange={(hour, minute) => p.onReminderChange({ ...p.reminder, hour, minute })} />} />}
         </Group>
 
-        <Group title="Privacy & data" footer="Everything lives on this phone only. Tidemark has no account and no servers. A backup file saved to iCloud Drive or Files is the only copy if you lose your phone.">
+        {/* After the settings people came for, not first */}
+        <Group title="Tidemark Plus">
+          {plus ? <>
+            <Row icon="check" label="Plus" value={plusApi.status?.productId === PLUS_PRODUCTS.lifetime ? 'Lifetime' : plusApi.status?.productId === PLUS_PRODUCTS.yearly ? 'Yearly' : plusApi.status?.productId === PLUS_PRODUCTS.monthly ? 'Monthly' : 'Active'}
+              last={plusApi.status?.productId === PLUS_PRODUCTS.lifetime || !plusApi.storeAvailable} />
+            {plusApi.storeAvailable && plusApi.status?.productId !== PLUS_PRODUCTS.lifetime &&
+              <Row icon="calendar" label="Manage subscription" onPress={plusApi.manage} hint="Opens your App Store subscriptions" last />}
+          </> : <>
+            <Row icon="sparkle" label="Get Plus" value="See plans" onPress={() => openPaywall()} hint="Medication log, 6 habits, measurements, photos, calories"
+              last={!plusApi.storeAvailable} />
+            {plusApi.storeAvailable && <Row icon="download" label="Restore purchases" onPress={() => { plusApi.restore(); }} hint="If you’ve bought Plus before" last />}
+          </>}
+        </Group>
+
+        <Group title="Privacy & data" footer="Everything lives on this phone only. Tidemark has no account and no servers. A backup file kept somewhere safe off this phone is the only copy if you lose it.">
           <SwitchRow icon="lock" label={`Lock with ${p.lockName}`} value={p.lock} onChange={p.onLockChange} disabled={!p.lockAvailable} />
           <Row icon="share" label="Export backup" value={backupDays == null ? 'Never' : backupDays === 0 ? 'Today' : `${backupDays}d ago`} onPress={p.onExport}
             hint="Saves a backup file you can restore later" />
@@ -329,7 +335,7 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
   }, [verdictText, changed]);
   return (
     <View style={s.wrap}>
-      <PageHeader title="Plan" onBack={leave} right={<Button label="Save" kind="coral" small disabled={!changed || !verdict.ok} onPress={save} />} />
+      <PageHeader title="Plan" onBack={leave} right={<Button label="Save" small disabled={!changed || !verdict.ok} onPress={save} />} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <View style={s.form}>
           <View style={s.two}>
@@ -542,7 +548,7 @@ function MedicationPage({ settings, doses, onDoses, onSave, onBack }: {
         <Text style={s.lead}>For a weight-loss medication such as a weekly GLP-1 injection. Today shows when the next dose is due and lets you mark it
           as taken; the Trend tab shows how your trend moved at each dose. Tidemark only keeps a record: follow your prescriber for anything about dosing.</Text>
         <View style={s.form}>
-          <Field label="Name"><Input value={name} onChangeText={setName} placeholder="e.g. Wegovy, Mounjaro" accessibilityLabel="Medication name" maxLength={40} /></Field>
+          <Field label="Name"><Input value={name} onChangeText={setName} placeholder="e.g. semaglutide" accessibilityLabel="Medication name" maxLength={40} /></Field>
           <View style={{ marginTop: 14 }}><Field label="Current dose (mg, optional)">
             <Input value={dose} onChangeText={setDose} keyboardType="decimal-pad" placeholder="e.g. 2.4" accessibilityLabel="Current dose in milligrams" />
           </Field></View>

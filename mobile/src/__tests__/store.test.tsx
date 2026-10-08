@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
-import { latestRescue, useTracker } from '../store';
+import { latestRescue, latestSnapshot, useTracker } from '../store';
 
 const goodState = {
   settings: { plan: { start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: [90, 89.5, 89] },
@@ -46,12 +46,74 @@ describe('saved data', () => {
     expect(await AsyncStorage.getItem(rescue!)).toBe('{broken');
   });
 
-  test('“export rescued copy” picks the newest copy, whichever kind it is', async () => {
+  test('“export rescued copy” gives the newest unreadable copy, never a newer pre-restore snapshot', async () => {
     await AsyncStorage.setItem('tracker_state_unreadable_1000', 'old rescue');
-    await AsyncStorage.setItem('tracker_snapshot_before_restore', JSON.stringify({ at: new Date(5000).toISOString(), tag: 'snap' }));
-    expect(JSON.parse((await latestRescue())!).tag).toBe('snap');
     await AsyncStorage.setItem('tracker_state_unreadable_9000', 'new rescue');
+    await AsyncStorage.setItem('tracker_state_unreadable_5000', 'middle rescue');
+    await AsyncStorage.setItem('tracker_snapshot_before_restore_99000', JSON.stringify({ at: new Date(99000).toISOString(), tag: 'snap' }));
     expect(await latestRescue()).toBe('new rescue');
+    await AsyncStorage.clear();
+    await AsyncStorage.setItem('tracker_snapshot_before_restore', JSON.stringify({ at: new Date().toISOString() }));
+    expect(await latestRescue()).toBeNull();
+  });
+
+  test('only the newest three distinct unreadable copies are kept, the new one always among them', async () => {
+    for (const t of [1000, 2000, 3000]) await AsyncStorage.setItem(`tracker_state_unreadable_${t}`, `copy ${t}`);
+    await AsyncStorage.setItem('tracker_state_v1', '{broken');
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    const keys = (await AsyncStorage.getAllKeys()).filter(k => k.startsWith('tracker_state_unreadable'));
+    expect(keys).toHaveLength(3);
+    expect(keys).not.toContain('tracker_state_unreadable_1000');
+    expect(await latestRescue()).toBe('{broken');
+  });
+
+  test('if the unreadable copy can’t be written, nothing is saved over the original', async () => {
+    await AsyncStorage.setItem('tracker_state_v1', '{broken');
+    const set = AsyncStorage.setItem as jest.Mock;
+    set.mockClear();
+    set.mockRejectedValueOnce(new Error('disk full'));
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    expect(result.current.loadFailed).toBe(true);
+    act(() => { result.current.setWeight('2026-02-01', 88); });
+    await new Promise(r => setTimeout(r, 300));
+    expect(set.mock.calls.filter(c => c[0] === 'tracker_state_v1')).toHaveLength(0);
+    expect(await AsyncStorage.getItem('tracker_state_v1')).toBe('{broken');
+  });
+
+  test('a weigh-in is saved straight away; habit ticks wait for the burst to end', async () => {
+    await AsyncStorage.setItem('tracker_state_v1', JSON.stringify(goodState));
+    const set = AsyncStorage.setItem as jest.Mock;
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    set.mockClear();
+    const saves = () => set.mock.calls.filter(c => c[0] === 'tracker_state_v1');
+    act(() => { result.current.setHabits({ '2026-01-12': { water: true } }); });
+    await act(async () => { await new Promise(r => setTimeout(r, 30)); });
+    expect(saves()).toHaveLength(0);
+    act(() => { result.current.setWeight('2026-01-13', 89.1); });
+    await act(async () => { await new Promise(r => setTimeout(r, 30)); });
+    expect(saves()).toHaveLength(1);
+    expect(JSON.parse(saves()[0][1]).weights['2026-01-13']).toBe(89.1);
+  });
+
+  test('restores keep their own snapshots: the newest three, each for 30 days, the newest used for undo', async () => {
+    await AsyncStorage.setItem('tracker_state_v1', JSON.stringify(goodState));
+    const old = { ...goodState, at: new Date(Date.now() - 31 * 864e5).toISOString() };
+    await AsyncStorage.setItem('tracker_snapshot_before_restore', JSON.stringify(old));   // from an older build, expired
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    await waitFor(async () => expect(await AsyncStorage.getItem('tracker_snapshot_before_restore')).toBeNull());
+    for (const unit of ['lb', 'imp', 'kg', 'lb'] as const) {
+      act(() => { result.current.setUnit(unit); });
+      await act(async () => { await new Promise(r => setTimeout(r, 5)); expect(await result.current.snapshot('before_restore')).toBe(true); });
+    }
+    const keys = (await AsyncStorage.getAllKeys()).filter(k => k.startsWith('tracker_snapshot_'));
+    expect(keys).toHaveLength(3);
+    expect(keys.every(k => /_\d+$/.test(k))).toBe(true);
+    expect((await latestSnapshot())!.unit).toBe('lb');
+    expect((await latestSnapshot())!.weights['2026-01-12']).toBe(89.4);
   });
 
   test('broken preferences do not cost you your data', async () => {

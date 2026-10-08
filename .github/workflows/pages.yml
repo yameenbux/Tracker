@@ -1,7 +1,8 @@
-name: Deploy web app to Pages
+name: Deploy website to Pages
 
-# Builds the web version of the Tidemark app and publishes it to GitHub Pages:
-#   /<repo>/              the app (Add to Home Screen on an iPhone for a full-screen app)
+# Builds the website and the web test build of the app, and publishes them to GitHub Pages:
+#   /<repo>/              the website: what Tidemark is, support, and the privacy policy
+#   /<repo>/app/          the owner's private test build of the app, not a product (noindex)
 #   /<repo>/privacy.html  the privacy policy
 #   /<repo>/classic/      the original web tracker
 on:
@@ -9,10 +10,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Only the deploy job can publish. The build job runs `npm ci` (and so every dependency's install scripts), so it gets
+# read access and nothing else.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -25,8 +26,8 @@ jobs:
       run:
         working-directory: mobile
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -35,19 +36,22 @@ jobs:
       - name: Export the web app
         run: npx expo export --platform web --output-dir dist
         env:
-          WEB_BASE_URL: /${{ github.event.repository.name }}
+          WEB_BASE_URL: /${{ github.event.repository.name }}/app
       - name: Assemble the site
         run: node scripts/pages-site.js dist ../_site /${{ github.event.repository.name }} https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: _site
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

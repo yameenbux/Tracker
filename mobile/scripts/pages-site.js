@@ -1,7 +1,9 @@
 /* global __dirname */
-// Builds the GitHub Pages site from the web export: Tidemark at the root (with the bits iOS needs to add it to the
-// Home Screen as a full-screen app), the privacy policy at its usual address, and the original web tracker in /classic.
+// Builds the GitHub Pages site: the one-page website (site/index.html, with the privacy policy filled in from
+// privacy.html) at the root, the privacy policy also at its own address (every app build links there), the owner's
+// web test build of the app in /app, and the original web tracker in /classic.
 // Usage: node scripts/pages-site.js <web-export-dir> <out-dir> <base-path, e.g. /Tracker> [site-url, for link previews]
+// The web export must have been built with WEB_BASE_URL=<base-path>/app.
 const fs = require('fs');
 const path = require('path');
 
@@ -10,11 +12,13 @@ if (!dist || !out) { console.error('usage: node scripts/pages-site.js <web-expor
 const repo = path.resolve(__dirname, '..', '..');
 const mobile = path.resolve(__dirname, '..');
 
+const app = path.join(out, 'app'), appBase = `${base}/app`;
 fs.rmSync(out, { recursive: true, force: true });
-fs.cpSync(dist, out, { recursive: true });
+fs.mkdirSync(out, { recursive: true });
+fs.cpSync(dist, app, { recursive: true });
 
-// Home Screen icon and standalone mode (iOS reads these from the page, not from a build setting)
-fs.copyFileSync(path.join(mobile, 'assets', 'icon.png'), path.join(out, 'apple-touch-icon.png'));
+// Home Screen icon and standalone mode for the test build (iOS reads these from the page, not from a build setting)
+fs.copyFileSync(path.join(mobile, 'assets', 'icon.png'), path.join(app, 'apple-touch-icon.png'));
 fs.copyFileSync(path.join(mobile, 'assets', 'social.png'), path.join(out, 'social.png'));
 
 // Title, description and link previews (iMessage, WhatsApp, search results). Previews need absolute addresses.
@@ -37,15 +41,16 @@ const addHead = (file, tags, title) => {
   if (title) h = /<title>[^<]*<\/title>/.test(h) ? h.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`) : h.replace('</head>', `<title>${esc(title)}</title></head>`);
   fs.writeFileSync(file, h.replace('</head>', tags + '</head>'));
 };
-fs.writeFileSync(path.join(out, 'manifest.webmanifest'), JSON.stringify({
-  name: 'Tidemark', short_name: 'Tidemark', start_url: `${base}/`, scope: `${base}/`, display: 'standalone',
+fs.writeFileSync(path.join(app, 'manifest.webmanifest'), JSON.stringify({
+  name: 'Tidemark', short_name: 'Tidemark', start_url: `${appBase}/`, scope: `${appBase}/`, display: 'standalone',
   background_color: '#FBF7F3', theme_color: '#2A1E45',
-  icons: [{ src: `${base}/apple-touch-icon.png`, sizes: '1024x1024', type: 'image/png' }],
+  icons: [{ src: `${appBase}/apple-touch-icon.png`, sizes: '1024x1024', type: 'image/png' }],
 }, null, 2));
-const head = meta({ title: 'Tidemark · Weight tracker', page: '',
+// The web app is the owner's private test build, not a product: kept out of search results
+const head = meta({ title: 'Tidemark · Test build', page: 'app/', noindex: true,
   description: 'A private weight tracker. Your trend weight, not the daily noise, with a plan, habits and measurements. No account, and your data stays on your phone.' }) + [
-  `<link rel="apple-touch-icon" href="${base}/apple-touch-icon.png">`,
-  `<link rel="manifest" href="${base}/manifest.webmanifest">`,
+  `<link rel="apple-touch-icon" href="${appBase}/apple-touch-icon.png">`,
+  `<link rel="manifest" href="${appBase}/manifest.webmanifest">`,
   '<meta name="apple-mobile-web-app-capable" content="yes">',
   '<meta name="mobile-web-app-capable" content="yes">',
   '<meta name="apple-mobile-web-app-title" content="Tidemark">',
@@ -57,7 +62,7 @@ const head = meta({ title: 'Tidemark · Weight tracker', page: '',
   '<style>@media (prefers-color-scheme: light){body::after{content:"";position:fixed;top:0;left:0;right:0;' +
     'height:env(safe-area-inset-top);background:#2A1E45;z-index:2147483647;pointer-events:none}}</style>',
 ].join('');
-const indexPath = path.join(out, 'index.html');
+const indexPath = path.join(app, 'index.html');
 const html = fs.readFileSync(indexPath, 'utf8');
 if (!html.includes('</head>')) throw new Error('web export index.html has no </head>');
 // viewport-fit=cover makes iOS report the notch and home-bar sizes, so the app's own safe-area padding applies
@@ -65,10 +70,29 @@ const viewport = /<meta name="viewport"[^>]*>/;
 if (!viewport.test(html)) throw new Error('web export index.html has no viewport meta');
 fs.writeFileSync(indexPath, html
   .replace(viewport, '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />')
-  .replace(/<title>[^<]*<\/title>/, '<title>Tidemark · Weight tracker</title>')
+  .replace(/<title>[^<]*<\/title>/, '<title>Tidemark · Test build</title>')
   .replace('</head>', head + '</head>'));
 
-// The privacy policy keeps its address; the original web tracker moves to /classic (it loads its own fonts)
+// The website, with the policy's text set into its last section, so the two can never say different things
+const policy = fs.readFileSync(path.join(repo, 'privacy.html'), 'utf8');
+const body = policy.match(/<main>([\s\S]*)<\/main>/);
+if (!body) throw new Error('privacy.html has no <main>');
+const site = fs.readFileSync(path.join(repo, 'site', 'index.html'), 'utf8');
+const slot = /<!-- PRIVACY:[^>]*-->/;
+if (!slot.test(site)) throw new Error('site/index.html has no PRIVACY slot');
+// On the page the policy is one section: its title becomes the section heading and its headings step down a level
+const policyBody = body[1].replace(/\s*<div class="eyebrow">[^<]*<\/div>/, '').replace(/<h2>/g, '<h3>').replace(/<\/h2>/g, '</h3>')
+  .replace(/<h1>[^<]*<\/h1>/, '<h2>How Tidemark handles your data</h2>');
+fs.writeFileSync(path.join(out, 'index.html'), site.replace(slot, () => policyBody));
+addHead(path.join(out, 'index.html'), meta({ title: 'Tidemark · The weight tracker that reads the trend', page: '',
+  description: 'A private weight tracker for iPhone. Your trend weight, not the daily noise, with a plan, habits and an optional medication log. No account, and your data stays on your phone.' }));
+fs.copyFileSync(path.join(mobile, 'assets', 'icon.png'), path.join(out, 'icon.png'));
+fs.cpSync(path.join(repo, 'site', 'shots'), path.join(out, 'shots'), { recursive: true });
+fs.mkdirSync(path.join(out, 'fonts'), { recursive: true });
+for (const f of ['SpaceGrotesk_700Bold.ttf', 'SpaceGrotesk_500Medium.ttf', 'HankenGrotesk_400Regular.ttf', 'HankenGrotesk_600SemiBold.ttf', 'OFL-SpaceGrotesk.txt', 'OFL-HankenGrotesk.txt'])
+  fs.copyFileSync(path.join(repo, 'fonts', f), path.join(out, 'fonts', f));
+
+// The privacy policy keeps its own address too; the original web tracker lives in /classic (it loads its own fonts)
 fs.copyFileSync(path.join(repo, 'privacy.html'), path.join(out, 'privacy.html'));
 addHead(path.join(out, 'privacy.html'), meta({ title: 'Tidemark · Privacy policy', page: 'privacy.html',
   description: 'Tidemark collects no data. Everything you enter stays on your phone: no account, no server, no analytics, no ads.' }));
@@ -77,6 +101,6 @@ fs.copyFileSync(path.join(repo, 'index.html'), path.join(out, 'classic', 'index.
 fs.cpSync(path.join(repo, 'fonts'), path.join(out, 'classic', 'fonts'), { recursive: true });
 // The original tracker stays reachable for anyone still using it, but out of search results (the app is the real thing)
 addHead(path.join(out, 'classic', 'index.html'), meta({ title: 'Tidemark Classic', page: 'classic/', noindex: true,
-  description: 'The original web version of the tracker. The current app is at the main address.' }), 'Tidemark Classic');
+  description: 'The original web version of the tracker.' }), 'Tidemark Classic');
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
 console.log(`Pages site written to ${out}`);

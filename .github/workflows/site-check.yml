@@ -25,6 +25,6 @@ jobs:
             echo "ok  $1"
           }
           check "$SITE/privacy.html" "Privacy"
-          check "$SITE/" "Tidemark"
-          check "$SITE/manifest.webmanifest" "Tidemark"
+          check "$SITE/" "Questions people ask"
+          check "$SITE/app/manifest.webmanifest" "Tidemark"
           exit $fail
