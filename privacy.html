@@ -57,7 +57,7 @@
     <li>With the optional lock on, Tidemark asks for Face ID (or your passcode) every time you come back to it.</li>
     <li>The app switcher shows a blank Tidemark screen, never your numbers.</li>
     <li>Reminders never show a weight or any other number on your lock screen, just a nudge to weigh in.</li>
-    <li>Export files are deleted from Tidemark as soon as the share sheet closes. An exported file is not encrypted, so keep it somewhere private.</li>
+    <li>Backups can be locked with a password (XChaCha20-Poly1305 encryption, key derived with scrypt). Without the password the file can't be read, by anyone, including us. A backup saved without a password, and the CSV spreadsheet, are plain text, so keep those somewhere private. Export files are deleted from Tidemark as soon as the share sheet closes.</li>
   </ul>
 
   <h2>Device backups</h2>

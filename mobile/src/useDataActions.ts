@@ -1,8 +1,10 @@
 import { buildExportText, parseBackup } from './core/backup';
+import { isVault, MIN_PASSWORD, open, seal } from './core/vault';
+import { secureRandom } from './secureRandom';
 import { toCsv } from './core/csv';
 import { dateKey, parseKey, startOfDay } from './core/dates';
 import { DEFAULT_PREFS } from './core/storage';
-import { confirm, notify } from './dialogs';
+import { askPassword, choose, confirm, notify } from './dialogs';
 import { clearCache, pickBackupText, shareBackup } from './io';
 import { deleteAllPhotos, deletePhoto } from './photos';
 import { applyReminder } from './reminders';
@@ -16,8 +18,15 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
 
   const restore = async () => {
     try {
-      const text = await pickBackupText();
+      let text = await pickBackupText();
       if (text == null) return;
+      if (isVault(text)) {
+        const pw = await askPassword('Backup password', 'This backup is protected. Enter the password it was saved with.');
+        if (pw == null) return;
+        show({ message: 'Unlocking backup…' });
+        await new Promise(r => setTimeout(r, 60));
+        text = open(text, pw);                                       // throws a readable message on a wrong password
+      }
       const b = parseBackup(text, state.settings);
       const nW = Object.keys(b.weights).length, nH = Object.keys(b.habits).length;
       const ok = await confirm('Restore this backup?',
@@ -42,8 +51,22 @@ export function useDataActions(t: Tracker, show: Show, done: () => void) {
 
   const exportData = async () => {
     if (!state.settings) return;
+    // A backup leaves the phone, so offer to lock it with a password first
+    const how = await choose('Protect this backup?', 'A password keeps the file private wherever it ends up. You’ll need it to restore, and it can’t be recovered if you forget it.',
+      [{ id: 'password', label: 'Add a password' }, { id: 'plain', label: 'No password' }]);
+    if (!how) return;
+    let text = buildExportText({ ...state, settings: state.settings });
+    if (how === 'password') {
+      const pw = await askPassword('Choose a password', `At least ${MIN_PASSWORD} characters.`);
+      if (pw == null) return;
+      if (pw.length < MIN_PASSWORD) { notify('Password too short', `Use at least ${MIN_PASSWORD} characters.`); return; }
+      if ((await askPassword('Type it again', 'To make sure there’s no typo.')) !== pw) { notify('Passwords didn’t match', 'Nothing was exported. Try again.'); return; }
+      show({ message: 'Locking your backup…' });
+      await new Promise(r => setTimeout(r, 60));                   // let the message paint before the (deliberately slow) key step
+      text = seal(text, pw, secureRandom);
+    }
     try {
-      await shareBackup('tidemark-' + dateKey(new Date()) + '.txt', buildExportText({ ...state, settings: state.settings }));
+      await shareBackup('tidemark-' + dateKey(new Date()) + (how === 'password' ? '-protected' : '') + '.txt', text);
       // The share sheet closes the same way whether the file was saved or the sheet was cancelled, so ask
       if (await confirm('Did you save the backup?', 'Only say yes if the file went somewhere safe: Files, iCloud Drive, email or a computer.', 'Yes, it’s saved', false)) {
         t.setPrefs({ lastBackup: new Date().toISOString() });

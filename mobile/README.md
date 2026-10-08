@@ -53,7 +53,8 @@ What each protection is, and what it isn't:
 - **Face ID lock and app-switcher cover.** The lock is a screen in front of the app, asked for on every return; it is not a
   separate encryption key. The cover blanks the app switcher whenever the app isn't active (lock on or off).
 - **Device backups.** iCloud/computer backups include the app's data, as for every app; that's what makes a lost phone
-  recoverable. Exports leave the app as plain text files, so they're only as private as where they're saved.
+  recoverable. Backups can be password-protected (`src/core/vault.ts`: scrypt N=2^15 key, XChaCha20-Poly1305, audited
+  `@noble` libraries, system randomness via expo-crypto); unprotected backups and the CSV are plain text.
 - **Untrusted input.** Restored backups are size-limited (10 MB), parsed defensively and cleaned field by field (dates,
   ranges, lengths, counts, prototype keys); nothing is evaluated. A snapshot is kept for 30 days before any restore.
 - **Notifications** never contain a weight or other figure; there's no push entitlement.
@@ -61,7 +62,7 @@ What each protection is, and what it isn't:
   `node-forge`, the Jest preset's `sprintf-js`, the Xcode project editor's `uuid`). None of these ship in the app binary.
   Re-check after each Expo SDK upgrade.
 - **Not done (by design):** jailbreak detection (easily bypassed, and a jailbroken owner already has their own data) and
-  certificate pinning (no network calls to pin). **Not done yet:** encrypted (password-protected) backups.
+  certificate pinning (no network calls to pin).
 
 ## Not in this version yet
 
