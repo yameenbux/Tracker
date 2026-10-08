@@ -1,7 +1,8 @@
-name: Deploy web app to Pages
+name: Deploy website to Pages
 
-# Builds the web version of the Tidemark app and publishes it to GitHub Pages:
-#   /<repo>/              the app: the owner's private test build, not a product (noindex)
+# Builds the website and the web test build of the app, and publishes them to GitHub Pages:
+#   /<repo>/              the website: what Tidemark is, support, and the privacy policy
+#   /<repo>/app/          the owner's private test build of the app, not a product (noindex)
 #   /<repo>/privacy.html  the privacy policy
 #   /<repo>/classic/      the original web tracker
 on:
@@ -35,7 +36,7 @@ jobs:
       - name: Export the web app
         run: npx expo export --platform web --output-dir dist
         env:
-          WEB_BASE_URL: /${{ github.event.repository.name }}
+          WEB_BASE_URL: /${{ github.event.repository.name }}/app
       - name: Assemble the site
         run: node scripts/pages-site.js dist ../_site /${{ github.event.repository.name }} https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1

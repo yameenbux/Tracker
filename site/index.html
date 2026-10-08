@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tidemark · The weight tracker that reads the trend</title>
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="icon.png">
+<style>
+  /* Everything on this page is served from this site: no font services, no analytics, no cookies. */
+  @font-face { font-family: 'Space Grotesk'; font-weight: 700; font-display: swap; src: url(fonts/SpaceGrotesk_700Bold.ttf) format('truetype'); }
+  @font-face { font-family: 'Space Grotesk'; font-weight: 500; font-display: swap; src: url(fonts/SpaceGrotesk_500Medium.ttf) format('truetype'); }
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 400; font-display: swap; src: url(fonts/HankenGrotesk_400Regular.ttf) format('truetype'); }
+  @font-face { font-family: 'Hanken Grotesk'; font-weight: 600; font-display: swap; src: url(fonts/HankenGrotesk_600SemiBold.ttf) format('truetype'); }
+
+  /* The app's own palette (mobile/src/theme.ts). The hero is plum in both themes, like the app icon. */
+  :root {
+    --paper: #FBF7F3; --card: #FFFFFF; --line: #EFE6DC; --ink: #241B33; --soft: #6E6577;
+    --plum: #2A1E45; --plum-2: #4B2E73; --plum-deep: #1E1533; --on-plum: #FBF7F3; --on-plum-soft: #C9BFD6;
+    --coral: #FF6B5E; --amber: #FFA24B; --link: #C93A26; --mint: #06704F; --mint-bg: #E4F7EF; --panel: #EDE6F6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #121019; --card: #1C1925; --line: #2E2938; --ink: #F2EEF6; --soft: #ADA5B8;
+      --link: #FF8D7D; --mint: #5BD6A9; --mint-bg: #15291F; --panel: #2A2240;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 'Hanken Grotesk', -apple-system, system-ui, sans-serif; }
+  a { color: var(--link); text-underline-offset: 3px; }
+  :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  .skip { position: absolute; left: -9999px; }
+  .skip:focus { left: 16px; top: 16px; background: var(--card); padding: 8px 14px; z-index: 10; }
+  h1, h2, h3 { font-family: 'Space Grotesk', -apple-system, system-ui, sans-serif; font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; margin: 0; }
+  h2 { font-size: clamp(30px, 4.4vw, 44px); }
+  h3 { font-size: 21px; letter-spacing: -0.01em; }
+  .kicker { font: 500 14px/1.4 'Space Grotesk', sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: var(--link); margin: 0 0 12px; }
+  section { padding: 88px 0; }
+  section + section { border-top: 1px solid var(--line); }
+
+  /* Header and hero: one plum block, like opening the app */
+  .top { background: radial-gradient(120% 90% at 85% 70%, rgba(255,107,94,.20), transparent 60%), linear-gradient(160deg, #352657 0%, var(--plum) 55%, var(--plum-deep) 100%); color: var(--on-plum); }
+  nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; }
+  .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; font: 700 22px 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .brand img { width: 40px; height: 40px; border-radius: 10px; }
+  nav ul { display: flex; gap: 22px; list-style: none; margin: 0; padding: 0; }
+  nav ul a { color: var(--on-plum-soft); text-decoration: none; font-weight: 600; font-size: 15px; }
+  nav ul a:hover { color: var(--on-plum); }
+  @media (max-width: 640px) { nav ul { display: none; } }
+
+  .hero { display: grid; grid-template-columns: 1fr 1.1fr; gap: 48px; align-items: center; padding: 48px 0 96px; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; gap: 28px; padding: 24px 0 72px; } }
+  .hero h1 { font-size: clamp(44px, 7vw, 76px); letter-spacing: -0.035em; }
+  .hero h1 .calm { background: linear-gradient(90deg, var(--amber), var(--coral)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p.lede { font-size: 19px; color: var(--on-plum-soft); max-width: 30em; margin: 22px 0 28px; }
+  .soon { display: inline-flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 999px; border: 1.5px solid rgba(251,247,243,.28); font-weight: 600; font-size: 15px; }
+  .soon svg { width: 18px; height: 18px; }
+
+  /* The signature: real weigh-in noise, and the trend Tidemark draws through it */
+  .tide { position: relative; }
+  .tide svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .tide .dot { fill: var(--on-plum); opacity: .55; }
+  .tide .trend { fill: none; stroke: url(#tm-trend); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+  .tide .today { fill: var(--on-plum); }
+  .tide .today-core { fill: var(--coral); }
+  .tide .axis { font: 500 12px 'Space Grotesk', sans-serif; fill: var(--on-plum-soft); }
+  .tide .gridline { stroke: rgba(251,247,243,.10); }
+  .tide figcaption { margin-top: 14px; font-size: 14px; color: var(--on-plum-soft); display: flex; gap: 20px; flex-wrap: wrap; }
+  .tide figcaption span::before { content: ''; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .key-dot::before { width: 8px; height: 8px; border-radius: 50%; background: var(--on-plum); opacity: .6; }
+  .key-line::before { width: 22px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--amber), var(--coral)); }
+  @media (prefers-reduced-motion: no-preference) {
+    .tide.play .dot { animation: drop .5s cubic-bezier(.2,.8,.3,1) both; }
+    .tide.play .trend { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 1.8s .9s cubic-bezier(.45,0,.2,1) forwards; }
+    .tide.play .today, .tide.play .today-core { animation: pop .4s 2.6s both; }
+  }
+  @keyframes drop { from { opacity: 0; transform: translateY(-14px); } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes pop { from { opacity: 0; transform: scale(.4); transform-origin: center; transform-box: fill-box; } }
+
+  /* How it works: three screens, each with the one thing it's for */
+  .screens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 48px; }
+  @media (max-width: 860px) { .screens { grid-template-columns: 1fr; max-width: 420px; } }
+  .screens figure { margin: 0; }
+  .phone { aspect-ratio: 393 / 852; border-radius: 34px; overflow: hidden; background: var(--card); border: 1px solid var(--line); box-shadow: 0 24px 50px -28px rgba(42,30,69,.45); }
+  .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .screens figcaption { margin-top: 18px; }
+  .screens figcaption p { margin: 6px 0 0; color: var(--soft); }
+
+  /* Free and Plus */
+  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 40px; }
+  @media (max-width: 760px) { .plans { grid-template-columns: 1fr; } }
+  .plan { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 30px; }
+  .plan.plus { border: 2px solid var(--plum-2); }
+  @media (prefers-color-scheme: dark) {
+    .plan.plus { border-color: #C2A8F2; }
+    .plan li::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C2A8F2' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5.5 12.5 4.2 4.2 8.8-9.2'/%3E%3C/svg%3E"); }
+  }
+  .plan .price { font: 700 34px/1 'Space Grotesk', sans-serif; letter-spacing: -0.02em; margin: 14px 0 4px; }
+  .plan .price small { font: 400 16px 'Hanken Grotesk', sans-serif; color: var(--soft); letter-spacing: 0; }
+  .plan ul { list-style: none; padding: 0; margin: 22px 0 0; }
+  .plan li { padding: 9px 0 9px 32px; border-top: 1px solid var(--line); position: relative; }
+  .plan li::before { content: ''; position: absolute; left: 2px; top: 13px; width: 18px; height: 18px; border-radius: 50%; background: var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234B2E73' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5.5 12.5 4.2 4.2 8.8-9.2'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  .fine { color: var(--soft); font-size: 15px; margin-top: 18px; }
+
+  /* Privacy promise */
+  .promise { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  @media (max-width: 860px) { .promise { grid-template-columns: 1fr; gap: 24px; } }
+  .promise dl { margin: 0; display: grid; gap: 14px; }
+  .promise dl div { background: var(--mint-bg); border-radius: 18px; padding: 18px 20px; }
+  .promise dt { font: 700 18px 'Space Grotesk', sans-serif; color: var(--mint); }
+  .promise dd { margin: 4px 0 0; }
+
+  /* Support */
+  .faq { margin-top: 36px; max-width: 760px; }
+  .faq details { border-top: 1px solid var(--line); }
+  .faq details:last-child { border-bottom: 1px solid var(--line); }
+  .faq summary { cursor: pointer; list-style: none; padding: 20px 40px 20px 0; position: relative; font: 600 18px/1.4 'Hanken Grotesk', sans-serif; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; position: absolute; right: 6px; top: 14px; font: 500 26px 'Space Grotesk', sans-serif; color: var(--link); transition: transform .2s; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq details p { margin: 0 0 20px; color: var(--soft); max-width: 40em; }
+  .contact { margin-top: 36px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px 26px; max-width: 760px; }
+  .contact p { margin: 4px 0 0; }
+
+  /* The full policy, set as a document */
+  .policy { max-width: 720px; }
+  .policy .policy-body h3 { margin: 34px 0 6px; }
+  .policy .policy-body h2 + .muted { margin-top: 10px; }
+  .policy .policy-body .box { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-top: 20px; }
+  .policy .policy-body .muted { color: var(--soft); }
+  .policy .policy-body li { margin: 6px 0; }
+
+  footer { background: var(--plum-deep); color: var(--on-plum-soft); padding: 40px 0; font-size: 15px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  footer a { color: var(--on-plum); }
+  footer p { margin: 0; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <nav aria-label="Main">
+      <a class="brand" href="#"><img src="icon.png" alt="" width="40" height="40">Tidemark</a>
+      <ul>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#plus">Free and Plus</a></li>
+        <li><a href="#support">Support</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+      </ul>
+    </nav>
+
+    <div class="hero">
+      <div>
+        <h1>The scale jumps.<br><span class="calm">Your trend doesn’t.</span></h1>
+        <p class="lede">Tidemark is a weight tracker for iPhone that reads your weigh-ins properly: a trend one odd day can’t drag, an honest weekly rate, and a plan to hold it against. No account, and nothing leaves your phone.</p>
+        <span class="soon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></svg>Coming soon to iPhone</span>
+      </div>
+
+      <figure class="tide" id="tide">
+        <svg viewBox="0 0 560 330" role="img" aria-labelledby="tide-title">
+          <title id="tide-title">Ten weeks of daily weigh-ins scattered up and down by a kilo or more, with a smooth trend line running through them, steadily down from 92 kg to about 88 kg.</title>
+          <defs><linearGradient id="tm-trend" x1="0" x2="1"><stop offset="0" stop-color="#FFA24B"/><stop offset="1" stop-color="#FF6B5E"/></linearGradient></defs>
+          <g id="tide-grid"></g><g id="tide-dots"></g><g id="tide-line"></g>
+        </svg>
+        <figcaption><span class="key-dot">What the scale said</span><span class="key-line">What Tidemark shows</span></figcaption>
+      </figure>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section id="how">
+    <div class="wrap">
+      <p class="kicker">How it works</p>
+      <h2>Weigh in, then let the numbers settle.</h2>
+      <div class="screens">
+        <figure>
+          <div class="phone"><img src="shots/today.png" alt="The Today screen: trend weight, progress towards the goal, this week’s change and pace." loading="lazy"></div>
+          <figcaption><h3>Today, at a glance</h3><p>Your trend weight, how far you’ve come and this week’s pace. Logging opens on your last weight, so it’s a tap or two.</p></figcaption>
+        </figure>
+        <figure>
+          <div class="phone"><img src="shots/trend.png" alt="The Trend screen: a chart of weigh-ins and the trend against the plan, with a table of changes over 3, 7, 14 and 30 days." loading="lazy"></div>
+          <figcaption><h3>The trend, against your plan</h3><p>See the line you’re on and the one you planned. When a weigh-in jumps, it tells you why that’s normal.</p></figcaption>
+        </figure>
+        <figure>
+          <div class="phone"><img src="shots/habits.png" alt="The Habits screen: this week’s checklist and 30-day grids for each habit." loading="lazy"></div>
+          <figcaption><h3>Habits, without streaks</h3><p>Tick off the few things that help, like water or a walk. Thirty-day grids show consistency, and a missed day doesn’t reset anything.</p></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="plus">
+    <div class="wrap">
+      <p class="kicker">Free and Plus</p>
+      <h2>Free does the job. Plus adds the extras.</h2>
+      <div class="plans">
+        <div class="plan">
+          <h3>Tidemark</h3>
+          <p class="price">Free</p>
+          <ul>
+            <li>Trend weight, weekly rate and your plan</li>
+            <li>Chart, change table and full history</li>
+            <li>Up to 3 daily habits</li>
+            <li>Weigh-in reminders and Face ID lock</li>
+            <li>Backups and CSV export</li>
+          </ul>
+        </div>
+        <div class="plan plus">
+          <h3>Tidemark Plus</h3>
+          <p class="price">£1.99 <small>a month</small></p>
+          <p class="fine" style="margin-top:0">or £11.99 a year, or £19.99 once. Monthly and yearly start with 7 days free.</p>
+          <ul>
+            <li>Medication log and dose reminders, for weekly GLP-1 injections or anything else you take</li>
+            <li>Up to 6 habits</li>
+            <li>Measurements and private progress photos</li>
+            <li>Calories, and an estimate of what you really burn</li>
+            <li>Password-protected backups</li>
+          </ul>
+        </div>
+      </div>
+      <p class="fine">UK prices. Plus is bought through Apple, and the App Store shows the price in your own currency. Anything you enter in a Plus feature is kept if Plus ends, and comes back if you return.</p>
+    </div>
+  </section>
+
+  <section id="promise">
+    <div class="wrap promise">
+      <div>
+        <p class="kicker">Private by design</p>
+        <h2>Your weight is nobody’s business but yours.</h2>
+      </div>
+      <dl>
+        <div><dt>No account</dt><dd>There’s nothing to sign up for and no password to forget.</dd></div>
+        <div><dt>No server</dt><dd>Everything you enter is kept on your iPhone, encrypted by iOS while it’s locked.</dd></div>
+        <div><dt>Nothing collected</dt><dd>No analytics, no ads, no tracking. On the App Store, Tidemark’s privacy label is “Data Not Collected”.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section id="support">
+    <div class="wrap">
+      <p class="kicker">Support</p>
+      <h2>Questions people ask.</h2>
+      <div class="faq">
+        <details>
+          <summary>How do I move my data to a new iPhone?</summary>
+          <p>If you restore your new iPhone from an iCloud or computer backup of the old one, Tidemark comes with it. Or, in Tidemark on the old phone, go to Settings → Export backup, save the file somewhere you can reach from the new phone, then use Settings → Restore from backup there.</p>
+        </details>
+        <details>
+          <summary>What happens if I lose my phone?</summary>
+          <p>Your data is only on your phone, so a backup is what gets it back. Tidemark reminds you to make one and shows when you last did. You can lock a backup with a password, so only you can open it.</p>
+        </details>
+        <details>
+          <summary>Why does my weight jump around so much?</summary>
+          <p>A day’s weight moves with water, salt, sleep and what you last ate, often by a kilo or more. That’s why Tidemark shows a trend: one high reading moves it a little, and only a real change moves it a lot.</p>
+        </details>
+        <details>
+          <summary>How do I cancel Plus?</summary>
+          <p>On your iPhone, open Settings, tap your name, then Subscriptions, then Tidemark. You can also get there from Tidemark’s Settings → Manage subscription. Cancel at least 24 hours before the renewal date to avoid the next charge.</p>
+        </details>
+        <details>
+          <summary>Can I get a refund?</summary>
+          <p>Apple handles all payments, so refunds go through Apple: visit <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a> and sign in with your Apple ID. We can’t see or refund purchases ourselves.</p>
+        </details>
+        <details>
+          <summary>I bought Plus but it isn’t showing.</summary>
+          <p>Open Tidemark’s Settings → Restore purchases, signed in with the same Apple ID you bought it with. Plus works on any iPhone signed in to that Apple ID.</p>
+        </details>
+        <details>
+          <summary>Does Tidemark give medical advice?</summary>
+          <p>No. Its targets, trends and calorie estimates are general guidance from the numbers you enter, and the medication log only records what you take. Talk to your GP, pharmacist or prescriber about your treatment, especially if you’re pregnant or have a health condition.</p>
+        </details>
+        <details>
+          <summary>Something isn’t working.</summary>
+          <p>If Tidemark shows an error, tap “Email the error to support” on that screen: it fills in the error and the app version, and you see the email before it’s sent. Otherwise, email us and say what you were doing when it happened.</p>
+        </details>
+      </div>
+      <div class="contact">
+        <h3>Still stuck?</h3>
+        <p>Email <a href="mailto:yameen@ysbdesigns.uk">yameen@ysbdesigns.uk</a>. You’ll hear back from the person who builds Tidemark.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" class="policy-section">
+    <div class="wrap policy">
+      <p class="kicker">Privacy policy</p>
+      <div class="policy-body">
+<!-- PRIVACY: filled in from privacy.html by mobile/scripts/pages-site.js, so the policy has one source -->
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Tidemark is made by YSB Ventures Ltd.</p>
+    <p><a href="#privacy">Privacy policy</a> · <a href="mailto:yameen@ysbdesigns.uk">Support</a></p>
+  </div>
+</footer>
+
+<script>
+  // The hero chart: ten weeks of made-up daily weigh-ins (a steady loss plus everyday water swings), and the trend
+  // worked out the way the app does it (Holt's linear smoothing, mobile/src/core/trend.ts).
+  (function () {
+    var N = 70, W = 560, H = 310, padL = 44, padR = 16, top = 10;
+    var seed = 7; function rand() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    var days = [], kg;
+    for (var i = 0; i < N; i++) {
+      if (i % 9 === 4 && rand() < .5) continue;                      // the odd missed day
+      var swing = (rand() - .5) * 1.6 + (i % 7 === 6 ? .5 : 0);       // water, salt, a weekend
+      days.push({ i: i, kg: 92 - i * 0.058 + swing });
+    }
+    var A = 0.1, B = 0.02, level = days[0].kg, slope = -0.05, prev = days[0].i, trend = [];
+    days.forEach(function (d, n) {
+      if (n) {
+        for (var s = 0; s < d.i - prev; s++) { var p = level + slope; var last = s === d.i - prev - 1;
+          var nl = last ? p + A * (d.kg - p) : p; slope = slope + B * (nl - level - slope); level = nl; }
+        prev = d.i;
+      }
+      trend.push({ i: d.i, kg: level });
+    });
+    var lo = 87, hi = 93.2;
+    var x = function (i) { return padL + (i / (N - 1)) * (W - padL - padR); };
+    var y = function (v) { return top + (hi - v) / (hi - lo) * (H - top); };
+    var ns = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs, parent) { var e = document.createElementNS(ns, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+    var grid = document.getElementById('tide-grid');
+    [88, 90, 92].forEach(function (v) {
+      el('line', { class: 'gridline', x1: padL, x2: W - padR, y1: y(v), y2: y(v) }, grid);
+      el('text', { class: 'axis', x: 0, y: y(v) + 4 }, grid).textContent = v + ' kg';
+    });
+    var dots = document.getElementById('tide-dots');
+    days.forEach(function (d, n) { var c = el('circle', { class: 'dot', cx: x(d.i), cy: y(d.kg), r: 3.6 }, dots); c.style.animationDelay = (n * 11) + 'ms'; });
+    var path = trend.map(function (t, n) { return (n ? 'L' : 'M') + x(t.i).toFixed(1) + ' ' + y(t.kg).toFixed(1); }).join(' ');
+    var g = document.getElementById('tide-line');
+    var line = el('path', { class: 'trend', d: path }, g);
+    line.style.setProperty('--len', Math.ceil(line.getTotalLength()));
+    var end = trend[trend.length - 1];
+    el('circle', { class: 'today', cx: x(end.i), cy: y(end.kg), r: 9 }, g);
+    el('circle', { class: 'today-core', cx: x(end.i), cy: y(end.kg), r: 4 }, g);
+    document.getElementById('tide').classList.add('play');
+  })();
+</script>
+</body>
+</html>
