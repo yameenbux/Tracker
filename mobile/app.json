@@ -69,6 +69,7 @@
       "name": "Plumb"
     },
     "plugins": [
+      "./plugins/withoutPushEntitlement.js",
       "expo-sharing",
       "expo-font",
       "@react-native-community/datetimepicker",
@@ -95,6 +96,7 @@
           "backgroundColor": "#2A1E45"
         }
       ],
+      "expo-web-browser",
       "expo-notifications"
     ]
   }

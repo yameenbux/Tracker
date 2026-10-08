@@ -118,10 +118,10 @@ export const fieldStyles = StyleSheet.create({
 
 const s = StyleSheet.create({
   seg: { flexDirection: 'row', backgroundColor: C.chip, borderRadius: 999, padding: 3 },
-  segBtn: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999 },
-  segOn: { backgroundColor: C.coral },
+  segBtn: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 999 },
+  segOn: { backgroundColor: C.ink },
   segTxt: { fontFamily: F.bodySemi, fontSize: 12.5, color: C.inkSoft },
-  segTxtOn: { color: C.ink },
+  segTxtOn: { color: '#fff' },
   wRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   wIn: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink, backgroundColor: C.bg, borderWidth: 1.5, borderColor: C.line,
          borderRadius: 10, minHeight: 44, paddingVertical: 8, paddingHorizontal: 8, textAlign: 'right' },

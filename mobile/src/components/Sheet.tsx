@@ -3,6 +3,7 @@ import { Animated, Easing, KeyboardAvoidingView, Modal, PanResponder, Platform, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from '../motion';
 import { C, F } from '../theme';
+import { CoverOverlay } from './Cover';
 import { Icon } from './Icons';
 
 /**
@@ -10,8 +11,10 @@ import { Icon } from './Icons';
  * The backdrop fades while only the sheet slides; drag the handle down, tap outside or tap ✕ to close.
  * Content scrolls and sits above the keyboard, and the bottom respects the home indicator.
  */
-export function Sheet({ title, onClose, children, footer }: {
+export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
   title: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode;
+  /** Set to true (e.g. after Save) to animate the sheet away; onClose runs when it's gone. */
+  closing?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
@@ -29,7 +32,7 @@ export function Sheet({ title, onClose, children, footer }: {
     closing.current = true;
     Animated.timing(anim, { toValue: 0, duration: reduced ? 0 : 200, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => onClose());
   }, [anim, onClose, reduced]);
-  useEffect(() => { if (swiped) close(); }, [swiped, close]);
+  useEffect(() => { if (swiped || closeNow) close(); }, [swiped, closeNow, close]);
 
   const [pan] = useState(() => PanResponder.create({
     onMoveShouldSetPanResponder: (_, g) => g.dy > 6,
@@ -64,6 +67,7 @@ export function Sheet({ title, onClose, children, footer }: {
           {footer ? <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>{footer}</View> : null}
         </Animated.View>
       </KeyboardAvoidingView>
+      <CoverOverlay />
     </Modal>
   );
 }

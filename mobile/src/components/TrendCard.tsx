@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
 import { behindBy, replanFromHere, weightSeries } from '../core/plan';
-import { latestJump, projectedGoalDate, trendSeries, weeklyRate } from '../core/trend';
+import { latestJump, projectedGoalDate, trendSeries, TrendPoint, weeklyRate } from '../core/trend';
 import { showChange, showWeight } from '../core/units';
 import type { Plan, Settings, Unit, Weights } from '../core/types';
 import { C, F } from '../theme';
@@ -14,11 +14,11 @@ const change = (kg: number, unit: Unit, dp = 2) => showChange(kg, unit, dp);
  * Trend weight: what the scale is really doing once daily water swings are smoothed out,
  * the honest weekly rate, and why a sudden jump on the scale isn't fat.
  */
-export const TrendCard = memo(function TrendCard({ settings, weights, unit, onReplan }: {
-  settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void;
+export const TrendCard = memo(function TrendCard({ settings, weights, unit, onReplan, trend }: {
+  settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void; trend?: TrendPoint[];
 }) {
   const plan = settings.plan;
-  const series = trendSeries(weightSeries(plan, weights));
+  const series = trend ?? trendSeries(weightSeries(plan, weights));
   if (series.length < 2) {
     return (
       <Card title="Your trend">

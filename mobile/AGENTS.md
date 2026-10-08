@@ -33,7 +33,7 @@ Run lint and typecheck before declaring any task done.
 > Accessibility rules used across the app: text colours from `theme.ts` (`coralInk`, `mintInk`, `danger`; never `coral`
 > or `mint` as text), 44pt minimum touch targets, `maxFontSizeMultiplier` on large numbers, and a label on every control.
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
+- If and when the app moves to **Expo Router**: routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 

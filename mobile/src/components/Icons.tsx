@@ -5,7 +5,7 @@ import { C } from '../theme';
 // so controls look the same on every phone and scale cleanly.
 export type IconName =
   | 'today' | 'trend' | 'habits' | 'body' | 'settings' | 'plus' | 'chevron' | 'back' | 'close' | 'lock'
-  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield';
+  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal';
 
 const P: Record<IconName, (c: string) => React.ReactNode> = {
   today: c => <><Path d="M4 11.5 12 5l8 6.5" stroke={c} /><Path d="M6.5 10v9h11v-9" stroke={c} /></>,
@@ -29,6 +29,7 @@ const P: Record<IconName, (c: string) => React.ReactNode> = {
   calendar: c => <><Rect x={4} y={5.5} width={16} height={14.5} rx={3} stroke={c} /><Path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke={c} /></>,
   flame: c => <Path d="M12 20.5c3.6 0 6-2.4 6-5.6 0-3.5-2.6-5.4-3.6-8.9-1.6 1.4-2.2 3-2.4 4.6-1-1-1.6-2.3-1.7-3.6C8 8.6 6 11.4 6 14.9c0 3.2 2.4 5.6 6 5.6z" stroke={c} />,
   ruler: c => <><Rect x={3.5} y={8} width={17} height={8} rx={2} stroke={c} /><Path d="M7.5 8v3M11 8v4.5M14.5 8v3M18 8v4.5" stroke={c} /></>,
+  meal: c => <><Path d="M7 3.5v7.5M4.5 3.5v4.5a2.5 2.5 0 0 0 5 0V3.5M7 11v9.5" stroke={c} /><Path d="M17 20.5V3.5c-2 1-3.5 3.5-3.5 7v2.5H17" stroke={c} /></>,
   shield: c => <><Path d="M12 3.8 5.5 6.3v5.2c0 4.2 2.8 7.4 6.5 8.7 3.7-1.3 6.5-4.5 6.5-8.7V6.3z" stroke={c} /><Path d="m9.2 12.2 2 2 3.8-4" stroke={c} /></>,
 };
 

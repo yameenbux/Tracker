@@ -76,7 +76,7 @@ export const ChangeTable = memo(function ChangeTable({ series, unit }: { series:
       <View style={s.table}>
         {rows.map(r => {
           const c = r.change;
-          const color = c == null ? C.inkSoft : c < -0.05 ? C.mint : c > 0.05 ? C.coralInk : C.ink;
+          const color = c == null ? C.inkSoft : c < -0.05 ? C.mintInk : c > 0.05 ? C.coralInk : C.ink;
           return (
             <View key={r.days} style={s.cell} accessible accessibilityLabel={`${r.days} days: ${c == null ? 'not enough data' : showChange(c, unit, 1)}`}>
               <Text style={s.cellK}>{r.days} days</Text>

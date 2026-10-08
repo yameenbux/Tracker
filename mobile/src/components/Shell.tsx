@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tap } from '../feel';
 import { useReducedMotion } from '../motion';
@@ -9,14 +9,23 @@ import { Icon, IconName } from './Icons';
 export type Tab = 'today' | 'trend' | 'habits' | 'body';
 export const TAB_BAR_H = 56;
 
-/** A tab's page: iOS-style large title with an eyebrow, a settings button, then scrolling content. */
-export function TabScreen({ eyebrow, title, onSettings, children }: {
-  eyebrow?: string; title: string; onSettings: () => void; children: React.ReactNode;
+/**
+ * A tab's page: iOS-style large title with an eyebrow and a settings button. As you scroll, a compact title bar
+ * fades in under the status bar (like a collapsing large title). `scrollTop` changing scrolls back to the top.
+ */
+export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
+  eyebrow?: string; title: string; onSettings: () => void; scrollTop?: number; children: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const [y] = useState(() => new Animated.Value(0));
+  const ref = useRef<ScrollView>(null);
+  useEffect(() => { if (scrollTop) ref.current?.scrollTo({ y: 0, animated: true }); }, [scrollTop]);
+  const barOpacity = y.interpolate({ inputRange: [30, 70], outputRange: [0, 1], extrapolate: 'clamp' });
   return (
-    <ScrollView contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16 }}
-      keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
+    <View style={{ flex: 1 }}>
+    <Animated.ScrollView ref={ref} contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16 }}
+      keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets scrollEventThrottle={16}
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y } } }], { useNativeDriver: true })}>
       <View style={s.header}>
         <View style={{ flex: 1 }}>
           {eyebrow ? <Text style={s.eyebrow} maxFontSizeMultiplier={1.4}>{eyebrow}</Text> : null}
@@ -28,7 +37,12 @@ export function TabScreen({ eyebrow, title, onSettings, children }: {
         </Pressable>
       </View>
       {children}
-    </ScrollView>
+    </Animated.ScrollView>
+    <Animated.View pointerEvents="none" style={[s.compact, { height: insets.top + 40, paddingTop: insets.top, opacity: barOpacity }]}
+      importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+      <Text style={s.compactTxt} numberOfLines={1}>{title}</Text>
+    </Animated.View>
+    </View>
   );
 }
 
@@ -40,12 +54,12 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
 ];
 
 /** Bottom tab bar with the main action, logging a weight, in the middle. */
-export function TabBar({ tab, onTab, onLog }: { tab: Tab; onTab: (t: Tab) => void; onLog: () => void }) {
+export function TabBar({ tab, onTab, onLog, onReselect }: { tab: Tab; onTab: (t: Tab) => void; onLog: () => void; onReselect: () => void }) {
   const insets = useSafeAreaInsets();
   const item = (t: (typeof TABS)[number]) => {
     const on = t.id === tab;
     return (
-      <Pressable key={t.id} onPress={() => { if (!on) { tap(); onTab(t.id); } }} style={s.tab}
+      <Pressable key={t.id} onPress={() => { if (on) onReselect(); else { tap(); onTab(t.id); } }} style={s.tab}
         accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={t.label}>
         <Icon name={t.icon} size={24} color={on ? C.coralInk : C.inkSoft} strokeWidth={on ? 2.2 : 1.9} />
         <Text style={[s.tabTxt, on && s.tabOn]} maxFontSizeMultiplier={1.2}>{t.label}</Text>
@@ -73,9 +87,16 @@ export function Toast({ message, action, onAction, onHide }: { message: string; 
   const [y] = useState(() => new Animated.Value(reduced ? 0 : 40));
   useEffect(() => {
     if (!reduced) Animated.spring(y, { toValue: 0, friction: 8, useNativeDriver: true }).start();
-    const t = setTimeout(onHide, 5000);
-    return () => clearTimeout(t);
-  }, [y, reduced, onHide]);
+    // VoiceOver doesn't read changes on its own: announce the message, and leave more time to reach Undo
+    let t: ReturnType<typeof setTimeout> | undefined;
+    let alive = true;
+    AccessibilityInfo.isScreenReaderEnabled().catch(() => false).then(sr => {
+      if (!alive) return;
+      AccessibilityInfo.announceForAccessibility(action ? `${message}. ${action} available.` : message);
+      t = setTimeout(onHide, sr ? 12000 : 6000);
+    });
+    return () => { alive = false; if (t) clearTimeout(t); };
+  }, [y, reduced, onHide, message, action]);
   return (
     <Animated.View style={[s.toast, { bottom: TAB_BAR_H + insets.bottom + 12, transform: [{ translateY: y }] }]}
       accessibilityLiveRegion="polite" accessibilityRole="alert">
@@ -100,7 +121,7 @@ export function Notice({ icon, title, body, action, onAction, onDismiss, tone = 
         <Text style={s.nTitle}>{title}</Text>
         <Text style={s.nBody}>{body}</Text>
         {action && onAction && (
-          <Pressable onPress={onAction} hitSlop={8} style={{ alignSelf: 'flex-start', marginTop: 8 }} accessibilityRole="button">
+          <Pressable onPress={onAction} style={s.nActBtn} accessibilityRole="button">
             <Text style={s.nAct}>{action}</Text>
           </Pressable>
         )}
@@ -141,5 +162,9 @@ const s = StyleSheet.create({
   nTitle: { fontFamily: F.bodyBold, fontSize: 14, color: C.ink },
   nBody: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 2, lineHeight: 18 },
   nAct: { fontFamily: F.bodyBold, fontSize: 15, color: C.coralInk },
+  nActBtn: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginTop: 2, marginBottom: -8 },
+  compact: { position: 'absolute', top: 0, left: 0, right: 0, backgroundColor: 'rgba(251,247,243,0.97)', alignItems: 'center', justifyContent: 'center',
+             borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#D9CFC4' },
+  compactTxt: { fontFamily: F.display, fontSize: 17, color: C.ink },
   section: { fontFamily: F.bodyBold, fontSize: 12, letterSpacing: 1.2, textTransform: 'uppercase', color: C.inkSoft, marginTop: 6, marginBottom: 10, paddingHorizontal: 4 },
 });

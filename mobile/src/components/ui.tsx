@@ -32,7 +32,7 @@ export function Tabs<T extends string>({ value, options, onChange, label }: { va
   return (
     <View style={s.tabs} accessibilityRole="tablist" accessibilityLabel={label}>
       {options.map(o => (
-        <Pressable key={o.id} onPress={() => onChange(o.id)} style={[s.tab, value === o.id && s.tabOn]}
+        <Pressable key={o.id} onPress={() => onChange(o.id)} hitSlop={4} style={[s.tab, value === o.id && s.tabOn]}
           accessibilityRole="tab" accessibilityState={{ selected: value === o.id }}>
           <Text style={[s.tabTxt, value === o.id && s.tabTxtOn]}>{o.label}</Text>
         </Pressable>
@@ -52,7 +52,7 @@ export function Pill({ kg, text }: { kg: number | null; text: string }) {
 
 const s = StyleSheet.create({
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingTop: 16, paddingHorizontal: 14, paddingBottom: 12, marginBottom: 16 },
-  cardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 8 },
+  cardHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', rowGap: 8, columnGap: 8, paddingHorizontal: 4, marginBottom: 8 },
   cardTitle: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
   btn: { borderRadius: 14, minHeight: 52, paddingVertical: 15, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
   btnSmall: { borderRadius: 12, minHeight: 44, paddingVertical: 8, paddingHorizontal: 14 },

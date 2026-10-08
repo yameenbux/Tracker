@@ -88,22 +88,24 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
   const ok = plausible(kg);
   const valid = ok && !future && !early;
   const clash = weights[key] != null && key !== initialKey && !future;
+  // Save/Delete animate the sheet away first, then report (so it slides down instead of vanishing)
+  const [then, setThen] = useState<null | { run: () => void }>(null);
   return (
-    <Sheet title={editing ? 'Edit weigh-in' : 'Log weight'} onClose={onClose}
+    <Sheet title={editing ? 'Edit weigh-in' : 'Log weight'} onClose={() => (then ? then.run() : onClose())} closing={!!then}
       footer={<>
-        <Button label={clash ? 'Save and replace' : 'Save'} kind="coral" disabled={!valid} onPress={() => { if (valid) onSave(key, kg!); }} />
-        {editing && <Button label="Delete weigh-in" kind="danger" onPress={() => onDelete(initialKey!)} style={{ marginTop: 8 }} />}
+        <Button label={clash ? 'Save and replace' : 'Save'} kind="coral" disabled={!valid || !!then} onPress={() => { if (valid) setThen({ run: () => onSave(key, kg!) }); }} />
+        {editing && <Button label="Delete weigh-in" kind="danger" disabled={!!then} onPress={() => setThen({ run: () => onDelete(initialKey!) })} style={{ marginTop: 8 }} />}
       </>}>
       <View style={s.stepRow}>
         <Pressable onPress={() => nudge(-1)} disabled={kg == null} style={({ pressed }) => [s.stepBtn, pressed && { opacity: 0.6 }]}
-          accessibilityRole="button" accessibilityLabel={`Decrease by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
+          accessibilityRole="button" accessibilityState={{ disabled: kg == null }} accessibilityLabel={`Decrease by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
           <Text style={s.stepTxt}>−</Text>
         </Pressable>
         <View style={{ alignItems: 'center' }}>
           <WeightInput unit={unit} kg={kg} onChange={setKg} live big label="Weight" sync={nudges} autoFocus={kg == null} />
         </View>
         <Pressable onPress={() => nudge(1)} disabled={kg == null} style={({ pressed }) => [s.stepBtn, pressed && { opacity: 0.6 }]}
-          accessibilityRole="button" accessibilityLabel={`Increase by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
+          accessibilityRole="button" accessibilityState={{ disabled: kg == null }} accessibilityLabel={`Increase by ${unit === 'kg' ? '0.1 kilograms' : 'half a pound'}`}>
           <Text style={s.stepTxt}>+</Text>
         </Pressable>
       </View>
@@ -122,17 +124,16 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
 
 const s = StyleSheet.create({
   race: { borderRadius: 18, padding: 18, marginBottom: 16, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  raceLabel: { fontFamily: F.bodyBold, fontSize: 11.5, letterSpacing: 1.6, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' },
+  raceLabel: { fontFamily: F.bodyBold, fontSize: 11.5, letterSpacing: 1.6, textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)' },
   raceName: { fontFamily: F.display, fontSize: 20, color: '#fff', marginTop: 3 },
   raceMeta: { fontFamily: F.body, fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 3 },
   raceNum: { fontFamily: F.display, fontSize: 36, color: '#7FE3CF' },
-  raceLab: { fontFamily: F.bodySemi, fontSize: 11.5, letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  raceLab: { fontFamily: F.bodySemi, fontSize: 11.5, letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.85)', marginTop: 2 },
   count: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   empty: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, padding: 6, lineHeight: 19 },
   entry: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingVertical: 10, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line },
   eW: { fontFamily: F.displaySemi, fontSize: 17, color: C.ink },
   eD: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, marginTop: 2 },
-  chev: { fontSize: 20, color: C.inkSoft, marginLeft: 2 },
   more: { minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   moreTxt: { fontFamily: F.bodyBold, fontSize: 14, color: C.coralInk },
   foot: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 17, paddingHorizontal: 6, paddingTop: 10 },

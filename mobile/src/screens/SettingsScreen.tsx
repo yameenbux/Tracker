@@ -1,7 +1,8 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Constants from 'expo-constants';
-import { useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { addDays, dateKey, DAY_FULL, DAY_ORDER, longDate, mondayOf, validKey } from '../core/dates';
 import { assessPlan, buildTargets, cleanBreaks, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
 import { daysSince } from '../core/summary';
@@ -11,7 +12,9 @@ import type { Reminder } from '../core/storage';
 import { DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
 import { Button } from '../components/ui';
+import { confirm } from '../dialogs';
 import { success } from '../feel';
+import { useReducedMotion } from '../motion';
 import { timeLabel } from '../reminders';
 import { C, F } from '../theme';
 
@@ -56,7 +59,7 @@ function SwitchRow({ icon, label, value, onChange, disabled, last }: {
 }) {
   return (
     <Row icon={icon} label={label} last={last} right={
-      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: C.mint, false: C.line }} accessibilityLabel={label} />
+      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: C.mintInk, false: C.line }} accessibilityLabel={label} />
     } />
   );
 }
@@ -79,13 +82,6 @@ function Input(props: React.ComponentProps<typeof TextInput>) {
 }
 const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
-function ask(title: string, message: string, ok: string): Promise<boolean> {
-  if (Platform.OS === 'web') return Promise.resolve(window.confirm(title + '\n\n' + message));
-  return new Promise(resolve => Alert.alert(title, message, [
-    { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-    { text: ok, style: 'destructive', onPress: () => resolve(true) },
-  ], { cancelable: true, onDismiss: () => resolve(false) }));
-}
 
 // ---------- screen ----------
 
@@ -95,7 +91,7 @@ export interface SettingsProps {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
   lock: boolean; lockAvailable: boolean; lockName: string; onLockChange: (on: boolean) => void;
   reminder: Reminder; onReminderChange: (r: Reminder) => void;
-  lastBackup: string | null; weighIns: number;
+  lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   onSave: (s: Settings) => void; onClose: () => void;
   onExport: () => void; onExportCsv: () => void; onRestore: () => void; onReset: () => void; onEraseAll: () => void;
 }
@@ -110,11 +106,16 @@ export function SettingsScreen(p: SettingsProps) {
   };
   const back = () => setPage('root');
 
-  if (page === 'plan') return <PlanPage settings={settings} unit={unit} onSave={plan => { commit({ plan }); back(); }} onBack={back} />;
-  if (page === 'event') return <EventPage settings={settings} onDone={ev => { commit({ event: ev }); back(); }} />;
-  if (page === 'habits') return <HabitsPage settings={settings} onDone={habits => { commit({ habits }); back(); }} />;
-  if (page === 'sessions') return <SessionsPage settings={settings} onDone={sessions => { commit({ sessions }); back(); }} />;
-  if (page === 'meals') return <MealsPage settings={settings} onDone={meals => { commit({ meals }); back(); }} />;
+  // Sub-pages save when you leave them, however you leave (Back, swiping the sheet away, or the app locking)
+  const keep = <T,>(key: keyof Settings) => (v: T) => { if (JSON.stringify(v) !== JSON.stringify(settings[key])) commit({ [key]: v } as Partial<Settings>); };
+  if (page !== 'root') return <Pushed onBack={back}>{subPage()}</Pushed>;
+  function subPage() {
+  if (page === 'plan') return <PlanPage settings={settings} unit={unit} weights={p.weights} onSave={plan => { commit({ plan }); back(); }} onBack={back} onLeaveUnsaved={plan => commit({ plan })} />;
+  if (page === 'event') return <EventPage settings={settings} onSave={keep<Settings['event']>('event')} onBack={back} />;
+  if (page === 'habits') return <HabitsPage settings={settings} onSave={keep<Habit[]>('habits')} onBack={back} />;
+  if (page === 'sessions') return <SessionsPage settings={settings} onSave={keep<Settings['sessions']>('sessions')} onBack={back} />;
+  return <MealsPage settings={settings} onSave={keep<Settings['meals']>('meals')} onBack={back} />;
+  }
 
   const plan = settings.plan;
   const sessionDays = DAY_ORDER.filter(d => settings.sessions[d].title || settings.sessions[d].items.length).length;
@@ -144,7 +145,7 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="ruler" label="Units" right={<UnitToggle unit={unit} onChange={p.setUnit} />} />
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
-          <Row icon="flame" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
+          <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
           <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Plumb works out what you really burn from your trend.</Text>
@@ -170,7 +171,7 @@ export function SettingsScreen(p: SettingsProps) {
         </Group>
 
         <Group title="About">
-          <Row icon="shield" label="Privacy policy" onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})} hint="Opens in Safari" />
+          <Row icon="shield" label="Privacy policy" onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL, { controlsColor: C.coralInk }).catch(() => Linking.openURL(PRIVACY_URL).catch(() => {}))} hint="Opens the policy" />
           <Row icon="info" label="Version" value={build ? `${version} (${build})` : version} last />
         </Group>
         <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Plumb · a weight tracker that stays yours</Text>
@@ -192,22 +193,66 @@ function TimeInput({ hour, minute, onChange }: { hour: number; minute: number; o
 
 // ---------- sub-pages ----------
 
-function PlanPage({ settings, unit, onSave, onBack }: { settings: Settings; unit: Unit; onSave: (p: Settings['plan']) => void; onBack: () => void }) {
+/** iOS-style push: the page slides in from the right, and a swipe from the left edge goes back. */
+function Pushed({ onBack, children }: { onBack: () => void; children: React.ReactNode }) {
+  const { width } = useWindowDimensions();
+  const reduced = useReducedMotion();
+  const [x] = useState(() => new Animated.Value(reduced ? 0 : width));
+  const [swipedBack, setSwipedBack] = useState(false);
+  useEffect(() => { Animated.timing(x, { toValue: 0, duration: reduced ? 0 : 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(); }, [x, reduced]);
+  useEffect(() => { if (swipedBack) onBack(); }, [swipedBack, onBack]);
+  const [pan] = useState(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (e, g) => g.x0 < 28 && g.dx > 8 && Math.abs(g.dy) < g.dx,
+    onPanResponderMove: (_, g) => x.setValue(Math.max(0, g.dx)),
+    onPanResponderRelease: (_, g) => {
+      if (g.dx > width * 0.33 || g.vx > 0.8) Animated.timing(x, { toValue: width, duration: 180, useNativeDriver: true }).start(() => setSwipedBack(true));
+      else Animated.spring(x, { toValue: 0, useNativeDriver: true }).start();
+    },
+  }));
+  return <Animated.View style={{ flex: 1, backgroundColor: C.bg, transform: [{ translateX: x }] }} {...pan.panHandlers}>{children}</Animated.View>;
+}
+
+/**
+ * Calls `save(latest draft)` once when the page goes away — on Back or when the whole sheet is dismissed.
+ * Returns `skip()` for exits that have already handled saving (Save, Discard, Remove), checked synchronously
+ * so it holds even though the page unmounts in the same tap.
+ */
+function useSaveOnLeave<T>(draft: T, save: (v: T) => void): () => void {
+  const latest = useRef({ draft, save });
+  const skipped = useRef(false);
+  useEffect(() => { latest.current = { draft, save }; }, [draft, save]);
+  useEffect(() => () => { if (!skipped.current) latest.current.save(latest.current.draft); }, []);
+  return () => { skipped.current = true; };
+}
+
+function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
+  settings: Settings; unit: Unit; weights: Record<string, number>; onSave: (p: Settings['plan']) => void; onBack: () => void;
+  onLeaveUnsaved: (p: Settings['plan']) => void;
+}) {
   const [plan, setPlan] = useState({ startKg: settings.plan.startKg as number | null, goalKg: settings.plan.goalKg as number | null,
                                      start: settings.plan.start, goalDate: settings.plan.goalDate, breaks: settings.plan.breaks ?? [] });
   const setBreak = (i: number, patch: Partial<PlanBreak>) => setPlan(x => ({ ...x, breaks: x.breaks.map((b, j) => (j === i ? { ...b, ...patch } : b)) }));
   const verdict = assessPlan(plan);
   const changed = planChanged(settings.plan, plan);
-  const save = () => {
-    if (!verdict.ok) return;
+  const build = (): Settings['plan'] | null => {
+    if (!verdict.ok) return null;
     const full = { startKg: plan.startKg!, goalKg: plan.goalKg!, start: plan.start, goalDate: plan.goalDate, breaks: cleanBreaks(plan.breaks) };
-    onSave(onlyBreaksChanged(settings.plan, plan)
+    return onlyBreaksChanged(settings.plan, plan)
       ? withBreaks(settings.plan, plan.breaks)           // keep past weeks (and any re-plan) as they are
-      : { ...full, targets: buildTargets(full.startKg, full.goalKg, full.start, full.goalDate, full.breaks) });
+      : { ...full, targets: buildTargets(full.startKg, full.goalKg, full.start, full.goalDate, full.breaks) };
   };
+  // Swiped away (or locked) with a valid, unsaved plan: ask rather than silently dropping it
+  const pending = changed ? build() : null;
+  const skip = useSaveOnLeave(pending, next => {
+    if (next) confirm('Save your plan changes?', 'You left the plan page without saving.', 'Save', false).then(ok => { if (ok) onLeaveUnsaved(next); });
+  });
+  const save = () => { const next = build(); if (next) { skip(); onSave(next); } };
   const leave = async () => {
-    if (!changed || await ask('Discard plan changes?', 'Your current plan stays as it is.', 'Discard')) onBack();
+    if (!changed || await confirm('Discard plan changes?', 'Your current plan stays as it is.', 'Discard')) { skip(); onBack(); }
   };
+  // Moving the start later hides weigh-ins from before it (they stay in backups and the CSV)
+  const hidden = Object.keys(weights).filter(k => k < plan.start).length;
+  const hiddenBefore = Object.keys(weights).filter(k => k < settings.plan.start).length;
   const rate = verdict.ok ? (unit === 'kg' ? fmt(verdict.perWeek, 2) + ' kg' : toLbNum(verdict.perWeek).toFixed(1) + ' lb') : '';
   return (
     <View style={s.wrap}>
@@ -228,6 +273,7 @@ function PlanPage({ settings, unit, onSave, onBack }: { settings: Settings; unit
                 (verdict.warn ? "\nThat's faster than ~1% a week, which most people find hard to sustain." : '')}
             </Text>
           </View>
+          {hidden > hiddenBefore && <Text style={[s.hint, { color: C.warnInk }]}>{hidden - hiddenBefore} weigh-in{hidden - hiddenBefore === 1 ? '' : 's'} before the new start date will be hidden from the trend and history. They stay in your backups and CSV, and come back if you move the start earlier again.</Text>}
           {changed && verdict.ok && <Text style={s.hint}>{onlyBreaksChanged(settings.plan, plan)
             ? 'Saving updates the line from this week on. Past weeks stay as they are.'
             : 'Saving rebuilds the target line from start to goal, flat during breaks. Your weigh-ins are kept.'}</Text>}
@@ -257,32 +303,34 @@ function PlanPage({ settings, unit, onSave, onBack }: { settings: Settings; unit
   );
 }
 
-function EventPage({ settings, onDone }: { settings: Settings; onDone: (ev: Settings['event']) => void }) {
+function EventPage({ settings, onSave, onBack }: { settings: Settings; onSave: (ev: Settings['event']) => void; onBack: () => void }) {
   const [ev, setEv] = useState(settings.event ?? { name: '', date: settings.plan.goalDate, detail: '' });
-  const done = () => onDone(ev.name.trim() && validKey(ev.date) ? { name: ev.name.trim(), date: ev.date, detail: ev.detail.trim() } : null);
+  const result = ev.name.trim() && validKey(ev.date) ? { name: ev.name.trim(), date: ev.date, detail: ev.detail.trim() } : null;
+  const skip = useSaveOnLeave(result, onSave);
   return (
     <View style={s.wrap}>
-      <PageHeader title="Event" onBack={done} />
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+      <PageHeader title="Event" onBack={onBack} />
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Text style={s.lead}>A race, holiday or date you’re working towards. It shows as a countdown on Today. Leave the name blank to hide it.</Text>
         <View style={s.form}>
           <Field label="Name"><Input value={ev.name} onChangeText={v => setEv(e => ({ ...e, name: v }))} placeholder="e.g. 10K race" accessibilityLabel="Event name" returnKeyType="done" /></Field>
           <View style={{ marginTop: 14 }}><Field label="Date"><DateInput value={ev.date} onChange={v => setEv(e => ({ ...e, date: v }))} label="Event date" /></Field></View>
           <View style={{ marginTop: 14 }}><Field label="Details"><Input value={ev.detail} onChangeText={v => setEv(e => ({ ...e, detail: v }))} placeholder="Where, distance, anything useful" accessibilityLabel="Event details" /></Field></View>
         </View>
-        {settings.event && <Button label="Remove event" kind="danger" small style={{ alignSelf: 'flex-start' }} onPress={() => onDone(null)} />}
+        {settings.event && <Button label="Remove event" kind="danger" small style={{ alignSelf: 'flex-start' }} onPress={() => { skip(); onSave(null); onBack(); }} />}
       </ScrollView>
     </View>
   );
 }
 
-function HabitsPage({ settings, onDone }: { settings: Settings; onDone: (h: Habit[]) => void }) {
+function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (h: Habit[]) => void; onBack: () => void }) {
   const [habits, setHabits] = useState<Habit[]>(settings.habits.map(h => ({ ...h })));
   const setHabit = (i: number, patch: Partial<Habit>) => setHabits(hs => hs.map((h, j) => (j === i ? { ...h, ...patch } : h)));
+  useSaveOnLeave(habits.filter(h => h.short.trim() || h.name.trim()), onSave);
   return (
     <View style={s.wrap}>
-      <PageHeader title="Daily habits" onBack={() => onDone(habits.filter(h => h.short.trim() || h.name.trim()))} />
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+      <PageHeader title="Daily habits" onBack={onBack} />
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Text style={s.lead}>Up to {MAX_HABITS}. An emoji, a short label (5 letters) and a name. Removing a habit hides it; past ticks are kept.</Text>
         <View style={s.form}>
           {habits.map((h, i) => (
@@ -305,19 +353,17 @@ function HabitsPage({ settings, onDone }: { settings: Settings; onDone: (h: Habi
   );
 }
 
-function SessionsPage({ settings, onDone }: { settings: Settings; onDone: (s: Record<number, Session>) => void }) {
+function SessionsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (s: Record<number, Session>) => void; onBack: () => void }) {
   const [sessions, setSessions] = useState<Record<number, Session>>(() => JSON.parse(JSON.stringify(settings.sessions)));
   const [itemsText, setItemsText] = useState<Record<number, string>>(() => Object.fromEntries(DAY_ORDER.map(d => [d, settings.sessions[d].items.join('\n')])));
   const [openDay, setOpenDay] = useState<number | null>(null);
-  const done = () => {
-    const out: Record<number, Session> = {};
-    for (const d of DAY_ORDER) out[d] = { ...sessions[d], items: itemsText[d].split('\n').map(x => x.trim()).filter(Boolean) };
-    onDone(out);
-  };
+  const out: Record<number, Session> = {};
+  for (const d of DAY_ORDER) out[d] = { ...sessions[d], items: itemsText[d].split('\n').map(x => x.trim()).filter(Boolean) };
+  useSaveOnLeave(out, onSave);
   return (
     <View style={s.wrap}>
-      <PageHeader title="Weekly sessions" onBack={done} />
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+      <PageHeader title="Weekly sessions" onBack={onBack} />
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
         <Text style={s.lead}>One exercise per line. Start a line with # to make a heading (e.g. # core). Leave a day empty for rest.</Text>
         <View style={s.groupBox}>
           {DAY_ORDER.map((d, idx) => {
@@ -351,13 +397,14 @@ function SessionsPage({ settings, onDone }: { settings: Settings; onDone: (s: Re
 
 const MACRO_LABEL = { kcal: 'Calories', p: 'Protein grams', c: 'Carbs grams', f: 'Fat grams' } as const;
 
-function MealsPage({ settings, onDone }: { settings: Settings; onDone: (m: Settings['meals']) => void }) {
+function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (m: Settings['meals']) => void; onBack: () => void }) {
   const [meals, setMeals] = useState<(Meal & { id: string })[]>(settings.meals.items.map((m, i) => ({ ...m, id: 'm' + i })));
   const [target, setTarget] = useState({ ...settings.meals.target });
   const setMeal = (id: string, patch: Partial<Meal>) => setMeals(ms => ms.map(m => (m.id === id ? { ...m, ...patch } : m)));
+  useSaveOnLeave({ items: meals.map(({ id: _id, ...m }) => m), target }, onSave);
   return (
     <View style={s.wrap}>
-      <PageHeader title="Meals" onBack={() => onDone({ items: meals.map(({ id: _id, ...m }) => m), target })} />
+      <PageHeader title="Meals" onBack={onBack} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
         <Text style={s.lead}>Your usual day of eating. Macros are optional. Fill them in to see totals against a daily target.</Text>
         {meals.map((m, i) => (

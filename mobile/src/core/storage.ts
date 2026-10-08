@@ -29,10 +29,21 @@ export function cleanPrefs(p: any): Prefs {
   };
 }
 
+/**
+ * Brings a save written by an older version up to the current shape. Version 1 saves had no `v` and the same fields,
+ * so there is nothing to change yet; future format changes add a step here.
+ */
+export function migrate(s: any): any {
+  const v = Number.isInteger(s.v) ? s.v : 1;
+  if (v > SCHEMA_VERSION) throw new Error('saved by a newer version of Plumb');   // never down-convert (and lose) newer data
+  return s;
+}
+
 /** Turns whatever was saved (any older version) into a clean state. Throws if it isn't our data at all. */
 export function hydrate(raw: string): TrackerState {
-  const s = JSON.parse(raw);
-  if (!s || typeof s !== 'object') throw new Error('not an object');
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== 'object') throw new Error('not an object');
+  const s = migrate(parsed);
   return {
     settings: normalizeSettings(s.settings),
     weights: cleanWeights(s.weights),

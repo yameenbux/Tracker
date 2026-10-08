@@ -1,3 +1,4 @@
+import * as SplashScreen from 'expo-splash-screen';
 import { Component, ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { C, F } from '../theme';
@@ -10,6 +11,7 @@ import { Button } from './ui';
 export class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
   static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch() { SplashScreen.hideAsync().catch(() => {}); }   // never leave the splash covering the recovery screen
   render() {
     if (!this.state.error) return this.props.children;
     return (

@@ -8,6 +8,20 @@ export type { Prefs, Reminder } from './core/storage';
 const STORAGE_KEY = 'tracker_state_v1';
 const PREFS_KEY = 'tracker_prefs_v1';     // device-only preferences, never exported in backups
 const RESCUE_KEY = 'tracker_state_unreadable';   // a copy of saved data we couldn't read, so it is never lost
+
+/** Keeps one copy of each distinct unreadable save (not a new one on every launch). */
+async function rescue(raw: string) {
+  const keys = (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[])).filter(k => k.startsWith(RESCUE_KEY));
+  for (const k of keys) if ((await AsyncStorage.getItem(k).catch(() => null)) === raw) return;
+  await AsyncStorage.setItem(RESCUE_KEY + '_' + Date.now(), raw).catch(() => {});
+}
+
+/** The most recent rescued copy (or pre-restore snapshot), so it can be exported and looked at. */
+export async function latestRescue(): Promise<string | null> {
+  const keys = (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]))
+    .filter(k => k.startsWith(RESCUE_KEY) || k.startsWith('tracker_snapshot_')).sort();
+  return keys.length ? AsyncStorage.getItem(keys[keys.length - 1]).catch(() => null) : null;
+}
 const EMPTY: TrackerState = { settings: null, weights: {}, habits: {}, unit: 'kg', measurements: {}, photos: {}, intake: {}, lifts: {} };
 
 /** Everything lives on the device in one JSON blob — the data is tiny, and one write keeps it consistent. */
@@ -30,13 +44,13 @@ export function useTracker() {
           const st = hydrate(raw);
           // A plan that was saved but no longer reads would send someone back to setup: keep a copy and say so
           if (!st.settings && JSON.parse(raw)?.settings) {
-            await AsyncStorage.setItem(RESCUE_KEY + '_' + Date.now(), raw).catch(() => {});
+            await rescue(raw);
             setRecovered(true);
           }
           setState(st);
         } catch {
           // Never overwrite data we couldn't read: keep an exact copy before starting fresh
-          await AsyncStorage.setItem(RESCUE_KEY + '_' + Date.now(), raw).catch(() => {});
+          await rescue(raw);
           setRecovered(true);
         }
       }
@@ -76,13 +90,13 @@ export function useTracker() {
   const snapshot = useCallback(async (label: string) => {
     await AsyncStorage.setItem('tracker_snapshot_' + label, JSON.stringify({ v: SCHEMA_VERSION, at: new Date().toISOString(), ...state })).catch(() => {});
   }, [state]);
-  const setPrefs = useCallback((update: Partial<Prefs>) => {
-    setPrefsState(p => {
-      const next = { ...p, ...update };
-      AsyncStorage.setItem(PREFS_KEY, JSON.stringify(next)).catch(() => {});
-      return next;
-    });
-  }, []);
+  const prefWrites = useRef<Promise<void>>(Promise.resolve());
+  const setPrefs = useCallback((update: Partial<Prefs>) => setPrefsState(p => ({ ...p, ...update })), []);
+  useEffect(() => {
+    if (!loaded.current) return;
+    const json = JSON.stringify(prefs);
+    prefWrites.current = prefWrites.current.then(() => AsyncStorage.setItem(PREFS_KEY, json)).catch(() => {});
+  }, [prefs]);
   const dismissRecovered = useCallback(() => setRecovered(false), []);
 
   return { state, prefs, ready, recovered, saveFailed, dismissRecovered,
@@ -91,6 +105,6 @@ export function useTracker() {
 export type Tracker = ReturnType<typeof useTracker>;
 
 /** Removes everything Plumb has stored on this phone: data, preferences, rescue copies and snapshots. */
-export async function eraseStorage(): Promise<void> {
-  await AsyncStorage.clear();
+export async function eraseStorage(): Promise<boolean> {
+  try { await AsyncStorage.clear(); return true; } catch { return false; }
 }

@@ -29,7 +29,7 @@ function BigWeight({ unit, kg, onChange }: { unit: Unit; kg: number | null; onCh
   const box = (i: 0 | 1, w: number, label: string, suffix: string) => (
     <View style={s.bigBox}>
       <TextInput value={t[i]} onChangeText={v => set(i, v)} style={[s.bigIn, { minWidth: w }]} maxFontSizeMultiplier={1.2} keyboardType={i === 0 && unit === 'imp' ? 'number-pad' : 'decimal-pad'}
-        placeholder="0" placeholderTextColor={C.line} autoFocus={i === 0} accessibilityLabel={label} />
+        placeholder="0" placeholderTextColor={C.placeholder} autoFocus={i === 0} accessibilityLabel={label} />
       <Text style={s.bigUnit}>{suffix}</Text>
     </View>
   );

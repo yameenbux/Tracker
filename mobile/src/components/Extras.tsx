@@ -5,8 +5,8 @@ import { addDays, dateKey, DAY_ABBR, longDate, parseKey, startOfDay } from '../c
 import { habitInsight, INSIGHT_MIN_WEEKS, MILESTONE_TEXT, weeksOfData } from '../core/insights';
 import { lossWeeks, weightSeries } from '../core/plan';
 import { exerciseName, lastLift, suggestNext } from '../core/progression';
-import { trendSeries } from '../core/trend';
-import { showChange, showWeight } from '../core/units';
+import { trendSeries, TrendPoint } from '../core/trend';
+import { KG_PER_LB, showChange, showWeight } from '../core/units';
 import type { HabitLog, Session, Settings, TrackerState, Unit, Weights } from '../core/types';
 import { C, F } from '../theme';
 import { fieldStyles } from './Fields';
@@ -38,8 +38,8 @@ export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }
 }
 
 /** Habit ↔ trend comparisons, only once there is enough data, worded as observations. */
-export function PatternsCard({ settings, weights, habits, unit }: { settings: Settings; weights: Weights; habits: HabitLog; unit: Unit }) {
-  const series = trendSeries(weightSeries(settings.plan, weights));
+export function PatternsCard({ settings, weights, habits, unit, trend }: { settings: Settings; weights: Weights; habits: HabitLog; unit: Unit; trend?: TrendPoint[] }) {
+  const series = trend ?? trendSeries(weightSeries(settings.plan, weights));
   const have = weeksOfData(settings.plan, series);
   if (!settings.habits.length) return null;
   if (have < INSIGHT_MIN_WEEKS) {
@@ -68,8 +68,8 @@ export function PatternsCard({ settings, weights, habits, unit }: { settings: Se
 }
 
 /** Optional calorie logging: one number a day, and an estimate of real daily burn. */
-export function CaloriesCard({ settings, weights, intake, onChange }: {
-  settings: Settings; weights: Weights; intake: TrackerState['intake']; onChange: (k: string, kcal: number | null) => void;
+export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
+  settings: Settings; weights: Weights; intake: TrackerState['intake']; onChange: (k: string, kcal: number | null) => void; trend?: TrendPoint[];
 }) {
   // Worked out on every render, so "Today" is still today after midnight
   const today = dateKey(new Date()), yesterday = dateKey(addDays(new Date(), -1));
@@ -89,7 +89,7 @@ export function CaloriesCard({ settings, weights, intake, onChange }: {
     if (txt.trim() === '') onChange(day, null);
     else if (!invalid) onChange(day, v);
   };
-  const series = trendSeries(weightSeries(settings.plan, weights));
+  const series = trend ?? trendSeries(weightSeries(settings.plan, weights));
   const est = estimateExpenditure(intake, series);
   const last7 = Array.from({ length: 7 }, (_, i) => intake[dateKey(addDays(startOfDay(), -i - 1))]).filter((v): v is number => v != null);
   const avg7 = last7.length ? Math.round(last7.reduce((a, b) => a + b, 0) / last7.length) : null;
@@ -103,12 +103,12 @@ export function CaloriesCard({ settings, weights, intake, onChange }: {
       <View style={s.calRow}>
         <View style={s.dayTabs}>
           {(['today', 'yesterday'] as const).map(w => (
-            <Pressable key={w} onPress={() => setWhich(w)} style={[s.dayTab, which === w && s.dayTabOn]} accessibilityRole="tab" accessibilityState={{ selected: which === w }}>
+            <Pressable key={w} onPress={() => { if (w !== which) { commit(); setWhich(w); } }} hitSlop={4} style={[s.dayTab, which === w && s.dayTabOn]} accessibilityRole="tab" accessibilityState={{ selected: which === w }}>
               <Text style={[s.dayTabTxt, which === w && { color: '#fff' }]}>{w === 'today' ? 'Today' : 'Yesterday'}</Text>
             </Pressable>
           ))}
         </View>
-        <TextInput value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal"
+        <TextInput key={day} value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal"
           returnKeyType="done" maxFontSizeMultiplier={1.4}
           placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.calIn]} accessibilityLabel={`Calories eaten, ${which}`} />
       </View>
@@ -133,25 +133,35 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
   dateK: string; session: Session; lifts: TrackerState['lifts']; unit: Unit;
   onSave: (lifts: TrackerState['lifts']) => void; onClose: () => void;
 }) {
+  // Stored in kg (so progression maths is unchanged); shown and typed in pounds for st/lb users
+  const L = unit === 'kg' ? 'kg' : 'lb';
+  const toU = (kg: number) => (unit === 'kg' ? String(kg) : String(Math.round(kg / KG_PER_LB * 2) / 2));
+  const fromU = (t: string): number | null => {
+    const v = parseFloat(t);
+    if (!(v >= 0)) return null;
+    const kg = unit === 'kg' ? v : Math.round(v * KG_PER_LB * 100) / 100;
+    return kg <= 500 ? kg : null;
+  };
   const names = Array.from(new Set(session.items.map(exerciseName).filter((n): n is string => !!n)));
   const today = lifts[dateK] || {};
   const [rows, setRows] = useState(() => Object.fromEntries(names.map(n => {
     const sug = suggestNext(lastLift(lifts, n, dateK));
-    return [n, { txt: today[n] ? String(today[n].kg) : sug ? String(sug.kg) : '', done: today[n]?.done ?? false }];
+    return [n, { txt: today[n] ? toU(today[n].kg) : sug ? toU(sug.kg) : '', done: today[n]?.done ?? false }];
   })) as Record<string, { txt: string; done: boolean }>);
   const save = () => {
     const day: Record<string, { kg: number; done: boolean }> = {};
-    for (const n of names) { const kg = parseFloat(rows[n].txt); if (kg >= 0 && kg <= 500) day[n] = { kg, done: rows[n].done }; }
+    for (const n of names) { const kg = fromU(rows[n].txt); if (kg != null) day[n] = { kg, done: rows[n].done }; }
     const next = { ...lifts };
     if (Object.keys(day).length) next[dateK] = day; else delete next[dateK];
     onSave(next);
   };
   const d = parseKey(dateK);
-  const bad = names.filter(n => rows[n].txt.trim() !== '' && !(parseFloat(rows[n].txt) >= 0 && parseFloat(rows[n].txt) <= 500));
+  const bad = names.filter(n => rows[n].txt.trim() !== '' && fromU(rows[n].txt) == null);
+  const [saving, setSaving] = useState(false);   // animate away, then save
   return (
-    <Sheet title={session.title || 'Session'} onClose={onClose}
-      footer={names.length > 0 ? <Button label="Save session" kind="coral" disabled={bad.length > 0} onPress={save} /> : undefined}>
-      <Text style={s.muted}>{DAY_ABBR[d.getDay()]} {longDate(dateK)} · weights in kg. Tick when you hit every rep.</Text>
+    <Sheet title={session.title || 'Session'} onClose={() => (saving ? save() : onClose())} closing={saving}
+      footer={names.length > 0 ? <Button label="Save session" kind="coral" disabled={bad.length > 0 || saving} onPress={() => setSaving(true)} /> : undefined}>
+      <Text style={s.muted}>{DAY_ABBR[d.getDay()]} {longDate(dateK)} · weights in {L}. Tick when you hit every rep.</Text>
       {names.length === 0 && <Text style={[s.muted, { marginTop: 12 }]}>Add exercises to this day in Settings → Weekly sessions.</Text>}
       {names.map(n => {
         const last = lastLift(lifts, n, dateK);
@@ -161,13 +171,13 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
             <View style={{ flex: 1 }}>
               <Text style={s.liftName}>{n}</Text>
               <Text style={s.liftHint}>
-                {last ? `Last: ${last.kg} kg${last.done ? ', all reps' : ''}` : 'First time'}
-                {sug ? (sug.reason === 'increase' ? ` · try ${sug.kg} kg` : ' · repeat until every rep is done') : ''}
+                {last ? `Last: ${toU(last.kg)} ${L}${last.done ? ', all reps' : ''}` : 'First time'}
+                {sug ? (sug.reason === 'increase' ? ` · try ${toU(sug.kg)} ${L}` : ' · repeat until every rep is done') : ''}
               </Text>
             </View>
             <TextInput value={rows[n].txt} onChangeText={v => setRows(r => ({ ...r, [n]: { ...r[n], txt: v } }))} keyboardType="decimal-pad"
-              placeholder="kg" placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.liftIn, bad.includes(n) && { borderColor: C.danger }]}
-              maxFontSizeMultiplier={1.4} accessibilityLabel={`${n} weight in kilograms`} />
+              placeholder={L} placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.liftIn, bad.includes(n) && { borderColor: C.danger }]}
+              maxFontSizeMultiplier={1.4} accessibilityLabel={`${n} weight in ${unit === 'kg' ? 'kilograms' : 'pounds'}`} />
             <Pressable onPress={() => setRows(r => ({ ...r, [n]: { ...r[n], done: !r[n].done } }))} style={[s.liftDone, rows[n].done && s.liftDoneOn]}
               accessibilityRole="checkbox" accessibilityState={{ checked: rows[n].done }} accessibilityLabel={`${n}: all reps done`}>
               <Icon name="check" size={18} color={rows[n].done ? '#fff' : C.inkSoft} strokeWidth={2.6} />
@@ -175,7 +185,7 @@ export function LiftSheet({ dateK, session, lifts, unit, onSave, onClose }: {
           </View>
         );
       })}
-      {bad.length > 0 && <Text style={s.err}>Check {bad.join(', ')}: enter a weight between 0 and 500 kg, or leave it empty.</Text>}
+      {bad.length > 0 && <Text style={s.err}>Check {bad.join(', ')}: enter a weight between 0 and {unit === 'kg' ? '500 kg' : '1,100 lb'}, or leave it empty.</Text>}
     </Sheet>
   );
 }

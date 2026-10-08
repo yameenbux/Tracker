@@ -12,7 +12,7 @@ export const C = {
   mint: '#12B886',
   mintInk: '#06704F',     // mint for text: passes WCAG AA on white and on mintBg
   danger: '#B2392A',      // destructive text, AA on white and coralBg
-  placeholder: '#9A90A3',
+  placeholder: '#857B8F',      // 3.6:1 on paper: readable, still clearly a hint
   panelAlt: '#EDE6F6',
   mintPanel: '#E6F4EC',
   heroGood: '#7FF0C8',
@@ -21,6 +21,7 @@ export const C = {
   mintBg: '#E4F7EF',
   coralBg: '#FFEAE6',
   target: '#C9BFD6',
+  targetLine: '#9385A8',      // the chart's dashed target line: 3:1 on white
   chip: '#F0E8E0',
   todayBg: '#FFF3EF',
   panel: '#F7F3FB',

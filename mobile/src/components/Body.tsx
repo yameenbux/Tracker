@@ -6,6 +6,7 @@ import { weightSeries } from '../core/plan';
 import { trendSeries, TrendPoint } from '../core/trend';
 import { showWeight } from '../core/units';
 import type { MeasureKey, Measurements, PhotoLog, Pose, Settings, Unit, Weights } from '../core/types';
+import { confirm } from '../dialogs';
 import { addPhoto, deletePhoto, photoUri } from '../photos';
 import { C, F } from '../theme';
 import { DateInput, Field, fieldStyles } from './Fields';
@@ -28,8 +29,7 @@ function choose(title: string, options: Choice[]) {
                                  { text: 'Cancel', style: 'cancel' as const }]);
 }
 function confirmDelete(title: string, message: string, run: () => void) {
-  if (Platform.OS === 'web') { if (window.confirm(title + '\n\n' + message)) run(); return; }
-  Alert.alert(title, message, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: run }]);
+  confirm(title, message, 'Delete').then(ok => { if (ok) run(); });
 }
 
 /** Trend weight on (or just before) a date, for labelling photos. */
@@ -99,7 +99,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, measur
           {dates.length > 2 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingTop: 8 }}>
               {dates.slice(0, -1).map(k => (
-                <Pressable key={k} onPress={() => setThenKey(k)} style={[s.dateChip, k === before && s.dateChipOn]} accessibilityRole="button"
+                <Pressable key={k} onPress={() => setThenKey(k)} hitSlop={4} style={[s.dateChip, k === before && s.dateChipOn]} accessibilityRole="button"
                   accessibilityLabel={`Compare from ${longDate(k)}`} accessibilityState={{ selected: k === before }}>
                   <Text style={[s.dateChipTxt, k === before && { color: '#fff' }]}>{shortDate(parseKey(k))}</Text>
                 </Pressable>
@@ -138,11 +138,12 @@ function MeasureSheet({ unit, measurements, onSave, onClose }: {
   const today = dateKey(new Date());
   const existing = measurements[k] != null;
   const any = Object.keys(values).length > 0;
+  const [then, setThen] = useState<null | { run: () => void }>(null);   // animate away, then save
   return (
-    <Sheet title="Measurements" onClose={onClose} footer={<>
-      <Button label="Save" kind="coral" disabled={bad || !any} onPress={() => onSave(setMeasureDay(measurements, k, values))} />
+    <Sheet title="Measurements" onClose={() => (then ? then.run() : onClose())} closing={!!then} footer={<>
+      <Button label="Save" kind="coral" disabled={bad || !any || !!then} onPress={() => setThen({ run: () => onSave(setMeasureDay(measurements, k, values)) })} />
       {existing && <Button label={`Delete ${longDate(k)}`} kind="danger" style={{ marginTop: 8 }}
-        onPress={() => confirmDelete('Delete these measurements?', `Removes everything measured on ${longDate(k)}.`, () => onSave(setMeasureDay(measurements, k, null)))} />}
+        onPress={() => confirmDelete('Delete these measurements?', `Removes everything measured on ${longDate(k)}.`, () => setThen({ run: () => onSave(setMeasureDay(measurements, k, null)) }))} />}
     </>}>
       <View style={s.dateRow}><Text style={s.dateLabel}>Date</Text><DateInput value={k} onChange={changeDate} label="Measurement date" max={today} /></View>
       <View style={s.mGrid}>

@@ -1,12 +1,13 @@
 import { memo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
-import { DAY_ABBR, dateKey, MON } from '../core/dates';
+import { addDays, DAY_ABBR, dateKey, MON } from '../core/dates';
 import { consistency } from '../core/insights';
 import { mealTotals, toggleHabit, weekDays } from '../core/plan';
 import type { HabitLog, Session, Settings } from '../core/types';
 import { tick } from '../feel';
 import { useReducedMotion } from '../motion';
 import { C, F } from '../theme';
+import { Icon } from './Icons';
 import { Card } from './ui';
 
 /** Habit checkbox: the tick springs in when turned on, with a light haptic. */
@@ -21,7 +22,7 @@ function HabitBox({ on, label, onPress, disabled }: { on: boolean; label: string
   return (
     <Pressable onPress={() => { tick(); onPress(); }} hitSlop={7} disabled={disabled} style={[s.cb, on && s.cbOn, disabled && { opacity: 0.35 }]}
       accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled }} accessibilityLabel={label}>
-      {on ? <Animated.Text style={[s.tick, { transform: [{ scale }] }]}>✓</Animated.Text> : null}
+      {on ? <Animated.View style={{ transform: [{ scale }] }}><Icon name="check" size={18} color={C.ink} strokeWidth={2.8} /></Animated.View> : null}
     </Pressable>
   );
 }
@@ -73,15 +74,28 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onLogSession?: (dateKey: string, dow: number) => void;
 }) {
   const [open, setOpen] = useState<{ key: string; kind: 'sess' | 'meals' } | null>(null);
-  const days = weekDays();
+  // Page back through earlier weeks (to fix a missed tick), never past the plan's first week or into the future
+  const [back, setBack] = useState(0);
+  const days = weekDays(addDays(new Date(), -7 * back));
+  const canBack = dateKey(days[0]) > settings.plan.start;
   const todayKey = dateKey(new Date());
   const H = settings.habits;
   const hasMeals = settings.meals.items.length > 0;
   const anySession = days.some(d => { const x = settings.sessions[d.getDay()]; return x.title || x.items.length; });
 
   return (
-    <Card title="This week">
-      <Text style={s.cap}>{days[0].getDate()}–{days[6].getDate()} {MON[days[6].getMonth()]}</Text>
+    <Card title={back === 0 ? 'This week' : back === 1 ? 'Last week' : `${back} weeks ago`} right={
+      <View style={s.pager}>
+        <Pressable onPress={() => { setOpen(null); setBack(b => b + 1); }} disabled={!canBack} style={[s.pageBtn, !canBack && { opacity: 0.3 }]}
+          accessibilityRole="button" accessibilityLabel="Previous week" accessibilityState={{ disabled: !canBack }}>
+          <Icon name="back" size={20} color={C.ink} strokeWidth={2.4} />
+        </Pressable>
+        <Pressable onPress={() => { setOpen(null); setBack(b => Math.max(0, b - 1)); }} disabled={back === 0} style={[s.pageBtn, back === 0 && { opacity: 0.3 }]}
+          accessibilityRole="button" accessibilityLabel="Next week" accessibilityState={{ disabled: back === 0 }}>
+          <Icon name="chevron" size={20} color={C.ink} strokeWidth={2.4} />
+        </Pressable>
+      </View>}>
+      <Text style={s.cap}>{days[0].getDate()} {MON[days[0].getMonth()]} – {days[6].getDate()} {MON[days[6].getMonth()]}</Text>
       <View style={s.row}>
         <View style={{ flex: 1 }} />
         {H.map(h => (
@@ -105,10 +119,10 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
                 {sess.title ? <Text style={s.sessTitle} numberOfLines={1}>{sess.title}</Text> : null}
                 {(hasSess || hasMeals) && (
                   <View style={{ flexDirection: 'row', gap: 4, marginTop: 0 }}>
-                    {hasSess && <Pressable style={s.linkBtn} onPress={() => setOpen(o => o?.key === key && o.kind === 'sess' ? null : { key, kind: 'sess' })}
+                    {hasSess && <Pressable style={s.linkBtn} hitSlop={4} onPress={() => setOpen(o => o?.key === key && o.kind === 'sess' ? null : { key, kind: 'sess' })}
                       accessibilityRole="button" accessibilityState={{ expanded: open?.key === key && open.kind === 'sess' }} accessibilityLabel={`${DAY_ABBR[d.getDay()]} session${sess.title ? ': ' + sess.title : ''}`}>
                       <Text style={s.link}>{open?.key === key && open.kind === 'sess' ? 'Hide session' : 'Session'}</Text></Pressable>}
-                    {hasMeals && <Pressable style={s.linkBtn} onPress={() => setOpen(o => o?.key === key && o.kind === 'meals' ? null : { key, kind: 'meals' })}
+                    {hasMeals && <Pressable style={s.linkBtn} hitSlop={4} onPress={() => setOpen(o => o?.key === key && o.kind === 'meals' ? null : { key, kind: 'meals' })}
                       accessibilityRole="button" accessibilityState={{ expanded: open?.key === key && open.kind === 'meals' }} accessibilityLabel={`${DAY_ABBR[d.getDay()]} meals`}>
                       <Text style={[s.link, { color: C.mintInk }]}>{open?.key === key && open.kind === 'meals' ? 'Hide meals' : 'Meals'}</Text></Pressable>}
                   </View>
@@ -165,7 +179,8 @@ const s = StyleSheet.create({
   linkBtn: { minHeight: 36, justifyContent: 'center', paddingRight: 10 },
   cb: { width: 30, height: 30, borderWidth: 1.5, borderColor: C.line, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: C.bg },
   cbOn: { backgroundColor: C.coral, borderColor: C.coral },
-  tick: { color: C.ink, fontFamily: F.bodyBold, fontSize: 15 },
+  pager: { flexDirection: 'row', gap: 4 },
+  pageBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.chip, alignItems: 'center', justifyContent: 'center' },
   panel: { backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine, borderRadius: 12, padding: 12, marginHorizontal: 6, marginVertical: 6 },
   panelTitle: { fontFamily: F.display, fontSize: 13, color: C.plum2, marginBottom: 6 },
   item: { fontFamily: F.body, fontSize: 14, color: C.ink, paddingVertical: 3 },
