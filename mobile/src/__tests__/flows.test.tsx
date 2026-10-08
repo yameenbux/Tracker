@@ -4,14 +4,14 @@ import { defaultSettings, buildTargets, DEFAULT_HABITS } from '../core/plan';
 import { DEFAULT_PREFS } from '../core/storage';
 import { Toast } from '../components/Shell';
 import * as Notifications from 'expo-notifications';
-import { applyReminder, reminderDays, remindersBlocked } from '../reminders';
+import { applyReminder, onReminderTap, reminderDays, remindersBlocked } from '../reminders';
 import { SettingsScreen, SettingsProps } from '../screens/SettingsScreen';
 import { useLock } from '../useLock';
 
 const settings = defaultSettings({ start: '2026-01-05', startKg: 90, goalKg: 80, goalDate: '2026-06-01', targets: buildTargets(90, 80, '2026-01-05', '2026-06-01') }, DEFAULT_HABITS);
 const props = (over: Partial<SettingsProps> = {}): SettingsProps => ({
   settings, unit: 'kg', setUnit: jest.fn(), lock: false, lockAvailable: true, lockName: 'Face ID', onLockChange: jest.fn(),
-  reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), appearance: 'system', onAppearanceChange: jest.fn(), lastBackup: null, weighIns: 3, weights: {}, onPlanLeftUnsaved: jest.fn(),
+  reminder: DEFAULT_PREFS.reminder, onReminderChange: jest.fn(), appearance: 'system', onAppearanceChange: jest.fn(), lastBackup: null, weighIns: 3, weights: {}, onPlanLeftUnsaved: jest.fn(), doses: {}, onDoses: jest.fn(),
   onSave: jest.fn(), onClose: jest.fn(), onExport: jest.fn(), onExportCsv: jest.fn(), onRestore: jest.fn(), onReset: jest.fn(), onEraseAll: jest.fn(), ...over,
 });
 
@@ -98,6 +98,22 @@ describe('smart reminders', () => {
     await applyReminder({ ...r, minute: 45 }, false);
     expect(N.scheduleNotificationAsync).toHaveBeenCalled();
     N.getAllScheduledNotificationsAsync.mockResolvedValue([]);
+  });
+  test('a tapped reminder goes to the right place, and the launch tap is cleared so it only acts once', async () => {
+    const N = Notifications as unknown as Record<string, jest.Mock>;
+    const tapOf = (identifier: string) => ({ notification: { request: { identifier } } });
+    N.getLastNotificationResponseAsync.mockResolvedValueOnce(tapOf('dose-2026-10-08'));
+    N.clearLastNotificationResponse.mockClear();
+    const onLog = jest.fn(), onDose = jest.fn();
+    const off = onReminderTap(onLog, onDose);
+    await waitFor(() => expect(onDose).toHaveBeenCalledTimes(1));
+    expect(N.clearLastNotificationResponse).toHaveBeenCalled();
+    const listener = N.addNotificationResponseReceivedListener.mock.calls.at(-1)[0];
+    listener(tapOf('weigh-in-2026-10-09'));
+    listener(tapOf('someone-else'));
+    expect(onLog).toHaveBeenCalledTimes(1);
+    expect(onDose).toHaveBeenCalledTimes(1);
+    off();
   });
   test('notifications switched off in iOS Settings are detected', async () => {
     const N = Notifications as unknown as Record<string, jest.Mock>;

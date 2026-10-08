@@ -1,5 +1,5 @@
 // Backup format is shared with the web app (index.html), so a .txt exported from either one restores in the other.
-import { cleanEntries, dailyWeights, WeighIn } from './entries';
+import { dailyWeights, entriesFor, WeighIn } from './entries';
 import { cleanDoses } from './medication';
 import { dateKey, longDate, shortDate } from './dates';
 import { legacySettings, LEGACY_START } from './legacy';
@@ -34,7 +34,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     const settings = normalizeSettings(raw.settings);
     if (!settings) throw new Error('The plan in that backup is incomplete.');
     // Newer backups also carry timestamped weigh-ins; when they do, the day map is rebuilt from them
-    const entries = cleanEntries(raw.entries) ?? undefined;
+    const entries = entriesFor(raw.entries, cleanWeights(raw.weights)) ?? undefined;
     return { settings, weights: entries ? dailyWeights(entries) : cleanWeights(raw.weights), habits: cleanHabits(raw.habits),
              measurements: cleanMeasurements(raw.measurements), intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit,
              ...(entries ? { entries } : {}), ...(raw.doses ? { doses: cleanDoses(raw.doses) } : {}) };

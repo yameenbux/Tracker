@@ -1,5 +1,5 @@
 // Reading saved data back safely: every field is cleaned, older versions load, and junk is rejected rather than half-used.
-import { cleanEntries, dailyWeights, fromWeights } from './entries';
+import { dailyWeights, entriesFor, fromWeights } from './entries';
 import { cleanDoses } from './medication';
 import { cleanMeasurements, cleanPhotos } from './body';
 import { cleanIntake } from './calories';
@@ -54,7 +54,7 @@ export function hydrate(raw: string): TrackerState {
   if (!parsed || typeof parsed !== 'object') throw new Error('not an object');
   const s = migrate(parsed);
   // Version 3 saves carry timestamped weigh-ins; older ones only a day map, which becomes one reading a day
-  const entries = cleanEntries(s.entries) ?? fromWeights(cleanWeights(s.weights));
+  const entries = entriesFor(s.entries, cleanWeights(s.weights)) ?? fromWeights(cleanWeights(s.weights));
   return {
     settings: normalizeSettings(s.settings),
     weights: dailyWeights(entries),

@@ -21,11 +21,22 @@ describe('medication cards', () => {
   });
   test('not a dose day: shows when the next one is, and a late dose can still be logged today', () => {
     const other = (today.getDay() + 3) % 7, onChange = jest.fn();
-    render(<MedicationToday med={{ ...med, every: 'week', weekday: other }} doses={{}} onChange={onChange} />);
+    const lastWeek = new Date(today); lastWeek.setDate(lastWeek.getDate() - 4);   // last scheduled day, taken
+    render(<MedicationToday med={{ ...med, every: 'week', weekday: other }} doses={{ [dateKey(lastWeek)]: { mg: 2.4 } }} onChange={onChange} />);
     expect(screen.getByText(/Wegovy · next /)).toBeTruthy();
     expect(screen.queryByText('Mark taken')).toBeNull();
     fireEvent.press(screen.getByText('Took it today'));
-    expect(onChange.mock.calls[0][0]).toEqual({ [dateKey(today)]: { mg: 2.4 } });
+    expect(onChange.mock.calls[0][0]).toEqual({ [dateKey(lastWeek)]: { mg: 2.4 }, [dateKey(today)]: { mg: 2.4 } });
+  });
+  test('a weekly dose day with nothing logged is called out, and can be marked on the day it was taken', () => {
+    const missed = new Date(today); missed.setDate(missed.getDate() - 2);
+    const onChange = jest.fn(), onHistory = jest.fn();
+    render(<MedicationToday med={{ ...med, every: 'week', weekday: missed.getDay() }} doses={{}} onChange={onChange} onHistory={onHistory} />);
+    expect(screen.getByText(/isn’t marked/)).toBeTruthy();
+    fireEvent.press(screen.getByText(/^Took it [A-Z][a-z]{2}$/));
+    expect(onChange.mock.calls[0][0]).toEqual({ [dateKey(missed)]: { mg: 2.4 } });
+    fireEvent.press(screen.getByText('Another day'));
+    expect(onHistory).toHaveBeenCalled();
   });
   test('says when the last dose was', () => {
     const y = new Date(today); y.setDate(y.getDate() - 1);
