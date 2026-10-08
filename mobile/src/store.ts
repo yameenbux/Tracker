@@ -11,39 +11,60 @@ const STORAGE_KEY = 'tracker_state_v1';
 const PREFS_KEY = 'tracker_prefs_v1';     // device-only preferences, never exported in backups
 const RESCUE_KEY = 'tracker_state_unreadable';   // a copy of saved data we couldn't read, so it is never lost
 
-/** Keeps one copy of each distinct unreadable save (not a new one on every launch). */
-async function rescue(raw: string) {
-  const keys = (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[])).filter(k => k.startsWith(RESCUE_KEY));
-  for (const k of keys) if ((await AsyncStorage.getItem(k).catch(() => null)) === raw) return;
-  await AsyncStorage.setItem(RESCUE_KEY + '_' + Date.now(), raw).catch(() => {});
-}
-
-/** The most recent rescued copy (or pre-restore snapshot), so it can be exported and looked at. */
-export async function latestRescue(): Promise<string | null> {
-  const keys = (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[]))
-    .filter(k => k.startsWith(RESCUE_KEY) || k.startsWith('tracker_snapshot_'));
-  // Newest by when it was saved, not by key name: rescued copies carry the time in their key, snapshots inside them
-  let best: { raw: string; at: number } | null = null;
-  for (const k of keys) {
-    const raw = await AsyncStorage.getItem(k).catch(() => null);
-    if (raw == null) continue;
-    let at = Number(k.slice(k.lastIndexOf('_') + 1)) || 0;
-    if (k.startsWith('tracker_snapshot_')) { try { at = Date.parse(JSON.parse(raw).at) || 0; } catch { /* keep 0 */ } }
-    if (!best || at >= best.at) best = { raw, at };
-  }
-  return best?.raw ?? null;
-}
+const SNAPSHOT_KEY = 'tracker_snapshot_';      // a copy taken before a restore, for "undo"
+const KEEP_COPIES = 3;                         // rescued copies and snapshots: only the newest few are kept
 const SET_ASIDE_FLAG = 'tracker_set_aside';
 const SNAPSHOT_DAYS = 30;
 
-/** The pre-restore snapshot is there for "undo that restore", not forever: replaced data shouldn't linger. */
+const keysFrom = async (prefix: string) =>
+  (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[])).filter(k => k.startsWith(prefix));
+const rescueTime = (k: string) => Number(k.slice(k.lastIndexOf('_') + 1)) || 0;   // rescued copies carry their time in the key
+
+/**
+ * Keeps one copy of each distinct unreadable save (not a new one on every launch), and only the newest few.
+ * Throws if the copy can't be written, so nobody carries on as if the data were safe.
+ */
+async function rescue(raw: string) {
+  const keys = await keysFrom(RESCUE_KEY);
+  for (const k of keys) if ((await AsyncStorage.getItem(k).catch(() => null)) === raw) return;
+  const key = RESCUE_KEY + '_' + Date.now();
+  await AsyncStorage.setItem(key, raw);
+  const old = keys.filter(k => k !== key).sort((a, b) => rescueTime(b) - rescueTime(a)).slice(KEEP_COPIES - 1);
+  for (const k of old) await AsyncStorage.removeItem(k).catch(() => {});
+}
+
+/** The most recent rescued copy of data that couldn't be read, so it can be exported and looked at. */
+export async function latestRescue(): Promise<string | null> {
+  for (const k of (await keysFrom(RESCUE_KEY)).sort((a, b) => rescueTime(b) - rescueTime(a))) {
+    const raw = await AsyncStorage.getItem(k).catch(() => null);
+    if (raw != null) return raw;
+  }
+  return null;
+}
+
+/** Pre-restore snapshots, newest first (by the time inside them: older builds used one fixed key). */
+async function snapshots(): Promise<{ key: string; at: number; raw: string }[]> {
+  const out: { key: string; at: number; raw: string }[] = [];
+  for (const key of await keysFrom(SNAPSHOT_KEY)) {
+    const raw = await AsyncStorage.getItem(key).catch(() => null);
+    if (raw == null) continue;                 // couldn't read it just now: leave it be
+    let at = NaN;
+    try { at = Date.parse(JSON.parse(raw).at); } catch { /* unreadable: expires */ }
+    out.push({ key, at, raw });
+  }
+  return out.sort((a, b) => (b.at || 0) - (a.at || 0));
+}
+
+/** The newest pre-restore snapshot, for "undo that restore". */
+export async function latestSnapshot(): Promise<TrackerState | null> {
+  const raw = (await snapshots()).find(s => s.at > 0)?.raw;
+  try { return raw ? hydrate(raw) : null; } catch { return null; }
+}
+
+/** Snapshots are there for "undo that restore", not forever: replaced data shouldn't linger. */
 async function expireSnapshots(now = Date.now()) {
-  const keys = (await AsyncStorage.getAllKeys().catch(() => [] as readonly string[])).filter(k => k.startsWith('tracker_snapshot_'));
-  for (const k of keys) {
-    try {
-      const at = Date.parse(JSON.parse((await AsyncStorage.getItem(k)) ?? '{}').at);
-      if (!(at > now - SNAPSHOT_DAYS * 864e5)) await AsyncStorage.removeItem(k);
-    } catch { await AsyncStorage.removeItem(k).catch(() => {}); }
+  for (const [i, s] of (await snapshots()).entries()) {
+    if (i >= KEEP_COPIES || !(s.at > now - SNAPSHOT_DAYS * 864e5)) await AsyncStorage.removeItem(s.key).catch(() => {});
   }
 }
 
@@ -103,19 +124,22 @@ export function useTracker() {
       // Unreadable prefs reset, except the lock: fail closed, so tampering with prefs can't switch it off
       try { if (rawPrefs) setPrefsState(cleanPrefs(JSON.parse(rawPrefs))); } catch { setPrefsState({ ...DEFAULT_PREFS, lock: true }); }
       if (raw) {
+        let st: TrackerState | null = null;
+        try { st = hydrate(raw); } catch { /* unreadable: kept aside below */ }
         try {
-          const st = hydrate(raw);
-          // A plan that was saved but no longer reads would send someone back to setup: keep a copy and say so
-          if (!st.settings && JSON.parse(raw)?.settings) {
+          // Never overwrite data we couldn't read: keep an exact copy before starting fresh. A plan that was saved but
+          // no longer reads would send someone back to setup, so that gets a copy too
+          if (!st || (!st.settings && JSON.parse(raw)?.settings)) {
             await rescue(raw);
             setRecovered(true);
           }
-          setState(st);
         } catch {
-          // Never overwrite data we couldn't read: keep an exact copy before starting fresh
-          await rescue(raw);
-          setRecovered(true);
+          // The copy couldn't be written: carrying on would let the next save replace the only copy, so stop here
+          setLoadFailed(true);
+          setReady(true);
+          return;
         }
+        if (st) setState(st);
       }
       loaded.current = true;
       setReady(true);
@@ -125,10 +149,11 @@ export function useTracker() {
   const retryLoad = useCallback(() => { setReady(false); setAttempt(a => a + 1); }, []);
 
   // Writes go one after another, so a slow earlier write can never land after a newer one. A burst of changes
-  // (ticking three habits) is saved once, 250 ms after the last; leaving the app saves at once.
+  // (ticking three habits) is saved once, 250 ms after the last; leaving the app or saving a weigh-in saves at once.
   const writes = useRef<Promise<void>>(Promise.resolve());
   const latest = useRef<TrackerState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const urgent = useRef(false);
   const flush = useCallback(() => {
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     const st = latest.current;
@@ -148,18 +173,20 @@ export function useTracker() {
     if (!loaded.current) return;   // never overwrite saved data with the empty initial state
     latest.current = state;
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(flush, 250);
+    if (urgent.current) { urgent.current = false; flush(); }
+    else timer.current = setTimeout(flush, 250);
   }, [state, flush]);
   useEffect(() => {
     const sub = AppState.addEventListener('change', st => { if (st !== 'active') flush(); });
     return () => { sub.remove(); flush(); };
   }, [flush]);
 
-  const setWeight = useCallback((k: string, kg: number | null) => setState(s => {
+  // A weigh-in is the one thing people type in: never leave it waiting in memory
+  const setWeight = useCallback((k: string, kg: number | null) => { urgent.current = true; setState(s => {
     const weights = { ...s.weights };
     if (kg == null) delete weights[k]; else weights[k] = round2(kg);
     return { ...s, weights, entries: reconcile(s.entries ?? [], weights) };
-  }), []);
+  }); }, []);
   const setUnit = useCallback((unit: Unit) => setState(s => ({ ...s, unit })), []);
   const setDoses = useCallback((doses: DoseLog) => setState(s => ({ ...s, doses })), []);
   const setSettings = useCallback((settings: Settings) => setState(s => ({ ...s, settings })), []);
@@ -175,9 +202,16 @@ export function useTracker() {
   // Restores, resets and undos hand over a whole state: keep the weigh-in records in step with its day map
   // (unchanged days keep their records and times; edited days are re-recorded)
   const replaceAll = useCallback((next: TrackerState) => setState({ ...next, entries: reconcile(next.entries ?? [], next.weights) }), []);
-  /** Keeps a copy of the current data on the phone before something replaces it (restore, erase). */
-  const snapshot = useCallback(async (label: string) => {
-    await AsyncStorage.setItem('tracker_snapshot_' + label, JSON.stringify({ v: SCHEMA_VERSION, at: new Date().toISOString(), ...state })).catch(() => {});
+  /**
+   * Keeps a copy of the current data on the phone before something replaces it (restore, erase). Each gets its own key,
+   * so two restores in a row can't lose the real data. True once written.
+   */
+  const snapshot = useCallback(async (label: string): Promise<boolean> => {
+    const at = new Date();
+    const ok = await AsyncStorage.setItem(SNAPSHOT_KEY + label + '_' + at.getTime(), JSON.stringify({ v: SCHEMA_VERSION, at: at.toISOString(), ...state }))
+      .then(() => true, () => false);
+    await expireSnapshots().catch(() => {});
+    return ok;
   }, [state]);
   const prefWrites = useRef<Promise<void>>(Promise.resolve());
   const setPrefs = useCallback((update: Partial<Prefs>) => setPrefsState(p => ({ ...p, ...update })), []);

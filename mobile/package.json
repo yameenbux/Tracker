@@ -78,6 +78,24 @@
         "branches": 62,
         "functions": 62,
         "lines": 80
+      },
+      "./src/lock.ts": {
+        "statements": 100,
+        "branches": 100,
+        "functions": 100,
+        "lines": 100
+      },
+      "./src/io.ts": {
+        "statements": 97,
+        "branches": 87,
+        "functions": 100,
+        "lines": 100
+      },
+      "./src/useLock.ts": {
+        "statements": 98,
+        "branches": 94,
+        "functions": 91,
+        "lines": 100
       }
     }
   }

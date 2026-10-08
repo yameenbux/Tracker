@@ -33,14 +33,14 @@ describe('medication', () => {
     expect(doseReminderDays(weekly, { '2026-10-08': { mg: 2.4 } }, thu).map(d => d.getDate())).toEqual([15]);
     expect(doseReminderDays(null, {}, thu)).toEqual([]);
   });
-  test('reminders only when switched on, at 9am, never in the past, and at most 8 (fits iOS’s limit with weigh-ins)', () => {
+  test('reminders only when switched on, at 9am, never in the past, and at most 28 (fits iOS’s limit with weigh-ins)', () => {
     expect(doseReminderTimes(weekly, {}, thu)).toEqual([]);
     const on = { ...weekly, remind: true };
     const times = doseReminderTimes(on, {}, thu);
-    expect(times).toHaveLength(8);   // 8 weeks ahead, so a weekly dose keeps reminding without opening the app
+    expect(times).toHaveLength(28);  // 28 weeks ahead, so a weekly dose keeps reminding without opening the app
     expect(times.slice(0, 2).map(d => [d.getDate(), d.getHours()])).toEqual([[8, 9], [15, 9]]);
     expect(doseReminderTimes(on, {}, new Date(2026, 9, 8, 10, 0))[0].getDate()).toBe(15);
-    expect(doseReminderTimes({ ...on, every: 'day' }, {}, thu).length).toBeLessThanOrEqual(8);
+    expect(doseReminderTimes({ ...on, every: 'day' }, {}, thu)).toHaveLength(28);   // four weeks of a daily dose, not eight days
   });
   test('dose periods group doses by strength, with the trend change during each', () => {
     const series = [

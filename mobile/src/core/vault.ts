@@ -8,9 +8,12 @@ import { bytesToHex, hexToBytes } from '@noble/ciphers/utils.js';
 import { scrypt } from '@noble/hashes/scrypt.js';
 
 export const VAULT_HEADER = 'TIDEMARK ENCRYPTED BACKUP';
+// scrypt cost by file version: 2^15 x 8 takes roughly a second on a phone, which is what makes guessing passwords slow.
+// Raising it means a new version with its own entry; older files keep opening with the cost they were sealed with.
+const KDFS: Record<number, { N: number; r: number; p: number; dkLen: number }> = {
+  1: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 },
+};
 const VERSION = 1;
-// scrypt cost: 2^15 x 8 takes roughly a second on a phone, which is what makes guessing passwords slow
-const KDF = { N: 2 ** 15, r: 8, p: 1, dkLen: 32 };
 export const MIN_PASSWORD = 8;
 
 export type RandomBytes = (n: number) => Uint8Array;
@@ -51,9 +54,10 @@ export function isVault(text: string): boolean {
 export function seal(plain: string, password: string, random: RandomBytes): string {
   if (password.length < MIN_PASSWORD) throw new Error(`Use at least ${MIN_PASSWORD} characters.`);
   const salt = random(16), nonce = random(24);
-  const key = scrypt(utf8ToBytes(password), salt, KDF);
+  const kdf = KDFS[VERSION];
+  const key = scrypt(utf8ToBytes(password), salt, kdf);
   const data = xchacha20poly1305(key, nonce).encrypt(utf8ToBytes(plain));
-  const body: Sealed = { v: VERSION, kdf: 'scrypt', N: KDF.N, r: KDF.r, p: KDF.p, salt: bytesToHex(salt), nonce: bytesToHex(nonce), data: bytesToHex(data) };
+  const body: Sealed = { v: VERSION, kdf: 'scrypt', N: kdf.N, r: kdf.r, p: kdf.p, salt: bytesToHex(salt), nonce: bytesToHex(nonce), data: bytesToHex(data) };
   return `${VAULT_HEADER}\nThis Tidemark backup is protected with a password. Open it with Settings > Restore from backup.\n${JSON.stringify(body)}\n`;
 }
 
@@ -61,19 +65,31 @@ export function open(text: string, password: string): string {
   const line = text.split('\n').find(l => l.trim().startsWith('{'));
   let b: Sealed;
   try { b = JSON.parse(line ?? ''); } catch { throw new Error('That protected backup is damaged.'); }
-  if (!b || b.v !== VERSION || b.kdf !== 'scrypt' || typeof b.salt !== 'string' || typeof b.nonce !== 'string' || typeof b.data !== 'string') {
+  const kdf = b && Number.isInteger(b.v) ? KDFS[b.v] : undefined;
+  if (!b || !kdf || b.kdf !== 'scrypt' || typeof b.salt !== 'string' || typeof b.nonce !== 'string' || typeof b.data !== 'string') {
     throw new Error('That protected backup is damaged or from a newer version of Tidemark.');
   }
-  // Refuse absurd work factors a crafted file could use to hang the app
-  if (b.N !== KDF.N || b.r !== KDF.r || b.p !== KDF.p) throw new Error('That protected backup uses settings Tidemark doesn’t recognise.');
+  // Only the work factors known for its version: refuses absurd ones a crafted file could use to hang the app
+  if (b.N !== kdf.N || b.r !== kdf.r || b.p !== kdf.p) throw new Error('That protected backup uses settings Tidemark doesn’t recognise.');
   let salt: Uint8Array, nonce: Uint8Array, data: Uint8Array;
   try { salt = hexToBytes(b.salt); nonce = hexToBytes(b.nonce); data = hexToBytes(b.data); }
   catch { throw new Error('That protected backup is damaged.'); }
   if (salt.length !== 16 || nonce.length !== 24) throw new Error('That protected backup is damaged.');
-  const key = scrypt(utf8ToBytes(password), salt, KDF);
+  const key = scrypt(utf8ToBytes(password), salt, kdf);
   try {
     return bytesToUtf8(xchacha20poly1305(key, nonce).decrypt(data));
   } catch {
     throw new Error('Wrong password, or the file has been changed.');
   }
+}
+
+// The key step blocks for about a second: hand the event loop a turn first, so a spinner or message can paint
+const yieldOnce = () => new Promise<void>(r => setTimeout(r, 0));
+export async function sealAsync(plain: string, password: string, random: RandomBytes): Promise<string> {
+  await yieldOnce();
+  return seal(plain, password, random);
+}
+export async function openAsync(text: string, password: string): Promise<string> {
+  await yieldOnce();
+  return open(text, password);
 }

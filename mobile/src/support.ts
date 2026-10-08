@@ -14,17 +14,25 @@ export const appVersion = () => {
 };
 
 /**
+ * Error text can quote what was being handled (a weight, a habit name), so only its shape is kept: quoted strings become
+ * "…" (an apostrophe inside a word doesn't start one), numbers become #, and it is capped.
+ */
+export function scrub(text: string, max = 300): string {
+  return text.replace(/(^|\W)(["'`])(?:(?!\2)[^\\\n]|\\.)*\2/g, '$1"…"').replace(/\d+(?:[.,]\d+)*/g, '#').slice(0, max);
+}
+
+/**
  * A crash report the person sends themselves, by email, after reading it: the error, where it happened in the app's
  * code, the app version and the phone's OS. Never any weights, habits or other data. Tidemark has no crash-reporting
  * service: that would send data off the phone, and the App Store listing says no data is collected.
  */
 export function errorReportUrl(error: Error, componentStack?: string | null): string {
-  const where = (componentStack ?? '').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 6).join('\n');
+  const where = (componentStack ?? '').split('\n').map(l => scrub(l.trim(), 120)).filter(Boolean).slice(0, 6).join('\n');
   const body = [
     'What were you doing when this happened? (optional)', '', '',
     '--- Details for support (no personal data) ---',
     `Tidemark ${appVersion()} · ${Platform.OS} ${String(Platform.Version)}`,
-    `${error.name}: ${error.message}`.slice(0, 500),
+    `${String(error.name).slice(0, 60)}: ${scrub(String(error.message))}`,
     ...(where ? [`In:\n${where}`] : []),
   ].join('\n');
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Tidemark error report ${appVersion()}`)}&body=${encodeURIComponent(body)}`;
