@@ -14,13 +14,13 @@ import type { Settings } from './core/types';
 import { CoverContext, CoverOverlay } from './components/Cover';
 import { LogSheet } from './components/Entries';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { KeyboardDone } from './components/KeyboardDone';
+import { DoneWindow } from './components/KeyboardDone';
 import { LiftSheet } from './components/Extras';
 import { ActivePane, Tab, TabBar, Toast } from './components/Shell';
 import { confirm, notify } from './dialogs';
 import { success } from './feel';
-import { allowReminders, applyReminder, onReminderTap } from './reminders';
-import { LockScreen } from './screens/LockScreen';
+import { allowReminders, applyReminder, onReminderTap, remindersBlocked } from './reminders';
+import { LoadFailedScreen, LockScreen } from './screens/LockScreen';
 import { Onboarding } from './screens/Onboarding';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { BodyTab, HabitsTab, TabProps, TodayNotices, TodayTab, TrendTab } from './screens/Tabs';
@@ -69,12 +69,30 @@ function Main() {
   const closeSettings = useCallback(() => setShowSettings(false), []);
   const data = useDataActions(t, show, closeSettings);
 
-  useEffect(() => { if (t.ready) SplashScreen.hideAsync().catch(() => {}); }, [t.ready]);
+  // Hide the splash two frames after loading, so the saved appearance (e.g. Dark) is already painted underneath
+  useEffect(() => {
+    if (!t.ready) return;
+    let f2 = 0;
+    const f1 = requestAnimationFrame(() => { f2 = requestAnimationFrame(() => { SplashScreen.hideAsync().catch(() => {}); }); });
+    return () => { cancelAnimationFrame(f1); cancelAnimationFrame(f2); };
+  }, [t.ready]);
   // Reminders: skip today once it's logged, and keep the two-week window rolling (re-run each day and on changes)
   const loggedToday = state.weights[today] != null;
   useEffect(() => { if (t.ready) applyReminder(prefs.reminder, loggedToday); }, [t.ready, prefs.reminder, loggedToday, today]);
   // Tapping a reminder opens the log sheet
-  useEffect(() => onReminderTap(() => { setTab('today'); setLog({ key: null, n: Date.now() }); }), []);
+  // Tapping a reminder opens the log sheet. It waits for Face ID when the lock is on, then opens straight after unlock.
+  const [pendingLog, setPendingLog] = useState<number | null>(null);
+  useEffect(() => onReminderTap(() => setPendingLog(Date.now())), []);
+
+  // Reminders switched on here but notifications switched off in iOS Settings: say so in Settings
+  const [notifBlocked, setNotifBlocked] = useState(false);
+  useEffect(() => {
+    if (!prefs.reminder.on) return;
+    const check = () => { remindersBlocked().then(setNotifBlocked); };
+    check();
+    const sub = AppState.addEventListener('change', st => { if (st === 'active') check(); });
+    return () => sub.remove();
+  }, [prefs.reminder.on]);
 
   const setReminder = async (r: Reminder) => {
     if (r.on && !(await allowReminders())) {
@@ -100,6 +118,7 @@ function Main() {
   const rate = useMemo(() => (today ? weeklyRate(series) : null), [series, today]);   // the 28-day window moves with the date
 
   if (!t.ready) return <View style={s.fill} />;
+  if (t.loadFailed) return <LoadFailedScreen onRetry={t.retryLoad} />;
 
   if (!settings) {
     const kept = Object.keys(state.weights).length;
@@ -112,6 +131,7 @@ function Main() {
 
   // While locked, render nothing but the lock: no data underneath for VoiceOver, and any open sheets close
   if (lock.locked && (showSettings || log || lift)) { setShowSettings(false); setLog(null); setLift(null); }   // don't reopen them on unlock
+  if (!lock.locked && pendingLog != null) { setPendingLog(null); setShowSettings(false); setTab('today'); setLog({ key: null, n: pendingLog }); }
   if (lock.locked) return <LockScreen lockName={lock.lockName} onUnlock={lock.tryUnlock} />;
 
   const replan = async (next: Settings['plan']) => {
@@ -131,6 +151,7 @@ function Main() {
 
   return (
     <CoverContext.Provider value={lock.covered}>
+      <DoneWindow>
       <View style={s.fill}>
         {pane('today', <TodayTab {...props} scrollTop={top('today')} notices={
           <TodayNotices t={t} lockLost={lock.lockLost} onLockLostDismiss={lock.dismissLockLost} backupHidden={backupHidden}
@@ -172,7 +193,7 @@ function Main() {
             <SettingsScreen settings={settings} unit={state.unit} setUnit={t.setUnit}
               lock={prefs.lock} lockAvailable={lock.lockAvailable} lockName={lock.lockName} onLockChange={on => lock.setLock(on, lock.lockName)}
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
-              appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })}
+              appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               onSave={t.setSettings} onClose={closeSettings}
               onExport={data.exportData} onExportCsv={data.exportCsv} onRestore={data.restore} onReset={data.reset}
@@ -181,9 +202,9 @@ function Main() {
           </View>
         </Modal>
 
-        <KeyboardDone />
         <CoverOverlay />
       </View>
+      </DoneWindow>
     </CoverContext.Provider>
   );
 }

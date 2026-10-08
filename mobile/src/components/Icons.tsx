@@ -5,7 +5,7 @@ import { C } from '../theme';
 // so controls look the same on every phone and scale cleanly.
 export type IconName =
   | 'today' | 'trend' | 'habits' | 'body' | 'settings' | 'plus' | 'chevron' | 'back' | 'close' | 'lock'
-  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal' | 'moon';
+  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal' | 'moon' | 'mail';
 
 const P: Record<IconName, (c: string) => React.ReactNode> = {
   today: c => <><Path d="M4 11.5 12 5l8 6.5" stroke={c} /><Path d="M6.5 10v9h11v-9" stroke={c} /></>,
@@ -13,6 +13,7 @@ const P: Record<IconName, (c: string) => React.ReactNode> = {
   habits: c => <><Rect x={4} y={4} width={16} height={16} rx={4.5} stroke={c} /><Path d="m8.5 12.2 2.4 2.4 4.8-5" stroke={c} /></>,
   body: c => <><Circle cx={12} cy={5.5} r={2.2} stroke={c} /><Path d="M6 10h12M12 10v4.5M12 14.5 9 20M12 14.5 15 20" stroke={c} /></>,
   settings: c => <><Circle cx={12} cy={12} r={3} stroke={c} /><Path stroke={c} d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></>,
+  mail: c => <><Rect x={3.5} y={6} width={17} height={12.5} rx={2.5} stroke={c} /><Path d="m4.5 7.5 7.5 6 7.5-6" stroke={c} /></>,
   moon: c => <Path d="M19.5 14.2A7.5 7.5 0 0 1 9.8 4.5a7.5 7.5 0 1 0 9.7 9.7z" stroke={c} />,
   plus: c => <Path d="M12 5v14M5 12h14" stroke={c} />,
   chevron: c => <Path d="m9.5 6 6 6-6 6" stroke={c} />,

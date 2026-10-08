@@ -19,6 +19,22 @@ describe('saved data', () => {
     expect(result.current.recovered).toBe(false);
   });
 
+  test('if storage itself can\'t be read, nothing is written until a retry succeeds', async () => {
+    await AsyncStorage.setItem('tracker_state_v1', JSON.stringify(goodState));
+    (AsyncStorage.getItem as jest.Mock).mockRejectedValueOnce(new Error('io'));
+    const set = AsyncStorage.setItem as jest.Mock; set.mockClear();
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    expect(result.current.loadFailed).toBe(true);
+    act(() => { result.current.setUnit('lb'); });
+    await new Promise(r => setTimeout(r, 20));
+    expect(set).not.toHaveBeenCalled();
+    act(() => { result.current.retryLoad(); });
+    await waitFor(() => expect(result.current.loadFailed).toBe(false));
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    expect(result.current.state.weights['2026-01-12']).toBe(89.4);
+  });
+
   test('unreadable data is kept aside, never overwritten', async () => {
     await AsyncStorage.setItem('tracker_state_v1', '{broken');
     const { result } = renderHook(() => useTracker());

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from '../motion';
 import { C, F, themed } from '../theme';
 import { CoverOverlay } from './Cover';
-import { KeyboardDone } from './KeyboardDone';
+import { DoneWindow } from './KeyboardDone';
 import { Icon } from './Icons';
 
 /**
@@ -52,6 +52,7 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
       <Animated.View style={[StyleSheet.absoluteFill, s.backdrop, { opacity: anim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityRole="button" accessibilityLabel="Close" />
       </Animated.View>
+      <DoneWindow>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={s.holder} pointerEvents="box-none">
         <Animated.View style={[s.sheet, { paddingBottom: insets.bottom + 16, transform: [{ translateY }] }]} accessibilityViewIsModal
           onAccessibilityEscape={close}>
@@ -71,7 +72,7 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
           {footer ? <View style={{ paddingHorizontal: 20, paddingTop: 12 }}>{footer}</View> : null}
         </Animated.View>
       </KeyboardAvoidingView>
-      <KeyboardDone />
+      </DoneWindow>
       <CoverOverlay />
     </Modal>
   );
@@ -80,7 +81,7 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
 const s = themed(() => StyleSheet.create({
   backdrop: { backgroundColor: C.backdrop },
   holder: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: C.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, maxHeight: '92%',
+  sheet: { backgroundColor: C.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: C.sheetEdge, maxHeight: '92%',
            shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } },
   handleZone: { paddingTop: 8, paddingHorizontal: 20, paddingBottom: 6 },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: C.line, marginBottom: 10 },

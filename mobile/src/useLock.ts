@@ -6,7 +6,7 @@ import type { Prefs } from './core/storage';
 /**
  * The Face ID lock and the app-switcher privacy cover.
  * - `locked`: the app shows only the lock screen (no data rendered underneath, sheets closed).
- * - `covered`: a plain cover shown while the app is inactive, so iOS's app-switcher snapshot is blank.
+ * - `covered`: a plain cover shown while the app is inactive (lock on or off), so iOS's app-switcher snapshot is blank.
  * If the phone loses its passcode / Face ID while the lock is on, the lock switches itself off rather than
  * locking the person out of their own data for good (`lockLost` explains what happened).
  */
@@ -53,7 +53,7 @@ export function useLock(ready: boolean, prefs: Prefs, setPrefs: (p: Partial<Pref
     let wasBackground = false;
     const sub = AppState.addEventListener('change', st => {
       // iOS takes the app-switcher snapshot while 'inactive', so cover the screen then; lock fully on 'background'
-      if (st === 'inactive' && lockRef.current) setCovered(true);
+      if (st === 'inactive') setCovered(true);   // always: weight is health data, lock or no lock
       if (st === 'background') { wasBackground = true; if (lockRef.current) { lockedRef.current = true; setLocked(true); } }
       if (st === 'active') {
         setCovered(false);

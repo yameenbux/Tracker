@@ -171,8 +171,8 @@ const s = themed(() => StyleSheet.create({
   icCol: { width: 30, alignItems: 'center' },
   icon: { fontSize: 15 },
   icSmall: { fontFamily: F.bodyBold, fontSize: 10, color: C.inkSoft, marginTop: 3 },
-  dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line, borderRadius: 10 },
-  today: { backgroundColor: C.todayBg, borderLeftWidth: 3, borderLeftColor: C.coral },
+  dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line },
+  today: { backgroundColor: C.todayBg, borderLeftWidth: 3, borderLeftColor: C.coral, borderRadius: 10, borderBottomColor: 'transparent' },   // rounded highlight; plain rows keep straight dividers
   dayTxt: { fontFamily: F.displaySemi, fontSize: 14, color: C.ink },
   todayTag: { fontFamily: F.bodyBold, fontSize: 11, color: C.coralInk, letterSpacing: 0.5 },
   sessTitle: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 1 },

@@ -30,12 +30,25 @@ export function clearCache(): void {
   try { for (const item of new Directory(Paths.cache).list()) { try { item.delete(); } catch { /* in use */ } } } catch { /* no cache */ }
 }
 
-/** Lets the user pick a backup file; resolves to its text, or null if they cancelled. */
+const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
+
+/** Lets the user pick a backup file; resolves to its text, or null if they cancelled. Throws if it's implausibly large. */
 export async function pickBackupText(): Promise<string | null> {
   const res = await DocumentPicker.getDocumentAsync({ type: ['text/plain', 'application/json'], copyToCacheDirectory: true });
   if (res.canceled || !res.assets.length) return null;
   const asset = res.assets[0];
-  if (Platform.OS === 'web' && asset.file) return asset.file.text();
+  // A real backup is well under a megabyte even after years of use; refuse anything huge before reading it into memory
+  const tooBig = (n: number | null | undefined) => (n ?? 0) > MAX_BACKUP_BYTES;
+  if (Platform.OS === 'web') {
+    if (!asset.file) return null;
+    if (tooBig(asset.file.size)) throw new Error('That file is too big to be a Plumb backup.');
+    return asset.file.text();
+  }
   const f = new File(asset.uri);
-  try { return await f.text(); } finally { try { if (f.exists) f.delete(); } catch { /* temp copy */ } }
+  try {
+    if (tooBig(asset.size ?? f.size)) throw new Error('That file is too big to be a Plumb backup.');
+    return await f.text();
+  } finally {
+    try { if (f.exists) f.delete(); } catch { /* temp copy */ }   // never leave the picked copy in the cache
+  }
 }

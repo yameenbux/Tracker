@@ -20,6 +20,19 @@ export function LockScreen({ lockName, onUnlock, cover }: { lockName: string; on
   );
 }
 
+/** Shown when the phone's storage couldn't be read. Nothing is written until it can be, so nothing can be overwritten. */
+export function LoadFailedScreen({ onRetry }: { onRetry: () => void }) {
+  return (
+    <View style={s.wrap}>
+      <PlumbIcon size={84} />
+      <Text style={s.title} accessibilityRole="header">Couldn’t open your data</Text>
+      <Text style={s.sub}>Your weigh-ins are still on this phone; Plumb couldn’t read them just now. Nothing has been changed or deleted.
+        {'\n\n'}Try again, or restart your iPhone if this keeps happening.</Text>
+      <Button label="Try again" kind="coral" onPress={onRetry} style={{ marginTop: 28, alignSelf: 'stretch' }} />
+    </View>
+  );
+}
+
 const s = themed(() => StyleSheet.create({
   wrap: { flex: 1, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', padding: 40 },
   title: { fontFamily: F.display, fontSize: 24, color: C.ink, marginTop: 16, textAlign: 'center' },
