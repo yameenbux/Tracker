@@ -11,6 +11,7 @@ import { fmt, numOrNull, showWeight, toLbNum } from '../core/units';
 import type { Habit, Meal, PlanBreak, Session, Settings, Unit } from '../core/types';
 import type { Reminder } from '../core/storage';
 import { HABIT_ICONS, habitIcon } from '../core/habitIcons';
+import { FONTS, LIBRARIES, MIT, OFL } from '../core/licences';
 import { AppearanceToggle, DateInput, Field, fieldStyles, UnitToggle, WeightInput } from '../components/Fields';
 import { Icon, IconName } from '../components/Icons';
 import { DoneInput, DoneWindow } from '../components/KeyboardDone';
@@ -98,7 +99,7 @@ const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
 // ---------- screen ----------
 
-export type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals';
+export type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals' | 'credits';
 
 export interface SettingsProps {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
@@ -131,6 +132,7 @@ export function SettingsScreen(p: SettingsProps) {
   if (page === 'event') return <EventPage settings={settings} onSave={keep<Settings['event']>('event')} onBack={back} />;
   if (page === 'habits') return <HabitsPage settings={settings} onSave={keep<Habit[]>('habits')} onBack={back} />;
   if (page === 'sessions') return <SessionsPage settings={settings} onSave={keep<Settings['sessions']>('sessions')} onBack={back} />;
+  if (page === 'credits') return <CreditsPage onBack={back} />;
   return <MealsPage settings={settings} onSave={keep<Settings['meals']>('meals')} onBack={back} />;
   }
 
@@ -200,6 +202,7 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="shield" label="Privacy policy" onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL, { controlsColor: C.coralInk }).catch(() => Linking.openURL(PRIVACY_URL).catch(() => {}))} hint="Opens the policy" />
           <Row icon="mail" label="Contact support" hint={`Opens Mail to ${SUPPORT_EMAIL}`}
             onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Tidemark ${version}`)}`).catch(() => notify('No mail app', `Email ${SUPPORT_EMAIL} from any device.`))} />
+          <Row icon="book" label="Acknowledgements" onPress={() => setPage('credits')} />
           <Row icon="info" label="Version" value={build ? `${version} (${build})` : version} last />
         </Group>
         <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Tidemark · read the trend, not the waves{'\n'}Targets and estimates are guidance, not medical advice.</Text>
@@ -460,6 +463,28 @@ function SessionsPage({ settings, onSave, onBack }: { settings: Settings; onSave
 
 const MACRO_LABEL = { kcal: 'Calories', p: 'Protein grams', c: 'Carbs grams', f: 'Fat grams' } as const;
 
+/** Open-source notices that must travel with the app (fonts under the OFL, libraries under MIT). */
+function CreditsPage({ onBack }: { onBack: () => void }) {
+  return (
+    <View style={s.wrap}>
+      <PageHeader title="Acknowledgements" onBack={onBack} />
+      <ScrollView contentContainerStyle={s.scroll}>
+        <Text style={s.lead}>Tidemark is built with open-source software. Thank you to everyone who made it.</Text>
+        <Text style={s.groupTitle} accessibilityRole="header">Fonts</Text>
+        <View style={s.form}>
+          {FONTS.map(f => <View key={f.name} style={{ marginBottom: 10 }}><Text style={s.creditName}>{f.name}</Text><Text style={s.creditTxt}>{f.notice}</Text></View>)}
+          <Text style={s.creditTxt}>{OFL}</Text>
+        </View>
+        <Text style={s.groupTitle} accessibilityRole="header">Libraries</Text>
+        <View style={s.form}>
+          {LIBRARIES.map(l => <View key={l.name} style={{ marginBottom: 10 }}><Text style={s.creditName}>{l.name}</Text><Text style={s.creditTxt}>© {l.by}</Text></View>)}
+          <Text style={s.creditTxt}>{MIT}</Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (m: Settings['meals']) => void; onBack: () => void }) {
   const [meals, setMeals] = useState<(Meal & { id: string })[]>(settings.meals.items.map((m, i) => ({ ...m, id: 'm' + i })));
   const [target, setTarget] = useState({ ...settings.meals.target });
@@ -525,6 +550,8 @@ const s = themed(() => StyleSheet.create({
   rowStacked: { width: '100%', alignItems: 'flex-end', paddingBottom: 4 },
   rowLabel: { flex: 1, fontFamily: F.bodyMed, fontSize: 16, color: C.ink },
   rowValue: { fontFamily: F.body, fontSize: 15, color: C.inkSoft, maxWidth: '55%', textAlign: 'right' },
+  creditName: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
+  creditTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 18, marginTop: 2 },
   lead: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 20, marginBottom: 14, marginHorizontal: 4 },
   form: { backgroundColor: C.card, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: C.line, padding: 14, marginBottom: 18 },
   hint: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 18, marginTop: 10, marginBottom: 10 },

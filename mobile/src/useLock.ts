@@ -59,7 +59,11 @@ export function useLock(ready: boolean, prefs: Prefs, setPrefs: (p: Partial<Pref
     const sub = AppState.addEventListener('change', st => {
       // iOS takes the app-switcher snapshot while 'inactive', so cover the screen then; lock fully on 'background'
       if (st === 'inactive') setCovered(true);   // always: weight is health data, lock or no lock
-      if (st === 'background') { wasBackground = true; if (lockRef.current) { lockedRef.current = true; setLocked(true); } }
+      if (st === 'background') {
+        setCovered(true);                        // Android never reports 'inactive', so cover here too
+        wasBackground = true;
+        if (lockRef.current) { lockedRef.current = true; setLocked(true); }
+      }
       if (st === 'active') {
         setCovered(false);
         // Only ask on a real return from the background. The Face ID sheet itself makes the app briefly inactive,

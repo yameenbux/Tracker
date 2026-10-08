@@ -1,0 +1,595 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/components/ProgressChart.tsx</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">src/components</a> ProgressChart.tsx</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">60.6% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>60/99</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">40.96% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>34/83</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">51.42% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>18/35</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">61.9% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>39/63</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line medium'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">104x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">291x</span>
+<span class="cline-any cline-yes">87x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">102x</span>
+<span class="cline-any cline-yes">102x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">51x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">40x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { memo, useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } from 'react-native-svg';
+import { daysBetween, parseKey, shortDate } from '../core/dates';
+import { chartRange, ChartRange, chartWindow, latestWeight, weekDate, targetAt, weightSeries } from '../core/plan';
+import { trendSeries, TrendPoint } from '../core/trend';
+import { KG_PER_LB, showWeight } from '../core/units';
+import type { Settings, Unit, Weights } from '../core/types';
+import { C, F, themed, useScheme } from '../theme';
+import { Card, Tabs } from './ui';
+&nbsp;
+const H = 220;
+const M = { t: 14, r: 14, b: 26, l: 36 };
+&nbsp;
+/** Gentle curve through points (same smoothing as the web app). */
+function <span class="fstat-no" title="function not covered" >smooth(</span>pts: { x: number; y: number }[]): string {
+<span class="cstat-no" title="statement not covered" >  if (pts.length &lt; 2) <span class="cstat-no" title="statement not covered" >return '';</span></span>
+  let d = <span class="cstat-no" title="statement not covered" >`M${pts[0].x},${pts[0].y}`;</span>
+  const t = <span class="cstat-no" title="statement not covered" >0.16;</span>
+<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; pts.length - 1; i++) {</span>
+    const p0 = <span class="cstat-no" title="statement not covered" >pts[i - 1] || pts[i],</span> p1 = <span class="cstat-no" title="statement not covered" >pts[i],</span> p2 = <span class="cstat-no" title="statement not covered" >pts[i + 1],</span> p3 = <span class="cstat-no" title="statement not covered" >pts[i + 2] || p2;</span>
+<span class="cstat-no" title="statement not covered" >    d += ` C${(p1.x + (p2.x - p0.x) * t).toFixed(1)},${(p1.y + (p2.y - p0.y) * t).toFixed(1)} ` +</span>
+         `${(p2.x - (p3.x - p1.x) * t).toFixed(1)},${(p2.y - (p3.y - p1.y) * t).toFixed(1)} ${p2.x},${p2.y}`;
+  }
+<span class="cstat-no" title="statement not covered" >  return d;</span>
+}
+&nbsp;
+export const ProgressChart = memo(function ProgressChart({ settings, weights, unit, fixedRange, trend }: {
+  settings: Settings; weights: Weights; unit: Unit; fixedRange?: boolean; trend?: TrendPoint[]; today?: string;
+}) {
+  useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
+  // Open on 12 weeks when a long plan has only a little data, so recent weigh-ins aren't squeezed into one corner
+  const [range, setRange] = useState&lt;ChartRange&gt;(() =&gt; {
+    if (fixedRange) return 'plan';
+    const pts = weightSeries(settings.plan, weights);
+    const dataDays = pts.length ? daysBetween(pts[0].d, pts[pts.length - 1].d) : <span class="branch-1 cbranch-no" title="branch not covered" >0;</span>
+    return settings.plan.targets.length &gt; 17 &amp;&amp; dataDays &lt; 56 ? '12w' : 'plan';
+  });
+  const [w, setW] = useState(0);
+  const [sel, setSel] = useState&lt;number | null&gt;(null);      // weigh-in being read by touch (or VoiceOver)
+  const clearTimer = useRef&lt;ReturnType&lt;typeof setTimeout&gt; | null&gt;(null);
+  useEffect(() =&gt; () =&gt; { <span class="missing-if-branch" title="if path not taken" >I</span>if (clearTimer.current) <span class="cstat-no" title="statement not covered" >clearTimeout(clearTimer.current); </span>}, []);
+  const plan = settings.plan;
+  const lw = latestWeight(plan, weights);
+  const [from, to] = chartWindow(plan, range, lw ? lw.d : <span class="branch-1 cbranch-no" title="branch not covered" >null)</span>;
+  const spanDays = Math.max(1, daysBetween(from, to));
+&nbsp;
+  const inWin = (d: Date) =&gt; d &gt;= from &amp;&amp; d &lt;= to;
+  // Trend is computed over all weigh-ins so it has its full history, then cut to the window
+  const series = (trend ?? trendSeries(weightSeries(plan, weights))).filter(p =&gt; inWin(p.d));
+  // Target line: weekly points inside the window, plus interpolated values at both edges so it spans the chart
+  const inner = plan.targets.map((kg, i) =&gt; ({ d: weekDate(plan, i), kg })).filter(p =&gt; p.d &gt; from &amp;&amp; p.d &lt; to);
+  const tWin = [{ d: from, kg: targetAt(plan, from) }, ...inner, { d: to, kg: targetAt(plan, to) }];
+  // Work in the unit being shown, so imperial gets whole-pound grid lines rather than converted kilograms
+  const U = (kg: number) =&gt; (unit === 'kg' ? kg : <span class="branch-1 cbranch-no" title="branch not covered" >kg / KG_PER_LB)</span>;
+  const yr = chartRange([...tWin.map(p =&gt; U(p.kg)), ...series.map(p =&gt; U(p.kg)), ...series.map(p =&gt; U(p.trend))]);
+&nbsp;
+  const iw = Math.max(1, w - M.l - M.r), ih = H - M.t - M.b;
+  const x = (d: Date) =&gt; M.l + iw * daysBetween(from, d) / spanDays;
+  const y = (kg: number) =&gt; M.t + ih * (1 - (U(kg) - yr.min) / (yr.max - yr.min));
+  const yu = <span class="fstat-no" title="function not covered" >(v</span>: number) =&gt; <span class="cstat-no" title="statement not covered" >M.t + ih * (1 - (v - yr.min) / (yr.max - yr.min));</span>   // for values already in display units
+  const pick = <span class="fstat-no" title="function not covered" >(p</span>x: number) =&gt; {
+<span class="cstat-no" title="statement not covered" >    if (!series.length) <span class="cstat-no" title="statement not covered" >return;</span></span>
+    let best = <span class="cstat-no" title="statement not covered" >0;</span>
+<span class="cstat-no" title="statement not covered" >    series.forEach(<span class="fstat-no" title="function not covered" >(p</span>, i) =&gt; { <span class="cstat-no" title="statement not covered" >if (Math.abs(x(p.d) - px) &lt; Math.abs(x(series[best].d) - px)) <span class="cstat-no" title="statement not covered" >best = i; </span></span>});</span>
+<span class="cstat-no" title="statement not covered" >    setSel(best);</span>
+  };
+  const picked = sel != null &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >sel &lt; series.length </span>? <span class="branch-0 cbranch-no" title="branch not covered" >series[sel] </span>: null;
+  const pts = series.map(p =&gt; ({ x: x(p.d), y: y(p.trend) }));      // trend line
+  // Individual weigh-ins as dots; on long ranges keep every nth so the chart stays light (the trend line uses all of them)
+  const every = Math.max(1, Math.ceil(series.length / 120));
+  const raw = series.filter((_, i) =&gt; i % every === 0 || <span class="branch-1 cbranch-no" title="branch not covered" >i === series.length - 1)</span>.map(p =&gt; ({ x: x(p.d), y: y(p.kg) }));
+  const grid: number[] = [];
+  for (let v = yr.min; v &lt;= yr.max; v += yr.step) grid.push(v);
+  const ev = settings.event &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >inWin(parseKey(settings.event.date)) </span>? <span class="branch-0 cbranch-no" title="branch not covered" >parseKey(settings.event.date) </span>: null;
+&nbsp;
+  const first = series[0], lastP = series[series.length - 1];
+  const summary = series.length &gt;= 2
+    ? `${series.length} weigh-ins from ${shortDate(first.d)} to ${shortDate(lastP.d)}. Trend went from ${showWeight(first.trend, unit)} to ${showWeight(lastP.trend, unit)}. ` +
+      `Target on ${shortDate(lastP.d)} is ${showWeight(targetAt(plan, lastP.d), unit)}; goal ${showWeight(plan.goalKg, unit)}.`
+    : series.length === 1 ? `One weigh-in: ${showWeight(first.kg, unit)} on ${shortDate(first.d)}. Target line runs to ${showWeight(plan.goalKg, unit)}.`
+    : <span class="branch-1 cbranch-no" title="branch not covered" >`No weigh-ins in this range yet. Target line runs to ${showWeight(plan.goalKg, unit)}.`;</span>
+&nbsp;
+  return (
+    &lt;Card title="Progress" right={fixedRange ? undefined :
+      &lt;Tabs value={range} onChange={setRange} label="Chart range" options={[{ id: '4w', label: '4W' }, { id: '12w', label: '12W' }, { id: 'plan', label: 'Plan' }]} /&gt;
+    }&gt;
+      &lt;View style={s.legend}&gt;
+        {series.length &gt; 0 &amp;&amp; &lt;View style={s.lg}&gt;&lt;View style={s.swLine} /&gt;&lt;Text style={s.lgTxt}&gt;Trend&lt;/Text&gt;&lt;/View&gt;}
+        {series.length &gt; 0 &amp;&amp; &lt;View style={s.lg}&gt;&lt;View style={s.swDot} /&gt;&lt;Text style={s.lgTxt}&gt;Weigh-ins&lt;/Text&gt;&lt;/View&gt;}
+        &lt;View style={s.lg}&gt;&lt;View style={s.swDash} /&gt;&lt;Text style={s.lgTxt}&gt;Target&lt;/Text&gt;&lt;/View&gt;
+        &lt;Text style={[s.lgTxt, { marginLeft: 'auto', color: C.inkSoft }]}&gt;{unit === 'kg' ? 'kg' : <span class="branch-1 cbranch-no" title="branch not covered" >'lb'}</span>&lt;/Text&gt;
+      &lt;/View&gt;
+      &lt;View onLayout={<span class="fstat-no" title="function not covered" >e </span>=&gt; <span class="cstat-no" title="statement not covered" >setW(e.nativeEvent.layout.width)}</span> accessible accessibilityLabel={'Progress chart. ' + summary}
+        // Touch and drag to read any day; a vertical scroll still wins, so the page scrolls normally over the chart
+        onStartShouldSetResponder={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >series.length &gt; 0}</span>
+        onResponderGrant={<span class="fstat-no" title="function not covered" >e </span>=&gt; { <span class="cstat-no" title="statement not covered" >if (clearTimer.current) <span class="cstat-no" title="statement not covered" >clearTimeout(clearTimer.current); <span class="cstat-no" title="statement not covered" ></span></span>pick(e.nativeEvent.locationX); </span>}}
+        onResponderMove={<span class="fstat-no" title="function not covered" >e </span>=&gt; <span class="cstat-no" title="statement not covered" >pick(e.nativeEvent.locationX)}</span> onResponderTerminationRequest={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >true}</span>
+        onResponderTerminate={<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >setSel(null)}</span>
+        onResponderRelease={<span class="fstat-no" title="function not covered" >()</span> =&gt; { <span class="cstat-no" title="statement not covered" >clearTimer.current = setTimeout(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >setSel(null),</span> 2500); </span>}}
+        // VoiceOver: swipe up/down to step through the weigh-ins in view
+        accessibilityRole="adjustable" accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        onAccessibilityAction={<span class="fstat-no" title="function not covered" >e </span>=&gt; {
+<span class="cstat-no" title="statement not covered" >          if (!series.length) <span class="cstat-no" title="statement not covered" >return;</span></span>
+          const cur = <span class="cstat-no" title="statement not covered" >sel ?? series.length - 1;</span>
+<span class="cstat-no" title="statement not covered" >          setSel(Math.max(0, Math.min(series.length - 1, cur + (e.nativeEvent.actionName === 'increment' ? 1 : -1))));</span>
+        }}
+        accessibilityValue={picked ? <span class="branch-0 cbranch-no" title="branch not covered" >{ text: `${shortDate(picked.d)}: ${showWeight(picked.kg, unit)}, trend ${showWeight(picked.trend, unit)}` } </span>: undefined}&gt;
+        {picked &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >w &gt; 0 </span>&amp;&amp; (
+<span class="branch-2 cbranch-no" title="branch not covered" >          &lt;View pointerEvents="none" style={[s.tip, { left: Math.min(Math.max(x(picked.d) - 70, 0), w - 140) }]}&gt;</span>
+            &lt;Text style={s.tipDate}&gt;{shortDate(picked.d)}&lt;/Text&gt;
+            &lt;Text style={s.tipVal}&gt;{showWeight(picked.kg, unit)}&lt;/Text&gt;
+            &lt;Text style={s.tipTrend}&gt;trend {showWeight(picked.trend, unit)}&lt;/Text&gt;
+          &lt;/View&gt;
+        )}
+        {w &gt; 0 &amp;&amp; (
+<span class="branch-1 cbranch-no" title="branch not covered" >          &lt;Svg width={w} height={H}&gt;</span>
+            &lt;Defs&gt;
+              &lt;LinearGradient id="stroke" x1="0" y1="0" x2="1" y2="0"&gt;&lt;Stop offset="0" stopColor={C.graphAmber} /&gt;&lt;Stop offset="1" stopColor={C.graphCoral} /&gt;&lt;/LinearGradient&gt;
+              &lt;LinearGradient id="area" x1="0" y1="0" x2="0" y2="1"&gt;&lt;Stop offset="0" stopColor={C.coral} stopOpacity={0.14} /&gt;&lt;Stop offset="1" stopColor={C.coral} stopOpacity={0} /&gt;&lt;/LinearGradient&gt;
+            &lt;/Defs&gt;
+            {grid.map(<span class="fstat-no" title="function not covered" >v </span>=&gt; (
+<span class="cstat-no" title="statement not covered" >              &lt;Line key={'g' + v} x1={M.l} x2={w - M.r} y1={yu(v)} y2={yu(v)} stroke={C.chip} strokeWidth={1} /&gt;</span>
+            ))}
+            {grid.map(<span class="fstat-no" title="function not covered" >v </span>=&gt; (
+<span class="cstat-no" title="statement not covered" >              &lt;SvgText key={'l' + v} x={M.l - 7} y={yu(v) + 4} fontSize={11} fill={C.inkSoft} textAnchor="end" fontFamily={F.bodyMed}&gt;{v}&lt;/SvgText&gt;</span>
+            ))}
+            &lt;SvgText x={M.l} y={H - 6} fontSize={10.5} fill={C.inkSoft} fontFamily={F.bodyMed}&gt;{shortDate(from)}&lt;/SvgText&gt;
+            &lt;SvgText x={w - M.r} y={H - 6} fontSize={10.5} fill={C.inkSoft} textAnchor="end" fontFamily={F.bodyMed}&gt;{shortDate(to)}&lt;/SvgText&gt;
+            {tWin.length &gt; 1 &amp;&amp; (
+              &lt;Path d={tWin.map(<span class="fstat-no" title="function not covered" >(p</span>, i) =&gt; <span class="cstat-no" title="statement not covered" >`${i ? 'L' : 'M'}${x(p.d)},${y(p.kg)}`)</span>.join(' ')} fill="none" stroke={C.targetLine} strokeWidth={2} strokeDasharray="5 5" /&gt;
+            )}
+            {ev &amp;&amp; &lt;Line x1={x(ev)} x2={x(ev)} y1={M.t + 8} y2={M.t + ih} stroke={C.graphMint} strokeWidth={1.5} strokeDasharray="3 3" /&gt;}
+            {ev &amp;&amp; &lt;Circle cx={x(ev)} cy={M.t + 4} r={4} fill={C.graphMint} /&gt;}
+            {/* Weigh-ins sit under the trend line, small and grey: the line is the story, the dots are the noise */}
+            {raw.map(<span class="fstat-no" title="function not covered" >p </span>=&gt; <span class="cstat-no" title="statement not covered" >&lt;Circle key={`r${p.x.toFixed(1)}`} cx={p.x} cy={p.y} r={2.6} fill={C.inkSoft} opacity={0.45} /&gt;)</span>}
+            {pts.length &gt;= 2 &amp;&amp; (
+              &lt;&gt;
+                {/* Shade under the line only once it spans a fair width; a few close points would draw a thin bar */}
+                {pts[pts.length - 1].x - pts[0].x &gt; iw * 0.15 &amp;&amp; (
+                  &lt;Path d={`${smooth(pts)} L${pts[pts.length - 1].x},${y(yr.min)} L${pts[0].x},${y(yr.min)} Z`} fill="url(#area)" /&gt;
+                )}
+                &lt;Path d={smooth(pts)} fill="none" stroke="url(#stroke)" strokeWidth={3.5} strokeLinejoin="round" strokeLinecap="round" /&gt;
+              &lt;/&gt;
+            )}
+            {pts.length &gt; 0 &amp;&amp; &lt;Circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r={6.5} fill={C.graphCoral} stroke={C.card} strokeWidth={2.5} /&gt;}
+            {picked &amp;&amp; &lt;&gt;
+              &lt;Line x1={x(picked.d)} x2={x(picked.d)} y1={M.t} y2={M.t + ih} stroke={C.ink} strokeWidth={1} opacity={0.35} /&gt;
+              &lt;Circle cx={x(picked.d)} cy={y(picked.trend)} r={5} fill={C.coralInk} stroke={C.card} strokeWidth={2} /&gt;
+              &lt;Circle cx={x(picked.d)} cy={y(picked.kg)} r={4} fill={C.raised} stroke={C.ink} strokeWidth={1.6} /&gt;
+            &lt;/&gt;}
+          &lt;/Svg&gt;
+        )}
+      &lt;/View&gt;
+    &lt;/Card&gt;
+  );
+});
+&nbsp;
+const s = themed(() =&gt; StyleSheet.create({
+  legend: { flexDirection: 'row', gap: 14, paddingHorizontal: 4, paddingBottom: 6, alignItems: 'center' },
+  lg: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  lgTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft },
+  swLine: { width: 18, height: 3, borderRadius: 2, backgroundColor: C.graphCoral },
+  swDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.inkSoft, opacity: 0.6 },
+  swDash: { width: 18, height: 0, borderTopWidth: 2, borderStyle: 'dashed', borderColor: C.targetLine },
+  tip: { position: 'absolute', top: 0, width: 140, zIndex: 2, backgroundColor: C.fill, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10 },
+  tipDate: { fontFamily: F.bodySemi, fontSize: 12, color: C.onFill, opacity: 0.75 },
+  tipVal: { fontFamily: F.display, fontSize: 15, color: C.onFill },
+  tipTrend: { fontFamily: F.body, fontSize: 12, color: C.tipTrend },
+}));
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-10-08T09:12:30.316Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    
