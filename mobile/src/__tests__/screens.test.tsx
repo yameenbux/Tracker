@@ -85,3 +85,17 @@ describe('body and extras', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalled());
   });
 });
+
+describe('habit amounts', () => {
+  test('steps, water, sleep and veg take your own amount; a hand-typed name is left alone', () => {
+    const p = props({ settings: { ...settings, habits: [
+      { id: 'steps', icon: 'steps', short: 'STEPS', name: 'Steps 8k' },
+      { id: 'water', icon: 'water', short: 'WATER', name: 'Two big bottles' },
+    ] } });
+    const view = render(<SettingsScreen {...p} initialPage="habits" />);
+    expect(screen.queryByText('Water a day')).toBeNull();          // custom name: no chooser to overwrite it
+    fireEvent.press(screen.getByLabelText('Steps a day: 10k'));
+    view.unmount();                                                 // saved however you leave the page
+    expect((p.onSave as jest.Mock).mock.calls.at(-1)[0].habits.map((h: { name: string }) => h.name)).toEqual(['Steps 10k', 'Two big bottles']);
+  });
+});

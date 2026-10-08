@@ -30,6 +30,29 @@ export const SUGGESTED_HABITS: Habit[] = [
   { id: 'stretch', icon: 'stretch', short: 'MOVE', name: 'Stretch or mobility' },
 ];
 
+/**
+ * Suggested habits with an amount (steps, water, sleep, veg): the amount is a choice, not a fixed number. The habit's
+ * name carries it ("Steps 10k"), so a name typed by hand still works and nothing else in the data changes.
+ */
+export const HABIT_AMOUNTS: Record<string, { question: string; options: string[]; name: (v: string) => string }> = {
+  steps: { question: 'Steps a day', options: ['5k', '6k', '7k', '8k', '10k', '12k', '15k'], name: v => `Steps ${v}` },
+  water: { question: 'Water a day', options: ['1.5 L', '2 L', '2–3 L', '3 L'], name: v => `Water ${v}` },
+  sleep: { question: 'Hours of sleep', options: ['6 h', '7 h', '8 h', '9 h'], name: v => `Sleep ${v}` },
+  veg: { question: 'Portions of veg', options: ['3', '5', '7'], name: v => `${v} portions of veg` },
+};
+
+/** The amount a habit's name currently says, if it's one of the choices (null for a name typed by hand). */
+export function habitAmount(h: Habit): string | null {
+  const spec = HABIT_AMOUNTS[h.id];
+  return spec?.options.find(o => spec.name(o) === h.name) ?? null;
+}
+
+/** The habit set to a different amount. */
+export function withHabitAmount(h: Habit, amount: string): Habit {
+  const spec = HABIT_AMOUNTS[h.id];
+  return spec && spec.options.includes(amount) ? { ...h, name: spec.name(amount) } : h;
+}
+
 export function defaultSettings(plan: Plan, habits: Habit[] = []): Settings {
   return { plan, event: null, habits: habits.slice(0, MAX_HABITS).map(h => ({ ...h })), sessions: emptySessions(),
            meals: { items: [], target: emptyMacros() } };

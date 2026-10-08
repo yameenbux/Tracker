@@ -27,14 +27,16 @@ test('first run: set up a plan, choose habits, and land on Today with the trend 
   fireEvent.press(await screen.findByText('See my plan'));
   expect(await screen.findByText('Anything to tick off each day?')).toBeTruthy();
   fireEvent.press(screen.getByLabelText('Water 2–3 L'));
-  fireEvent.press(screen.getByText('Next · 1 chosen'));
+  fireEvent.press(screen.getByLabelText('Steps 8k'));
+  fireEvent.press(screen.getByLabelText('Steps a day: 12k'));        // pick your own amount
+  fireEvent.press(screen.getByText('Next · 2 chosen'));
   fireEvent.press(await screen.findByText('Start tracking'));
   expect(await screen.findByText('Trend weight')).toBeTruthy();
   expect(screen.getByText(/Weighed in today/)).toBeTruthy();
   await waitFor(async () => {
     const s = JSON.parse((await AsyncStorage.getItem('tracker_state_v1'))!);
     expect(s.settings.plan.start).toBe(day(0));                       // starts today, not last Monday
-    expect(s.settings.habits.map((h: { id: string }) => h.id)).toEqual(['water']);
+    expect(s.settings.habits.map((h: { name: string }) => h.name)).toEqual(['Water 2–3 L', 'Steps 12k']);
     expect(s.entries).toHaveLength(1);
   });
 });

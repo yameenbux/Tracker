@@ -1,4 +1,4 @@
-import { assessPlan, buildTargets, cleanBreaks, isBreakStep, lossWeeks, planChanged, replanFromHere, behindBy } from '../plan';
+import { assessPlan, behindBy, buildTargets, cleanBreaks, habitAmount, HABIT_AMOUNTS, isBreakStep, lossWeeks, planChanged, replanFromHere, SUGGESTED_HABITS, withHabitAmount } from '../plan';
 import { consistency, habitInsight, milestoneQuarter, trendAt, weeksOfData } from '../insights';
 import { cleanIntake, estimateExpenditure, intakeForPace } from '../calories';
 import { cleanSessionLog, exerciseName, lastLift, suggestNext } from '../progression';
@@ -184,5 +184,16 @@ describe('breaks after a re-plan', () => {
     expect(next.goalDate).toBe(re.goalDate);
     expect(onlyBreaksChanged(re, { ...re, breaks: [{ start: '2026-12-21', weeks: 2 }] })).toBe(true);
     expect(onlyBreaksChanged(re, { ...re, goalKg: 87, breaks: [{ start: '2026-12-21', weeks: 2 }] })).toBe(false);
+  });
+});
+
+describe('habit amounts', () => {
+  test('every suggested habit with an amount starts on one of its choices, and changing it only renames it', () => {
+    for (const h of SUGGESTED_HABITS.filter(x => HABIT_AMOUNTS[x.id])) expect(habitAmount(h)).not.toBeNull();
+    const steps = SUGGESTED_HABITS.find(h => h.id === 'steps')!;
+    expect(withHabitAmount(steps, '10k')).toEqual({ ...steps, name: 'Steps 10k' });
+    expect(withHabitAmount(steps, '999k')).toEqual(steps);                       // not a choice: unchanged
+    expect(habitAmount({ ...steps, name: 'Steps after lunch' })).toBeNull();
+    expect(habitAmount({ id: 'water', icon: 'water', short: '3 L', name: 'Water 3 L' })).toBe('3 L');   // older default
   });
 });
