@@ -3,6 +3,7 @@ import { cleanPlus, NO_PLUS, PlusStatus } from './plus';
 import { dailyWeights, entriesFor, fromWeights } from './entries';
 import { cleanDoses, cleanEffects } from './medication';
 import { cleanNotes } from './notes';
+import { cleanProtein } from './protein';
 import { cleanMeasurements, cleanPhotos } from './body';
 import { cleanIntake } from './calories';
 import { cleanHabits, cleanWeights, normalizeSettings } from './plan';
@@ -78,5 +79,6 @@ export function hydrate(raw: string): TrackerState {
     doses: cleanDoses(s.doses),
     notes: cleanNotes(s.notes),
     effects: cleanEffects(s.effects),
+    protein: cleanProtein(s.protein),
   };
 }

@@ -2,6 +2,7 @@ import { PlusTeaser } from '../components/PlusTeaser';
 import { usableHabits } from '../core/plus';
 import { usePlus } from '../plus';
 import { CardBoundary } from '../components/States';
+import { ProteinCard } from '../components/Protein';
 import { EffectsSheet, MedicationToday, MedicationTrend } from '../components/Medication';
 import { isDue, missedDose } from '../core/medication';
 import { FEATURES } from '../features';
@@ -144,6 +145,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
       {feel && <EffectsSheet day={props.today} effects={state.effects ?? {}} onSave={t.setEffects} onClose={() => setFeel(false)} />}
       <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')}
         summary={H.length ? <HabitSummary pct={ticked30 ? avg30 : null} onPress={() => go('habits')} /> : undefined} /></CardBoundary>
+      {plus && settings.protein?.on && trendNow != null && <CardBoundary name="Protein"><ProteinCard settings={settings} trendKg={trendNow} log={state.protein ?? {}} onChange={t.setProtein} /></CardBoundary>}
       <CardBoundary name="Your event"><EventCard settings={settings} /></CardBoundary>
       {isValidElement<{ part?: string }>(notices) ? cloneElement(notices, { part: 'nudge' }) : null}
     </TabScreen>

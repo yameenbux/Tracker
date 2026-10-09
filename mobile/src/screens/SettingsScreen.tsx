@@ -191,6 +191,10 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
 {FEATURES.medication &&           <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
             onPress={() => setPage('medication')} />}
+          {plus ? <SwitchRow icon="meal" label="Protein target" value={settings.protein?.on === true} onChange={v => commit({ protein: { on: v, perKg: settings.protein?.perKg ?? 1.4 } })} />
+            : <Row icon="meal" label="Protein target" value="Plus" onPress={() => openPaywall('protein')} hint="Part of Tidemark Plus" />}
+          {plus && settings.protein?.on && <Row icon="target" label="Grams per kg" wide right={<Tabs value={String(settings.protein.perKg) as '1.2' | '1.4' | '1.6'} label="Protein per kilogram"
+            options={[{ id: '1.2', label: '1.2' }, { id: '1.4', label: '1.4' }, { id: '1.6', label: '1.6' }]} onChange={v => commit({ protein: { on: true, perKg: Number(v) as 1.2 | 1.4 | 1.6 } })} />} />}
           {/* Free: a plain row that says it's Plus, not a switch that opens a sales sheet */}
           {plus ? <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
             : <Row icon="flame" label="Calorie estimate" value="Plus" onPress={() => openPaywall('calories')} hint="Part of Tidemark Plus" last />}

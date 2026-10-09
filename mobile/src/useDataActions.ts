@@ -38,7 +38,7 @@ export function useDataActions(t: Tracker, show: Show, done: () => void, plus = 
       const before = state;
       // Photos aren't in backups, so the ones already on this phone are kept
       t.replaceAll({ settings: b.settings, weights: b.weights, entries: b.entries, habits: b.habits, measurements: b.measurements, photos: state.photos,
-        intake: b.intake, lifts: b.lifts, doses: b.doses ?? {}, notes: b.notes ?? {}, effects: b.effects ?? {}, unit: b.unit ?? state.unit });
+        intake: b.intake, lifts: b.lifts, doses: b.doses ?? {}, notes: b.notes ?? {}, effects: b.effects ?? {}, protein: b.protein ?? {}, unit: b.unit ?? state.unit });
       done();
       // Undo puts back the newest snapshot (what was here before this restore), or the copy in memory if it wasn't written
       show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo',

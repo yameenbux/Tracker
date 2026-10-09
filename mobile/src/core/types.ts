@@ -27,6 +27,7 @@ export interface Settings {
   meals: { items: Meal[]; target: Macros };
   trackCalories?: boolean;   // optional one-number-a-day calorie logging
   medication?: Medication | null;   // optional GLP-1 (or other) medication companion
+  protein?: { on: boolean; perKg: import('./protein').PerKg };   // Plus: a daily protein minimum
 }
 
 /** A medication taken on a schedule, e.g. a weekly GLP-1 injection. Tidemark only records it; it never advises on dosing. */
@@ -49,7 +50,8 @@ export interface TrackerState {
   weights: Weights;                                             // one number a day, derived from `entries`
   entries?: import('./entries').WeighIn[];                     // timestamped weigh-ins: the source of truth
   doses?: DoseLog;                                              // medication doses marked as taken
-  effects?: EffectLog;                                         // side effects noted on a day (medication, Plus)
+  effects?: EffectLog;
+  protein?: import('./protein').ProteinLog;                     // grams of protein eaten a day (Plus)                                         // side effects noted on a day (medication, Plus)
   notes?: import('./notes').DayNotes;                          // tags and a line of text on a day (why the scale jumped)
   habits: HabitLog;
   unit: Unit;

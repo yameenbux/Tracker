@@ -205,6 +205,7 @@ export function useTracker() {
     const r = mergeHealth(s.entries ?? [], added, deleted);
     return r.added || r.removed ? { ...s, entries: r.entries, weights: dailyWeights(r.entries) } : s;
   }), []);
+  const setProtein = useCallback((protein: import('./core/protein').ProteinLog) => setState(s => ({ ...s, protein })), []);
   const setEffects = useCallback((effects: EffectLog) => setState(s => ({ ...s, effects })), []);
   const setNote = useCallback((k: string, note: DayNote | null) => setState(s => ({ ...s, notes: withNote(s.notes ?? {}, k, note) })), []);
   const setLifts = useCallback((lifts: TrackerState['lifts']) => setState(s => ({ ...s, lifts })), []);
@@ -233,7 +234,7 @@ export function useTracker() {
 
   return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
            setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs,
-           discardPending, setDoses, setNote, addHealth, setEffects };
+           discardPending, setDoses, setNote, addHealth, setEffects, setProtein };
 }
 export type Tracker = ReturnType<typeof useTracker>;
 
