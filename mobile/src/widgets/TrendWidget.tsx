@@ -23,7 +23,7 @@ const TrendWidget = (p: WidgetProps, env: WidgetEnvironment) => {
   const brand = (
     <HStack spacing={5}>
       <Image systemName="gauge.with.needle" size={11} color={tinted ? PAPER : CORAL} />
-      <Text modifiers={[font({ size: 11, weight: 'semibold' }), soft]}>{fam === 'systemSmall' ? 'TREND' : 'TIDEMARK · TREND'}</Text>
+      <Text modifiers={[font({ size: 11, weight: 'semibold' }), soft]}>{fam === 'systemLarge' ? 'TIDEMARK · TREND' : 'TREND'}</Text>
     </HStack>
   );
 
@@ -36,7 +36,7 @@ const TrendWidget = (p: WidgetProps, env: WidgetEnvironment) => {
         <Image systemName={locked ? 'lock.fill' : 'scalemass'} size={22} color={PAPER} />
         <Text modifiers={[font({ size: 15, weight: 'semibold' }), paper]}>{locked ? 'Locked' : 'No weigh-ins yet'}</Text>
         <Text modifiers={[font({ size: 12 }), soft, lineLimit(3)]}>
-          {locked ? 'Tidemark is locked with Face ID, so your numbers stay in the app.' : 'Log your first weight in Tidemark and your trend appears here.'}
+          {locked ? 'Face ID lock is on, so your numbers stay in the app.' : 'Log a weigh-in and your trend appears here.'}
         </Text>
       </VStack>
     );
@@ -125,7 +125,7 @@ const TrendWidget = (p: WidgetProps, env: WidgetEnvironment) => {
           <Text modifiers={[font({ size: 11 }), soft, privacySensitive()]}>{p.toGo}</Text>
         </VStack>
       </HStack>
-      {chart(296, 132)}
+      {chart(296, 170)}
       <HStack spacing={0} modifiers={[padding({ top: 4 })]}>
         {p.week7.map((x, i) => (
           <VStack key={i} spacing={2} modifiers={[frame({ width: 296 / 7 })]}>
