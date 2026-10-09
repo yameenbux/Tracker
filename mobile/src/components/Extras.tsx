@@ -104,6 +104,7 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
   const avg7 = last7.length ? Math.round(last7.reduce((a, b) => a + b, 0) / last7.length) : null;
   let logged = 0;
   for (let i = 1; i <= CAL_WINDOW; i++) if (intake[dateKey(addDays(startOfDay(), -i))] != null) logged++;
+  const needsWeighIns = !est && logged >= CAL_MIN_DAYS;   // enough food logged, but no recent weigh-ins at an edge
   const plan = settings.plan;
   const pace = (plan.startKg - plan.goalKg) / Math.max(1, lossWeeks(plan.start, plan.goalDate, plan.breaks));
 
@@ -125,11 +126,12 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
       <Text style={s.muted}>One number for the whole day is enough. A rough total beats a perfect log you give up on.</Text>
       <View style={s.calStats}>
         <View style={s.calStat}><Text style={s.k}>7-day average</Text><Text style={s.v}>{avg7 != null ? `${avg7.toLocaleString()} kcal` : '—'}</Text></View>
-        <View style={s.calStat}><Text style={s.k}>Your burn</Text><Text style={s.v}>{est ? `~${est.tdee.toLocaleString()} kcal` : `${logged}/${CAL_MIN_DAYS} days`}</Text></View>
+        <View style={s.calStat}><Text style={s.k}>Your burn</Text><Text style={s.v}>{est ? `~${est.tdee.toLocaleString()} kcal` : needsWeighIns ? 'Needs weigh-ins' : `${logged}/${CAL_MIN_DAYS} days`}</Text></View>
       </View>
       <Text style={s.line}>
         {est
           ? <>From what you ate and how your trend moved over {est.window} days, you burn about <Text style={s.b}>{est.tdee.toLocaleString()} kcal a day</Text>. Your plan’s pace means eating around <Text style={s.b}>{intakeForPace(est.tdee, pace).toLocaleString()} kcal</Text>.</>
+          : needsWeighIns ? <>There aren’t weigh-ins near both ends of the last {CAL_WINDOW} days, so Tidemark can’t see how your trend really moved. Weigh in for the next couple of weeks and the estimate comes back.</>
           : <>Log {CAL_MIN_DAYS} of the last {CAL_WINDOW} days and Tidemark estimates what you really burn, from your own data rather than a formula.</>}
       </Text>
       {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low. An estimate, not medical advice: talk to a GP or dietitian before big changes.</Text>}
