@@ -61,6 +61,12 @@ const head = meta({ title: 'Tidemark · Test build', page: 'app/', noindex: true
   // White status text needs a dark backing: dark mode already has the app's dark background, light mode gets a plum band
   '<style>@media (prefers-color-scheme: light){body::after{content:"";position:fixed;top:0;left:0;right:0;' +
     'height:env(safe-area-inset-top);background:#2A1E45;z-index:2147483647;pointer-events:none}}</style>',
+  // Opened from the Home Screen, iOS makes 100% one status bar short of the screen (with black-translucent the page
+  // starts under the status bar but its height doesn't grow to match), which left a white strip under the tab bar.
+  // 100vh is the whole screen there; it stays standalone-only because in Safari 100vh runs under the toolbar.
+  // The body takes the app's background too, so any gap that's left matches instead of showing white.
+  '<style>body{background:#FBF7F3}@media (prefers-color-scheme: dark){body{background:#121019}}' +
+    '@media (display-mode: standalone){html,body,#root{height:100vh}}</style>',
 ].join('');
 const indexPath = path.join(app, 'index.html');
 const html = fs.readFileSync(indexPath, 'utf8');
