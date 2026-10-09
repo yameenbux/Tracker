@@ -129,9 +129,25 @@ export const HabitGrids = memo(function HabitGrids({ settings, habits }: { setti
   );
 });
 
+/** Thirty-day consistency as a small ring and figure, for the head of Today's habits. Opens the Habits tab. */
+export function HabitSummary({ pct, onPress }: { pct: number | null; onPress: () => void }) {
+  const size = 26, stroke = 4, r = (size - stroke) / 2, c = 2 * Math.PI * r, v = (pct ?? 0) / 100;
+  return (
+    <Tap onPress={onPress} style={s.sum} accessibilityRole="button" hitSlop={8}
+      accessibilityLabel={pct == null ? 'Habits: nothing ticked in the last 30 days yet' : `Habits: ${pct} percent over the last 30 days`} accessibilityHint="Opens Habits">
+      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.empty} strokeWidth={stroke} fill="none" />
+        {v > 0 && <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.done} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${(c * v).toFixed(1)} ${c.toFixed(1)}`} />}
+      </Svg>
+      <Text style={s.sumTxt} maxFontSizeMultiplier={1.4}>{pct == null ? '—' : `${pct}%`} · 30 days</Text>
+      <Icon name="chevron" size={14} color={C.inkSoft} />
+    </Tap>
+  );
+}
+
 /** Today's habits as large tap targets, plus today's session if one is planned. */
-export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
-  settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onOpenSession?: () => void;
+export function TodayHabits({ settings, habits, onChange, onOpenSession, summary }: {
+  settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onOpenSession?: () => void; summary?: React.ReactNode;
 }) {
   const { plus } = usePlus();
   const habitsShown = (x: Settings) => usableHabits(x.habits, plus);   // free: the first few; the rest are kept
@@ -139,7 +155,7 @@ export function TodayHabits({ settings, habits, onChange, onOpenSession }: {
   const sess = settings.sessions[new Date().getDay()];
   if (!habitsShown(settings).length && !sess.title && !sess.items.length) return null;
   return (
-    <Card title={`Today · ${DAY_ABBR[parseKey(key).getDay()]}`}>
+    <Card title={`Today · ${DAY_ABBR[parseKey(key).getDay()]}`} right={summary}>
       <View style={s.chips}>
         {habitsShown(settings).map(h => {
           const on = !!habits[key]?.[h.id];
@@ -198,4 +214,6 @@ const s = themed(() => StyleSheet.create({
   sess: { flexDirection: 'row', alignItems: 'center', marginTop: 12, marginHorizontal: 2, padding: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },
   sessK: { fontFamily: F.bodySemi, fontSize: 11, color: C.plum2, textTransform: 'uppercase', letterSpacing: 0.8 },
   sessV: { fontFamily: F.displaySemi, fontSize: 15, color: C.ink, marginTop: 2 },
+  sum: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 32 },
+  sumTxt: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
 }));

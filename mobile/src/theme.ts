@@ -24,6 +24,7 @@ const light = {
   mintPanel: '#E6F4EC',
   heroGood: '#7FF0C8',
   heroOver: '#FFB0A6',
+  heroPlan: '#C9B6F2',          // the plan's dashed line on the plum hero: 5.7:1 even on its lighter plum
   coralInk: '#C93A26',    // coral for text and warnings: passes WCAG AA on white
   mintBg: '#E4F7EF',
   coralBg: '#FFEAE6',
@@ -79,6 +80,7 @@ const dark: typeof light = {
   mintPanel: '#16271F',
   heroGood: '#7FF0C8',
   heroOver: '#FFB0A6',
+  heroPlan: '#C9B6F2',          // the plan's dashed line on the plum hero: 5.7:1 even on its lighter plum
   coralInk: '#FF8D7D',
   mintBg: '#15291F',
   coralBg: '#33201D',

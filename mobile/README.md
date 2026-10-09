@@ -73,6 +73,14 @@ What each protection is, and what it isn't:
 - **Untrusted input.** Restored backups are size-limited (10 MB), parsed defensively and cleaned field by field (dates,
   ranges, lengths, counts, prototype keys); nothing is evaluated. A snapshot is kept for 30 days before any restore.
 - **Notifications** never contain a weight or other figure; there's no push entitlement.
+- **Widgets** (`src/widgets/`, `expo-widgets`) show the trend on the Home Screen and Lock Screen, so they deliberately put
+  numbers outside the app. What they get is a small snapshot the app hands over (`src/core/widgetData.ts`): the trend,
+  this week's change, progress and the last 30 days scaled 0–1, no raw history. With the **Face ID lock on they get
+  nothing** but "locked". The snapshot sits in the app group `group.com.yameenbux.tidemark`; every number is marked
+  `privacySensitive` so iOS can hide it on a locked Lock Screen. The extension has its own privacy manifest
+  (`plugins/withWidgetPrivacyManifest.js`, reason 1C8F.1). **Not yet verified on a device:** how the app's
+  `NSFileProtectionComplete` applies to the app-group snapshot while the phone is locked (iOS keeps showing the last
+  rendered widget either way).
 - **Dependencies.** `npm audit --omit=dev` reports advisories only in build-time tooling (Metro's `braces`, the Expo CLI's
   `node-forge`, the Jest preset's `sprintf-js`, the Xcode project editor's `uuid`). None of these ship in the app binary.
   Re-check after each Expo SDK upgrade.
@@ -83,7 +91,9 @@ What each protection is, and what it isn't:
 
 - **Apple Health sync** — Expo Go can't use HealthKit. Needs the Apple Developer Program (£79/year)
   and a development build with EAS. Planned as step 2b.
-- **iCloud sync and widgets** — also need a development build.
+- **iCloud sync** — also needs a development build.
+- **Widgets need a development or App Store build**: Expo Go has no widget extension. They're built with the app by
+  EAS; nothing to set up beyond letting EAS register the app group the first time it asks.
 
 ## Before a release
 

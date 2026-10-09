@@ -6,6 +6,7 @@ import { C, F, themed } from '../theme';
 import { CoverOverlay } from './Cover';
 import { DoneWindow } from './KeyboardDone';
 import { Icon } from './Icons';
+import { CONTENT_MAX } from '../layout';
 
 /**
  * Bottom sheet used for every quick-entry task (log weight, measurements, session weights).
@@ -82,7 +83,8 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
 const s = themed(() => StyleSheet.create({
   backdrop: { backgroundColor: C.backdrop },
   holder: { flex: 1, justifyContent: 'flex-end' },
-  sheet: { backgroundColor: C.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: C.sheetEdge, maxHeight: '92%',
+  sheet: { width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center',   // a column on wide screens, like the tabs
+    backgroundColor: C.card, borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, borderBottomWidth: 0, borderColor: C.sheetEdge, maxHeight: '92%',
            shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } },
   handleZone: { paddingTop: 8, paddingHorizontal: 20, paddingBottom: 6 },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: C.line, marginBottom: 10 },

@@ -7,10 +7,10 @@ const { withInfoPlist } = require('expo/config-plugins');
 module.exports = function withProductionHardening(config) {
   return withInfoPlist(config, cfg => {
     if (process.env.EAS_BUILD_PROFILE === 'production') {
-      const ats = { ...(cfg.modResults.NSAppTransportSecurity ?? {}) };
+      // Edit the existing object rather than replacing it: other plugins (expo-widgets) can hold on to it and write it back
+      const ats = cfg.modResults.NSAppTransportSecurity ?? (cfg.modResults.NSAppTransportSecurity = {});
       delete ats.NSAllowsLocalNetworking;
       ats.NSAllowsArbitraryLoads = false;
-      cfg.modResults.NSAppTransportSecurity = ats;
       delete cfg.modResults.CFBundleURLTypes;
     }
     return cfg;
