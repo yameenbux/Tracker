@@ -1,8 +1,9 @@
 # Generates the Tidemark brand marks as SVG.
-# The mark (direction A, "calming waves"): daily weigh-ins are the waves; they calm, and what's left is the trend, one
-# flat line, with today marked where it lands. Read the trend, not the waves.
+# The mark (direction D, "the dial"): a scale's dial seen from above. The upper half of the ring is paper; the lower
+# half fills amber to coral, the progress you've made; the needle rests steady on a coral hub. It reads as health at a
+# glance, and the needle sits still on purpose: the trend, not today's jump.
 # Usage: python3 make_logo.py <out-dir>   (needs `pip install fonttools` and mobile/node_modules for the font)
-import os, sys
+import math, os, sys
 from fontTools.ttLib import TTFont
 from fontTools.pens.svgPathPen import SVGPathPen
 
@@ -12,40 +13,44 @@ FONT = os.path.join(HERE, '../mobile/node_modules/@expo-google-fonts/space-grote
 PLUM1, CORAL, AMBER, PAPER = '#2A1E45', '#FF6B5E', '#FFA24B', '#FBF7F3'
 
 # ---- geometry (1024 grid) ----
-X0, X1 = 210, 814                  # waves span
-WAVES = ((318, 120, 0.34), (500, 60, 0.62))   # (baseline y, amplitude, opacity): the second is calmer and stronger
-LINE_Y, LINE_END, TODAY = 690, 760, (788, 690)
-STROKE, LINE_STROKE, TODAY_R = 76, 92, 72   # weights tuned so the mark still reads at 29 px
+CX, CY, R, RING = 512, 524, 292, 96     # dial centre, ring radius (to the stroke's middle) and weight
+NEEDLE_ANGLE, NEEDLE_LEN, NEEDLE_BASE = 45, 214, 64   # degrees from 12 o'clock (clockwise), length, base width
+HUB = 58                                 # the coral hub the needle turns on; weights tuned so it reads at 29 px
 
-def wave(y, amp, n=3):
-    w = (X1 - X0) / n
-    d = f'M{X0} {y} Q {X0 + w / 2:.1f} {y - amp} {X0 + w:.1f} {y}'
-    for i in range(2, n + 1): d += f' T {X0 + i * w:.1f} {y}'
-    return d
+def pt(angle, r):
+    """A point on a circle around the dial centre; angle in degrees clockwise from 12 o'clock."""
+    a = math.radians(angle)
+    return CX + r * math.sin(a), CY - r * math.cos(a)
+
+def arc(a0, a1):
+    (x0, y0), (x1, y1) = pt(a0, R), pt(a1, R)
+    return f'M{x0:.1f} {y0:.1f} A{R} {R} 0 {1 if abs(a1 - a0) > 180 else 0} 1 {x1:.1f} {y1:.1f}'
 
 def defs(u):
     return (f'<defs><linearGradient id="bg{u}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#352657"/>'
             f'<stop offset="0.55" stop-color="{PLUM1}"/><stop offset="1" stop-color="#1E1533"/></linearGradient>'
-            f'<radialGradient id="warm{u}" cx="0.79" cy="0.69" r="0.5"><stop offset="0" stop-color="{CORAL}" stop-opacity="0.28"/>'
+            f'<radialGradient id="warm{u}" cx="0.5" cy="0.8" r="0.55"><stop offset="0" stop-color="{CORAL}" stop-opacity="0.24"/>'
             f'<stop offset="1" stop-color="{CORAL}" stop-opacity="0"/></radialGradient>'
             f'<radialGradient id="sheen{u}" cx="0.3" cy="0" r="0.8"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.08"/>'
             f'<stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>'
-            f'<linearGradient id="tr{u}" gradientUnits="userSpaceOnUse" x1="{X0}" y1="{LINE_Y}" x2="{TODAY[0]}" y2="{LINE_Y}">'
+            f'<linearGradient id="tr{u}" gradientUnits="userSpaceOnUse" x1="{CX - R}" y1="0" x2="{CX + R}" y2="0">'
             f'<stop offset="0" stop-color="{AMBER}"/><stop offset="1" stop-color="{CORAL}"/></linearGradient></defs>')
 
 def mark(u, mono=None):
     ink = mono or PAPER
-    waves = ''.join(f'<path d="{wave(y, amp)}" fill="none" stroke="{ink}" stroke-opacity="{min(1, op + 0.12) if mono else op}" '
-                    f'stroke-width="{STROKE}" stroke-linecap="round"/>' for y, amp, op in WAVES)
-    # in one colour the line stops short of the ring (a gap instead of the paper halo), or it would fill the ring's hole
-    end = TODAY[0] - TODAY_R - LINE_STROKE // 2 - 26 if mono else LINE_END
-    line = (f'<path d="M{X0} {LINE_Y} H{end}" stroke="{mono or f"url(#tr{u})"}" stroke-width="{LINE_STROKE}" '
-            f'stroke-linecap="round"/>')
-    cx, cy = TODAY
-    # One colour: today becomes a ring, so it still stands apart from the line it sits on
-    today = (f'<circle cx="{cx}" cy="{cy}" r="{TODAY_R - 21}" fill="none" stroke="{mono}" stroke-width="42"/>' if mono else
-             f'<circle cx="{cx}" cy="{cy}" r="{TODAY_R}" fill="{PAPER}"/><circle cx="{cx}" cy="{cy}" r="{round(TODAY_R * 0.41)}" fill="{CORAL}"/>')
-    return waves + line + today
+    # paper upper half (in one colour it steps back, so the filled half still reads as progress)
+    upper = (f'<path d="{arc(-90, 90)}" fill="none" stroke="{ink}" stroke-opacity="{0.42 if mono else 1}" '
+             f'stroke-width="{RING}" stroke-linecap="round"/>')
+    lower = (f'<path d="{arc(90, 270)}" fill="none" stroke="{mono or f"url(#tr{u})"}" stroke-width="{RING}" '
+             f'stroke-linecap="round"/>')
+    tip = pt(NEEDLE_ANGLE, NEEDLE_LEN)
+    l, r = pt(NEEDLE_ANGLE - 90, NEEDLE_BASE / 2), pt(NEEDLE_ANGLE + 90, NEEDLE_BASE / 2)
+    needle = (f'<path d="M{l[0]:.1f} {l[1]:.1f} L{tip[0]:.1f} {tip[1]:.1f} L{r[0]:.1f} {r[1]:.1f} Z" fill="{ink}" '
+              f'stroke="{ink}" stroke-width="14" stroke-linejoin="round"/>')
+    # One colour: the hub becomes a ring, so it still stands apart from the needle it holds
+    hub = (f'<circle cx="{CX}" cy="{CY}" r="{HUB - 17}" fill="none" stroke="{mono}" stroke-width="34"/>' if mono else
+           f'<circle cx="{CX}" cy="{CY}" r="{HUB}" fill="{CORAL}"/>')
+    return upper + lower + needle + hub
 
 def svg(inner, w=1024, h=1024, vb='0 0 1024 1024'):
     return f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="{vb}">{inner}</svg>'
