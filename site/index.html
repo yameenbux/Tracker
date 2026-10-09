@@ -95,15 +95,14 @@
   .btn-line:hover { background: rgba(251,247,243,.08); }
   .proof { margin: 18px 0 0; font-size: 14px; font-weight: 600; color: var(--on-plum-soft); letter-spacing: .01em; }
 
-  .fan { display: flex; justify-content: center; align-items: flex-start; max-width: 860px; margin: 64px auto 0; padding: 0 8px; }
-  .card { margin: 0; flex: none; aspect-ratio: 600 / 1301; border-radius: 30px; overflow: hidden; background: var(--paper);
-    box-shadow: 0 30px 60px -24px rgba(10,6,20,.65), 0 0 0 1px rgba(251,247,243,.12); }
-  .card img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-  .card-l, .card-r { width: 36%; z-index: 1; }
-  .card-c { width: 40%; z-index: 2; }
-  .card-l { margin-right: -7%; transform: translateY(28px) rotate(-6deg); }
-  .card-c { transform: translateY(-6px); }
-  .card-r { margin-left: -7%; transform: translateY(28px) rotate(6deg); }
+  /* Three phones: the iPhone Duo opened out, an iPhone, and an Android phone. The frames are drawn into the images
+     (transparent around them), so the shadow follows the phone's outline rather than a box. */
+  .fan { display: flex; justify-content: center; align-items: flex-start; max-width: 920px; margin: 64px auto 0; padding: 0 8px; }
+  .card { margin: 0; flex: none; filter: drop-shadow(0 26px 34px rgba(10,6,20,.55)); }
+  .card img { display: block; width: 100%; height: auto; }
+  .card-l { width: 41%; z-index: 1; margin-right: -6%; transform: translateY(36px) rotate(-4deg); }
+  .card-c { width: 30%; z-index: 2; transform: translateY(-6px); }
+  .card-r { width: 27%; z-index: 1; margin-left: -5%; transform: translateY(36px) rotate(6deg); }
 
   .points { list-style: none; margin: 72px auto 0; padding: 0 0 88px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; text-align: center; }
   .points .h3 { font-size: 20px; letter-spacing: -0.01em; color: var(--on-plum); }
@@ -111,7 +110,6 @@
   @media (max-width: 760px) {
     .hero p.lede { font-size: 17px; }
     .fan { margin-top: 48px; }
-    .card { border-radius: 18px; }
     .points { grid-template-columns: 1fr; gap: 20px; margin-top: 56px; padding-bottom: 64px; }
   }
 
@@ -122,11 +120,11 @@
     .js .rise:nth-child(2) { transition-delay: .08s; } .js .rise:nth-child(3) { transition-delay: .16s; } .js .rise:nth-child(4) { transition-delay: .24s; }
     .js .fan { opacity: 0; transform: translateY(12px); filter: blur(6px); transition: opacity .5s .35s, transform .5s .35s cubic-bezier(.22,1,.36,1), filter .5s .35s; }
     .js .card { transition: transform .6s cubic-bezier(.22,1,.36,1); }
-    .js .card-l { transform: translateX(48%) translateY(28px) rotate(-6deg); transition-delay: .5s; }
-    .js .card-r { transform: translateX(-48%) translateY(28px) rotate(6deg); transition-delay: .6s; }
+    .js .card-l { transform: translateX(40%) translateY(36px) rotate(-4deg); transition-delay: .5s; }
+    .js .card-r { transform: translateX(-48%) translateY(36px) rotate(6deg); transition-delay: .6s; }
     .js .opened .rise, .js .opened .fan { opacity: 1; transform: none; filter: none; }
-    .js .opened .card-l { transform: translateY(28px) rotate(-6deg); }
-    .js .opened .card-r { transform: translateY(28px) rotate(6deg); }
+    .js .opened .card-l { transform: translateY(36px) rotate(-4deg); }
+    .js .opened .card-r { transform: translateY(36px) rotate(6deg); }
   }
 
   /* Free and Plus */
@@ -340,9 +338,9 @@
       </div>
 
       <div class="fan" id="fan">
-        <figure class="card card-l"><img src="shots/trend.webp" width="600" height="1301" alt="The Trend screen: trend weight 88.2 kg, losing 0.5 kg a week, and a note that the last weigh-in dropped 0.8 kg while the trend moved 0.1 kg." decoding="async"></figure>
-        <figure class="card card-c"><img src="shots/today.webp" width="600" height="1301" alt="The Today screen: trend weight 88.2 kg with the last 30 days charted behind it, daily weigh-ins as dots around a calm trend line and the plan dashed, then progress from 92 towards 84 kg and on track." decoding="async"></figure>
-        <figure class="card card-r"><img src="shots/habits.webp" width="600" height="1301" alt="The Habits screen: this week’s ticks for water, steps and sleep." decoding="async"></figure>
+        <figure class="card card-l"><img src="shots/device-duo.webp" width="880" height="1239" alt="An iPhone Duo opened out, showing the Trend screen: trend weight 88.2 kg, losing 0.5 kg a week, and a note that the last weigh-in dropped 0.8 kg while the trend moved 0.1 kg." decoding="async"></figure>
+        <figure class="card card-c"><img src="shots/device-iphone.webp" width="600" height="1260" alt="An iPhone showing the Today screen: trend weight 88.2 kg with the last 30 days charted behind it, daily weigh-ins as dots around a calm trend line and the plan dashed, then progress from 92 towards 84 kg and on track." decoding="async"></figure>
+        <figure class="card card-r"><img src="shots/device-android.webp" width="600" height="1302" alt="An Android phone showing the Habits screen: this week’s ticks for water, steps and sleep." decoding="async"></figure>
       </div>
 
       <ul class="points" id="how">
