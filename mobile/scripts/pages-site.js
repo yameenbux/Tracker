@@ -80,9 +80,21 @@ if (!body) throw new Error('privacy.html has no <main>');
 const site = fs.readFileSync(path.join(repo, 'site', 'index.html'), 'utf8');
 const slot = /<!-- PRIVACY:[^>]*-->/;
 if (!slot.test(site)) throw new Error('site/index.html has no PRIVACY slot');
-// On the page the policy is one section: its title becomes the section heading and its headings step down a level
-const policyBody = body[1].replace(/\s*<div class="eyebrow">[^<]*<\/div>/, '').replace(/<h2>/g, '<h3>').replace(/<\/h2>/g, '</h3>')
-  .replace(/<h1>[^<]*<\/h1>/, '<h2>How Tidemark handles your data</h2>');
+// On the page the policy is a card: its title and date as the header, the short version always shown, and each section
+// a row that opens one at a time (privacy.html itself stays one open document, for anyone who wants it all at once)
+const chevron = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+const policyHtml = body[1].replace(/\s*<div class="eyebrow">[^<]*<\/div>/, '').replace(/<h1>[^<]*<\/h1>/, '');
+const [policyIntro, ...policySections] = policyHtml.split('<h2>');
+if (!policySections.length) throw new Error('privacy.html has no <h2> sections');
+const policyBody = `<div class="policy-card">
+  <div class="policy-head"><h2>How Tidemark handles your data</h2>${policyIntro.trim()}</div>
+  ${policySections.map((sec, i) => {
+    const end = sec.indexOf('</h2>');
+    if (end < 0) throw new Error('privacy.html has an unclosed <h2>');
+    return `<details name="policy"${i === 0 ? ' open' : ''}><summary><span>${sec.slice(0, end)}</span>${chevron}</summary>`
+      + `<div class="policy-panel">${sec.slice(end + 5).trim()}</div></details>`;
+  }).join('\n  ')}
+</div>`;
 fs.writeFileSync(path.join(out, 'index.html'), site.replace(slot, () => policyBody));
 addHead(path.join(out, 'index.html'), meta({ title: 'Tidemark · The weight tracker that reads the trend', page: '',
   description: 'A private weight tracker for iPhone. Your trend weight, not the daily noise, with a plan, habits and an optional medication log. No account, and your data stays on your phone.' }));
