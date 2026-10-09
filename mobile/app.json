@@ -116,6 +116,14 @@
       "expo-web-browser",
       "expo-notifications",
       "expo-iap",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Tidemark reads your weight from Apple Health, so readings from your scale and other apps appear in your trend. It never leaves your iPhone.",
+          "NSHealthUpdateUsageDescription": "Tidemark saves the weights you log to Apple Health, so your other health apps can see them.",
+          "background": false
+        }
+      ],
       "./plugins/withWidgetPrivacyManifest.js",
       [
         "expo-widgets",

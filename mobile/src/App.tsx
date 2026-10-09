@@ -36,6 +36,7 @@ import { clearCache } from './io';
 import { C, themed, useScheme } from './theme';
 import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
+import { useHealth } from './useHealth';
 import { widgetProps } from './core/widgetData';
 import { syncWidgets } from './widgets/sync';
 
@@ -77,6 +78,7 @@ function Main() {
   const [toast, setToast] = useState<ToastMsg | null>(null);
   const [backupHidden, setBackupHidden] = useState(false);
   const lock = useLock(t.ready, prefs, t.setPrefs);
+  const health = useHealth(t);
 
   const show = useCallback((m: Omit<ToastMsg, 'id'>) => setToast({ ...m, id: Date.now() }), []);
   const hideToast = useCallback(() => setToast(null), []);
@@ -228,6 +230,7 @@ function Main() {
               const replaced = state.weights[k], oldNote = state.notes?.[k] ?? null;
               if (moved) t.setWeight(moved.k, null);
               t.setWeight(k, kg); t.setNote(k, note); success(); setLog(null);
+              if (kg !== replaced) health.shareWeighIn(k, kg);
               const undo = () => { t.setWeight(k, replaced ?? null); t.setNote(k, oldNote); if (moved) t.setWeight(moved.k, moved.kg); };
               // Say what the weigh-in did to the trend, the number that matters, not just that it saved
               const after = { ...state.weights, [k]: kg };
@@ -250,7 +253,8 @@ function Main() {
               lock={prefs.lock} lockAvailable={lock.lockAvailable} lockName={lock.lockName} onLockChange={on => lock.setLock(on, lock.lockName)}
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
               appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })}
-              hideWeight={prefs.hide} onHideWeightChange={hide => t.setPrefs({ hide })} reminderBlocked={prefs.reminder.on && notifBlocked}
+              hideWeight={prefs.hide} onHideWeightChange={hide => t.setPrefs({ hide })}
+              health={health.available ? { on: health.on, set: health.setHealth } : undefined} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               doses={state.doses ?? {}} onDoses={t.setDoses}
               lengthUnit={lengthUnitFor(prefs.length, state.unit)} onLengthUnit={length => t.setPrefs({ length })}

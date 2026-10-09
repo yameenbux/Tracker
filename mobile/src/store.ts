@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { cleanPrefs, DEFAULT_PREFS, hydrate, Prefs, SCHEMA_VERSION } from './core/storage';
-import { reconcile } from './core/entries';
+import { dailyWeights, reconcile } from './core/entries';
+import { mergeHealth, type HealthReading } from './core/health';
 import { withNote, type DayNote } from './core/notes';
 import { round2 } from './core/units';
 import type { DoseLog, HabitLog, Measurements, PhotoLog, Settings, TrackerState, Unit } from './core/types';
@@ -199,6 +200,11 @@ export function useTracker() {
     if (kcal == null) delete intake[k]; else intake[k] = Math.round(kcal);
     return { ...s, intake };
   }), []);
+  /** Readings from Apple Health: added as records; a weight typed in Tidemark still wins for its day. */
+  const addHealth = useCallback((added: HealthReading[], deleted: string[]) => setState(s => {
+    const r = mergeHealth(s.entries ?? [], added, deleted);
+    return r.added || r.removed ? { ...s, entries: r.entries, weights: dailyWeights(r.entries) } : s;
+  }), []);
   const setNote = useCallback((k: string, note: DayNote | null) => setState(s => ({ ...s, notes: withNote(s.notes ?? {}, k, note) })), []);
   const setLifts = useCallback((lifts: TrackerState['lifts']) => setState(s => ({ ...s, lifts })), []);
   // Restores, resets and undos hand over a whole state: keep the weigh-in records in step with its day map
@@ -226,7 +232,7 @@ export function useTracker() {
 
   return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
            setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs,
-           discardPending, setDoses, setNote };
+           discardPending, setDoses, setNote, addHealth };
 }
 export type Tracker = ReturnType<typeof useTracker>;
 

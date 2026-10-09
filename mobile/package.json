@@ -7,6 +7,7 @@
     "@expo-google-fonts/space-grotesk": "^0.4.1",
     "@expo/metro-runtime": "~57.0.16",
     "@expo/ui": "~57.0.22",
+    "@kingstinct/react-native-healthkit": "16.1.0",
     "@noble/ciphers": "2.4.0",
     "@noble/hashes": "2.4.0",
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -32,6 +33,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
+    "react-native-nitro-modules": "0.37.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-svg": "15.15.4",
     "react-native-web": "~0.21.0"

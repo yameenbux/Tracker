@@ -22,8 +22,9 @@ export interface Prefs {
   length: 'cm' | 'in' | null;   // measurement unit; null follows the weight unit
   plus: PlusStatus;             // Tidemark Plus as Apple last confirmed it (re-checked on every launch)
   hide: boolean;                // "hide my weight": show how the trend moves, never the number
+  health: { on: boolean; anchor: string | null };   // Apple Health sync, and where the last read got to
 }
-export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system', length: null, plus: NO_PLUS, hide: false };
+export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system', length: null, plus: NO_PLUS, hide: false, health: { on: false, anchor: null } };
 
 /** Milestones are quarters of the way from the start weight to the goal, so they belong to those numbers. */
 export const milestonePlanKey = (p: { start: string; startKg: number; goalKg: number }) => `${p.start}|${p.startKg}|${p.goalKg}`;
@@ -43,6 +44,7 @@ export function cleanPrefs(p: any): Prefs {
     length: p.length === 'cm' || p.length === 'in' ? p.length : null,
     plus: cleanPlus(p.plus),
     hide: p.hide === true,
+    health: { on: p.health?.on === true, anchor: typeof p.health?.anchor === 'string' && p.health.anchor.length < 20000 ? p.health.anchor : null },
   };
 }
 

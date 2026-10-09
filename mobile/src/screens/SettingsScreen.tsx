@@ -112,6 +112,7 @@ export interface SettingsProps {
   reminder: Reminder; onReminderChange: (r: Reminder) => void;
   appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void; reminderBlocked?: boolean;
   hideWeight?: boolean; onHideWeightChange?: (on: boolean) => void;
+  health?: { on: boolean; set: (on: boolean) => Promise<boolean> };   // absent where there's no Apple Health
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   doses: DoseLog; onDoses: (d: DoseLog) => void;
   lengthUnit: 'cm' | 'in'; onLengthUnit: (u: 'cm' | 'in') => void;
@@ -180,6 +181,9 @@ export function SettingsScreen(p: SettingsProps) {
 
         <Group title="Tracking">
           <Row icon="ruler" label="Units" wide right={<UnitToggle unit={unit} onChange={p.setUnit} />} />
+          {p.health && <SwitchRow icon="heart" label="Apple Health" value={p.health.on} onChange={async on => {
+            if (!(await p.health!.set(on))) notify('Apple Health isn’t available', 'Tidemark couldn’t connect to Apple Health on this iPhone.');
+          }} />}
           <Row icon="body" label="Measurements" wide right={<LengthToggle unit={p.lengthUnit} onChange={p.onLengthUnit} />} />
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
@@ -190,7 +194,7 @@ export function SettingsScreen(p: SettingsProps) {
           {plus ? <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
             : <Row icon="flame" label="Calorie estimate" value="Plus" onPress={() => openPaywall('calories')} hint="Part of Tidemark Plus" last />}
         </Group>
-        <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
+        <Text style={s.groupFootOut}>{p.health ? 'Apple Health: weights from your scale or other apps come in by themselves, and weights you log here go to Health. A weight you type always wins for its day. ' : ''}Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
 
         <Group title="Display" footer="Hide my weight: Tidemark shows which way your trend is going and by how much, never the weight itself. Exports still hold the real numbers.">
           <Row icon="moon" label="Appearance" wide right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} />
