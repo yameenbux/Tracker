@@ -1,3 +1,4 @@
+import { requireOptionalNativeModule } from 'expo';
 import { Platform } from 'react-native';
 import type { WidgetProps } from '../core/widgetData';
 
@@ -9,7 +10,8 @@ let last = '';
 
 function load(): Widget[] | null {
   if (widgets !== undefined) return widgets;
-  if (Platform.OS !== 'ios') return (widgets = null);
+  // No native module (Expo Go, tests): don't load the widget code at all, it's slow and would only fail
+  if (Platform.OS !== 'ios' || !requireOptionalNativeModule('ExpoWidgets')) return (widgets = null);
   try {
     /* eslint-disable @typescript-eslint/no-require-imports */
     widgets = [require('./TrendWidget').default as Widget, require('./LockWidget').default as Widget];
