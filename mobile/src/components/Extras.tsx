@@ -119,7 +119,7 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
             </Pressable>
           ))}
         </View>
-        <DoneInput key={day} value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal eaten"
+        <DoneInput key={day} value={txt} onChangeText={setTxt} onFocus={() => setFocused(true)} onBlur={commit} keyboardType="number-pad" placeholder="kcal"
           returnKeyType="done" maxFontSizeMultiplier={1.4}
           placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.calIn]} accessibilityLabel={`Calories eaten, ${which}`} />
       </View>

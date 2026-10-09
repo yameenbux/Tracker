@@ -165,7 +165,7 @@ export const ProgressChart = memo(function ProgressChart({ settings, weights, un
 });
 
 const s = themed(() => StyleSheet.create({
-  legend: { flexDirection: 'row', gap: 14, paddingHorizontal: 4, paddingBottom: 6, alignItems: 'center' },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6, paddingHorizontal: 4, paddingBottom: 6, alignItems: 'center' },
   lg: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   lgTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft },
   swLine: { width: 18, height: 3, borderRadius: 2, backgroundColor: C.graphCoral },

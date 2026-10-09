@@ -293,7 +293,7 @@ const s = themed(() => StyleSheet.create({
   promiseTxt: { flex: 1, fontFamily: F.bodyMed, fontSize: 15, color: C.ink, lineHeight: 21 },
   bigRow: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 40, marginBottom: 24 },
   bigBox: { flexDirection: 'row', alignItems: 'baseline', borderBottomWidth: 2, borderBottomColor: C.control, paddingBottom: 6 },
-  bigIn: { fontFamily: F.display, fontSize: 56, color: C.ink, textAlign: 'center', padding: 0 },
+  bigIn: { fontFamily: F.display, fontSize: 56, color: C.ink, textAlign: 'center', padding: 0, borderWidth: 0 },
   bigUnit: { fontFamily: F.bodySemi, fontSize: 18, color: C.inkSoft, marginLeft: 4 },
   note: { fontFamily: F.body, fontSize: 14.5, color: C.plum2, textAlign: 'center', lineHeight: 20, marginTop: 4, paddingHorizontal: 12 },
   err: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.danger, textAlign: 'center', marginBottom: 10, lineHeight: 19 },

@@ -176,7 +176,7 @@ export function EffectsSheet({ day, effects, onSave, onClose }: { day: string; e
     onSave(next); setClosing(true);
   };
   return (
-    <Sheet title={`How you feel · ${longDate(day)}`} onClose={onClose} closing={closing}
+    <Sheet title={`How you feel · ${shortDate(parseKey(day))}`} onClose={onClose} closing={closing}
       footer={<Button label={picked.length || cur ? 'Save' : 'Nothing to note'} disabled={!picked.length && !cur} onPress={save} />}>
       <View style={s.sites}>
         {EFFECTS.map(x => (
