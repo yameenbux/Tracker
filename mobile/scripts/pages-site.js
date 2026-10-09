@@ -32,7 +32,7 @@ const meta = ({ title, description, page, noindex }) => [
   siteUrl ? `<meta property="og:url" content="${siteUrl}/${page}">` : '',
   siteUrl ? `<meta property="og:image" content="${siteUrl}/social.png">` : '',
   '<meta property="og:image:width" content="1200">', '<meta property="og:image:height" content="630">',
-  '<meta property="og:image:alt" content="Tidemark: a private weight tracker. Read the trend, not the waves.">',
+  '<meta property="og:image:alt" content="Tidemark, a private weight tracker for iPhone. The scale jumps; your trend doesn’t.">',
   '<meta name="twitter:card" content="summary_large_image">',
 ].filter(Boolean).join('');
 const addHead = (file, tags, title) => {
