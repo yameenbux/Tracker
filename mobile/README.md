@@ -23,9 +23,11 @@ If Expo Go says the project needs a different SDK version, update Expo Go from t
 
 ## What's in it
 
-**Free and Plus.** The core is free: weigh-ins, the trend and plan, reminders, Face ID lock, backups, up to 3 habits.
-**Tidemark Plus** (£1.99 a month or £11.99 a year, each with a 7-day free trial, or £19.99 once) adds the medication
-log, all 6 habits, measurements and photos, calories, and password-protected backups. It's sold through Apple with
+**Free and Plus.** The core is free: weigh-ins, the trend and plan, notes and tags on a day, Apple Health sync, the
+medication log with dose reminders, holding mode after the goal, "hide my weight", reminders, Face ID lock, backups,
+up to 3 habits. **Tidemark Plus** (£1.99 a month or £11.99 a year, each with a 7-day free trial, or £19.99 once) adds
+medication insights (trend at each dose, injection-site rotation, side effects against the dose cycle), a PDF report
+for a doctor, a daily protein minimum, all 6 habits, measurements and photos, calories, and password-protected backups. It's sold through Apple with
 StoreKit 2 (`expo-iap`): no account, no server and no third-party purchase SDK, so the privacy answer stays "Data Not
 Collected". Logic in `src/core/plus.ts`; store calls in `src/purchases.ts`; `usePlus()` and the paywall in `src/plus.tsx`.
 Anything entered in a Plus feature is kept if Plus lapses, and shows again when it's back. Product IDs (create these
@@ -48,6 +50,18 @@ introductory offer) and `com.yameenbux.tidemark.plus.lifetime` (non-consumable).
   with one tap to mark it taken (or flags a weekly dose that isn't marked); the Trend tab shows how the trend moved at
   each dose strength; a dose history to add or clear past doses; an optional dose-day reminder that doesn't name the
   medication. Stopping asks whether to keep or delete the history. A record only: it never suggests doses.
+- **Notes and tags** (`src/core/notes.ts`): quick tags (salty meal, alcohol, travel, period, poor sleep…) and a line of
+  text on any day, from the log sheet. Shown under weigh-ins, as marks on the chart and in the jump explainer.
+- **Hide my weight** (Settings → Display): the hero shows which way the trend is going this week; charts drop their
+  axis numbers; the log sheet neither prefills nor echoes the weight. Exports and the doctor report keep real numbers.
+- **Holding** (`holdingPlan` in `src/core/plan.ts`): at the goal, the Trend tab offers a 26-week holding plan with a
+  1.5 kg range. Past the goal is "At goal", never "Ahead".
+- **Apple Health** (`src/health.ts`, `src/useHealth.ts`, logic in `src/core/health.ts`): off by default. Reads body
+  weight with HealthKit anchors on launch, on return and when Health changes; writes typed weigh-ins, tagged so they're
+  never imported back. A typed weight wins for its day. Uses `@kingstinct/react-native-healthkit` (no official Expo
+  module exists); needs a development or App Store build.
+- **Doctor report** (Plus, `src/core/report.ts`): the last 12 weeks as a PDF made on the phone with `expo-print`.
+- **Protein minimum** (Plus, `src/core/protein.ts`): 1.2–1.6 g per kg of the lower of trend and goal weight.
 - **Settings**: an iOS grouped list — plan and breaks, event, units, habits, sessions, meals, calories, a daily weigh-in
   reminder, Face ID lock, export (backup or CSV), restore, clear, erase everything, privacy policy.
 - **Safety**: saved data that can't be read is copied aside rather than overwritten; a snapshot is taken before restore;
@@ -60,7 +74,7 @@ introductory offer) and `com.yameenbux.tidemark.plus.lifetime` (non-consumable).
 
 What each protection is, and what it isn't:
 
-- **No network surface.** No server, account, analytics or third-party SDKs. EAS builds with the `production` profile have no
+- **No network surface.** No server, account, analytics or data-collecting SDKs (the HealthKit binding talks only to iOS). EAS builds with the `production` profile have no
   App Transport Security exceptions and no URL scheme (`plugins/withProductionHardening.js`); development builds and local
   builds without that profile keep local networking so they can load code from Metro.
 - **iOS file encryption.** `NSFileProtectionComplete`: while the phone is locked, the app's files are encrypted with a key
@@ -89,9 +103,12 @@ What each protection is, and what it isn't:
 
 ## Not in this version yet
 
-- **Apple Health sync** — Expo Go can't use HealthKit. Needs the Apple Developer Program (£79/year)
-  and a development build with EAS. Planned as step 2b.
-- **iCloud sync** — also needs a development build.
+- **Apple Health sync is built but untested on a device**: Expo Go can't use HealthKit. Test it in a development or
+  TestFlight build (EAS turns on the HealthKit capability from the config plugin).
+- **iCloud sync** — not built. App Review Guideline 5.1.3(ii) says apps using HealthKit may not store personal health
+  information in iCloud. Settle that (e.g. ask App Review, or sync only what didn't come from Health) before building it.
+- **Apple Watch app** — not built. It needs a native watchOS target (Swift), which can't be compiled or tested here; an
+  untested target could break the whole iOS build.
 - **Widgets need a development or App Store build**: Expo Go has no widget extension. They're built with the app by
   EAS; nothing to set up beyond letting EAS register the app group the first time it asks.
 
