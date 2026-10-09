@@ -6,6 +6,7 @@ import { tap } from '../feel';
 import { useReducedMotion } from '../motion';
 import { C, F, themed } from '../theme';
 import { Icon, IconName } from './Icons';
+import { CONTENT_MAX } from '../layout';
 
 export type Tab = 'today' | 'trend' | 'habits' | 'body';
 export const TAB_BAR_H = 56;
@@ -28,7 +29,8 @@ export function TabScreen({ eyebrow, title, onSettings, scrollTop, children }: {
   const back = useReturnFade(active);   // a quick 180 ms settle when you switch back to this tab
   return (
     <View style={{ flex: 1 }}>
-    <Animated.ScrollView ref={ref} contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16 }}
+    <Animated.ScrollView ref={ref} contentContainerStyle={{ paddingTop: insets.top + 10, paddingBottom: TAB_BAR_H + insets.bottom + 28, paddingHorizontal: 16,
+        width: '100%', maxWidth: CONTENT_MAX, alignSelf: 'center' }}
       keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets scrollEventThrottle={16} scrollsToTop={active}
       onScroll={Animated.event([{ nativeEvent: { contentOffset: { y } } }], { useNativeDriver: true })}>
       <View style={s.header}>

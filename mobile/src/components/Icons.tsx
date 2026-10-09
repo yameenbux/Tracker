@@ -6,7 +6,7 @@ import { C } from '../theme';
 // so controls look the same on every phone and scale cleanly.
 export type IconName =
   | 'today' | 'trend' | 'habits' | 'body' | 'settings' | 'plus' | 'chevron' | 'back' | 'close' | 'lock'
-  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal' | 'moon' | 'mail' | 'minus' | 'sparkle' | HabitIcon;
+  | 'bell' | 'share' | 'download' | 'trash' | 'info' | 'check' | 'flag' | 'target' | 'calendar' | 'flame' | 'ruler' | 'shield' | 'meal' | 'moon' | 'mail' | 'minus' | 'sparkle' | 'down' | 'up' | HabitIcon;
 
 const P: Record<IconName, (c: string) => React.ReactNode> = {
   today: c => <><Path d="M4 11.5 12 5l8 6.5" stroke={c} /><Path d="M6.5 10v9h11v-9" stroke={c} /></>,
@@ -48,6 +48,8 @@ const P: Record<IconName, (c: string) => React.ReactNode> = {
   trash: c => <><Path d="M5 7h14M10 4.5h4M7 7l.8 12.5h8.4L17 7" stroke={c} /></>,
   info: c => <><Circle cx={12} cy={12} r={8.5} stroke={c} /><Path d="M12 11v5.5" stroke={c} /><Circle cx={12} cy={7.8} r={1.1} fill={c} /></>,
   check: c => <Path d="m5.5 12.5 4.2 4.2 8.8-9.2" stroke={c} />,
+  down: c => <><Circle cx={12} cy={12} r={8.5} stroke={c} /><Path d="M12 7.5v9M8.2 12.8l3.8 3.7 3.8-3.7" stroke={c} /></>,
+  up: c => <><Circle cx={12} cy={12} r={8.5} stroke={c} /><Path d="M12 16.5v-9M8.2 11.2 12 7.5l3.8 3.7" stroke={c} /></>,
   flag: c => <><Path d="M6 20.5V4" stroke={c} /><Path d="M6 4.5h11l-2.5 4 2.5 4H6" stroke={c} /></>,
   target: c => <><Circle cx={12} cy={12} r={8.5} stroke={c} /><Circle cx={12} cy={12} r={4.5} stroke={c} /><Circle cx={12} cy={12} r={1.3} fill={c} /></>,
   calendar: c => <><Rect x={4} y={5.5} width={16} height={14.5} rx={3} stroke={c} /><Path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" stroke={c} /></>,

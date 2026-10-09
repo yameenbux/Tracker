@@ -122,7 +122,7 @@ describe('the hero', () => {
     expect(screen.getByText('vs plan')).toBeTruthy();
     expect(screen.getByText(/^(On track|Ahead|Behind)$/)).toBeTruthy();
     expect(screen.queryByText(/ lb$/)).toBeNull();
-    expect(screen.getByText(/^Plan: goal by/)).toBeTruthy();
+    expect(screen.getByText(/goal by/)).toBeTruthy();
   });
 });
 

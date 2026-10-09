@@ -13,7 +13,7 @@ import { addDays, DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '
 import { consistency, lineWord, milestoneQuarter } from '../core/insights';
 import { direction, lineStatus, sign } from '../core/plan';
 import { milestonePlanKey } from '../core/storage';
-import { backupDue, changeTable, daysSince, recentTrend } from '../core/summary';
+import { backupDue, changeTable, daysSince } from '../core/summary';
 import { projectedGoalDate, Rate, TrendPoint } from '../core/trend';
 import { showChange, showAmount, showWeight } from '../core/units';
 import type { Settings } from '../core/types';
@@ -22,7 +22,8 @@ import { EntriesList, EventCard } from '../components/Entries';
 import { CaloriesCard, MilestoneBanner, PatternsCard } from '../components/Extras';
 import { HabitsCard } from '../components/HabitsCard';
 import { Hero } from '../components/Hero';
-import { ChangeTable, HabitGrids, Tile, TodayHabits, WeekDots } from '../components/Insights';
+import { ChangeTable, HabitGrids, HabitSummary, Tile, TodayHabits } from '../components/Insights';
+import { WeekCard } from '../components/WeekCard';
 import { ProgressChart } from '../components/ProgressChart';
 import { Notice, SectionLabel, Tab, TabScreen } from '../components/Shell';
 import { TrendCard } from '../components/TrendCard';
@@ -68,8 +69,6 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const eta = trendNow != null ? projectedGoalDate(trendNow, settings.plan.goalKg, rate) : null;
   const H = usableHabits(settings.habits, plus);   // free: the first few; the rest are kept for Plus
   const last7 = Array.from({ length: 7 }, (_, i) => dateKey(addDays(now, -i)));
-  const fullDays = last7.filter(k => H.length > 0 && H.every(h => state.habits[k]?.[h.id])).length;
-  const someDays = last7.filter(k => H.some(h => state.habits[k]?.[h.id])).length - fullDays;
   const weighIns7 = last7.filter(k => state.weights[k] != null).length;
   // At the largest text sizes two tiles can't share a row without breaking words: one per row instead
   const stack = useWindowDimensions().fontScale > 1.35;
@@ -98,13 +97,15 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
       {quarter > celebrated && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter, milestoneFor: planKey })} />
       )}
-      <View style={[s.tiles, stack && s.tilesStacked]}>
-        <Tile icon="trend" label="This week" onPress={() => go('trend')} wide={stack}
+      {/* This week across the full width: the trend through each of the last seven days, each labelled */}
+      <CardBoundary name="This week">
+        <WeekCard series={series} weights={state.weights} unit={unit} onPress={() => go('trend')}
           value={week != null ? showChange(week, unit, 1) : '—'}
           valueColor={week == null || d === 0 ? C.ink : week * d > 0.05 ? C.mintInk : week * d < -0.05 ? C.coralInk : C.ink}
-          sub={week != null ? 'trend change, 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
-          spark={recentTrend(series, 30)}
-          a11y={week != null ? `Trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'Weekly change, needs a week of weigh-ins'} />
+          sub={week != null ? 'trend change, last 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
+          a11y={week != null ? `This week: trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'This week: needs a week of weigh-ins'} />
+      </CardBoundary>
+      <View style={[s.tiles, stack && s.tilesStacked]}>
         <Tile icon="target" label="Pace" onPress={() => go('trend')} wide={stack}
           value={rate ? showChange(rate.perWeek, unit, 1) : '—'}
           valueColor={rate ? (d === 0 ? C.ink : rate.perWeek * d > 0.05 ? C.mintInk : rate.perWeek * d < -0.05 ? C.coralInk : C.ink) : C.inkSoft}
@@ -113,15 +114,6 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
             + (status && rate && word ? `, ${word}${status.onLine ? '' : ' by ' + showAmount(status.off, unit)}` : '')}>
           {/* Same words as the hero: On track / Ahead / Behind (or Off, when holding) */}
           {status && rate && word ? <Text style={[s.tileNote, (status.onLine || status.ahead) && { color: C.mintInk }]}>{word}{status.onLine ? '' : ` by ${showAmount(status.off, unit)}`}</Text> : null}
-        </Tile>
-      </View>
-      <View style={[s.tiles, stack && s.tilesStacked]}>
-        {/* Consistency, not today's ticks (the chips below already show those) */}
-        <Tile icon="habits" label="Habits" onPress={() => go('habits')} wide={stack}
-          value={!H.length ? 'Add habits' : ticked30 ? `${avg30}%` : '—'}
-          sub={!H.length ? 'Small daily ticks, no streaks' : ticked30 ? 'consistency, last 30 days' : 'tick one off below to start'}
-          a11y={H.length ? `Habits: ${avg30} percent over the last 30 days. Last 7 days: all done on ${fullDays} ${fullDays === 1 ? 'day' : 'days'}, some on ${someDays}` : 'Habits, none set up'}>
-          {H.length ? <><WeekDots log={state.habits} ids={H.map(h => h.id)} /><Text style={s.dotsCap} maxFontSizeMultiplier={1.4}>last 7 days</Text></> : null}
         </Tile>
         {settings.trackCalories && plus ? (
           <Tile icon="flame" label="Calories" onPress={() => go('body')} wide={stack}
@@ -140,8 +132,16 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
             a11y={waist ? `Waist ${showLength(waist.latest.cm, lu)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, lu)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
         )}
       </View>
+      {/* No habits yet: the invitation stays where the habit figures would be */}
+      {!H.length && (
+        <View style={s.tiles}>
+          <Tile icon="habits" label="Habits" onPress={() => openSettings('habits')} wide
+            value="Add habits" sub="Small daily ticks, no streaks" a11y="Habits, none set up. Opens habit settings." />
+        </View>
+      )}
       {FEATURES.medication && plus && settings.medication && !doseToday && <CardBoundary name="Medication"><MedicationToday med={settings.medication} doses={state.doses ?? {}} onChange={t.setDoses} onHistory={() => openSettings('medication')} /></CardBoundary>}
-      <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')} /></CardBoundary>
+      <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')}
+        summary={H.length ? <HabitSummary pct={ticked30 ? avg30 : null} onPress={() => go('habits')} /> : undefined} /></CardBoundary>
       <CardBoundary name="Your event"><EventCard settings={settings} /></CardBoundary>
       {isValidElement<{ part?: string }>(notices) ? cloneElement(notices, { part: 'nudge' }) : null}
     </TabScreen>

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
 import { FIRST_DAYS, firstDaysText, lineWord } from '../core/insights';
 import { direction, latestWeight, lineStatus, sign, weightSeries } from '../core/plan';
@@ -9,6 +9,8 @@ import { fmt, lbPart, showWeight, stPart, toLbNum } from '../core/units';
 import type { Settings, Unit, Weights } from '../core/types';
 import { useAnimatedNumber, useAnimatedPercent } from '../motion';
 import { C, F, themed, useScheme } from '../theme';
+import { HeroChart } from './HeroChart';
+import { Icon } from './Icons';
 
 export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
   settings: Settings; weights: Weights; unit: Unit; today?: string; trend?: TrendPoint[];
@@ -45,6 +47,10 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
   // Until there are a few weigh-ins there's nothing to judge yet: say what's next instead of a verdict
   const count = trend?.length ?? weightSeries(plan, weights).length;
   const early = count < FIRST_DAYS;
+  // The chart's height follows the screen: shorter on a short screen (iPhone Duo's outer display), taller on a wide one
+  const { width: winW, height: winH, fontScale } = useWindowDimensions();
+  const chartH = winH < 720 ? 92 : winW >= 600 ? 150 : 118;
+  const icons = fontScale <= 1.3;                // at the largest text sizes the chips need every pixel for the numbers
 
   return (
     <LinearGradient colors={[C.heroA, C.heroB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
@@ -59,6 +65,7 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
       <Text style={s.when}>{lw
         ? (today ? 'Weighed in today' : 'Last weigh-in ' + shortDate(lw.d)) + ' · scale ' + showWeight(lw.kg, unit)
         : 'Not logged yet'}</Text>
+      {!early && trend && <HeroChart plan={plan} series={trend} unit={unit} height={chartH} />}
 
       {dir !== 'maintain' && <>
       <View style={s.track} accessible accessibilityRole="progressbar" accessibilityLabel="Progress to goal"
@@ -69,15 +76,16 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
         <Animated.View style={[s.marker, { left: barW }]} />
       </View>
       <View style={s.ends}>
-        <Text style={s.endTxt}>Start <Text style={s.endB}>{short(plan.startKg)}</Text></Text>
-        <Text style={s.endTxt}>Goal <Text style={s.endB}>{short(plan.goalKg)}</Text></Text>
+        <Text style={s.endTxt} maxFontSizeMultiplier={1.4}>Start <Text style={s.endB}>{short(plan.startKg)}</Text></Text>
+        <Text style={[s.endTxt, s.endMid]} maxFontSizeMultiplier={1.4} numberOfLines={2}>{Math.round(pct)}% there · goal by <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>
+        <Text style={s.endTxt} maxFontSizeMultiplier={1.4}>Goal <Text style={s.endB}>{short(plan.goalKg)}</Text></Text>
       </View>
       </>}
-      <View style={s.pillRow}>
-        {dir === 'maintain'
-          ? <Text style={s.pillTxt}>Holding · <Text style={s.peachB}>{showWeight(plan.goalKg, unit)}</Text> until <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>
-          : <Text style={s.pillTxt}>Plan: goal by <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>}
-      </View>
+      {dir === 'maintain' && (
+        <View style={s.pillRow}>
+          <Text style={s.pillTxt}>Holding · <Text style={s.peachB}>{showWeight(plan.goalKg, unit)}</Text> until <Text style={s.peachB}>{longDate(plan.goalDate)}</Text></Text>
+        </View>
+      )}
 
       {early ? (
         <View style={s.first} accessible accessibilityLabel={`${count} of ${FIRST_DAYS} weigh-ins. ${firstDaysText(count)}`}>
@@ -92,21 +100,27 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
       ) : (
       <View style={s.chips}>
         <View style={s.chip} accessible accessibilityLabel={`${changeLabel} ${kgOrLb(change, true)}`}>
-          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{changeLabel}</Text>
+          <View style={s.chipBody}>
+          <View style={s.chipHead}>{icons && <Icon name={change > 0.05 ? 'up' : 'down'} size={14} color={C.amber} strokeWidth={2.4} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{changeLabel}</Text></View>
           <Text style={[s.chipV, changeTone === 'good' && s.good, changeTone === 'over' && s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{kgOrLb(change, true)}</Text>
           {second && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(change, false)}</Text>}
+          </View>
         </View>
         <View style={s.chip} accessible accessibilityLabel={`${d === 0 ? 'From goal' : 'To goal'} ${kgOrLb(togo, true)}`}>
-          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{d === 0 ? 'From goal' : 'To goal'}</Text>
+          <View style={s.chipBody}>
+          <View style={s.chipHead}>{icons && <Icon name="flag" size={14} color={C.heroOver} strokeWidth={2.4} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{d === 0 ? 'From goal' : 'To goal'}</Text></View>
           <Text style={s.chipV} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{kgOrLb(togo, true)}</Text>
           {second && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(togo, false)}</Text>}
+          </View>
         </View>
         <View style={s.chip} accessible accessibilityLabel={!status || !word ? 'Versus the plan: no weigh-in yet' : status.onLine ? word : `${word} by ${kgOrLb(status.off, true)}`}>
-          <Text style={s.chipK} maxFontSizeMultiplier={1.3}>{d === 0 ? 'vs goal' : 'vs plan'}</Text>
+          <View style={s.chipBody}>
+          <View style={s.chipHead}>{icons && <Icon name={!status || status.onLine || status.ahead ? 'check' : 'info'} size={14} strokeWidth={2.4} color={!status ? 'rgba(255,255,255,0.7)' : status.onLine || status.ahead ? C.heroGood : C.heroOver} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{d === 0 ? 'vs goal' : 'vs plan'}</Text></View>
           <Text style={[s.chipV, !status ? null : status.onLine || status.ahead ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
             {word ?? '—'}
           </Text>
           {status && !status.onLine && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>by {kgOrLb(status.off, true)}</Text>}
+          </View>
         </View>
       </View>
       )}
@@ -121,19 +135,22 @@ const s = themed(() => StyleSheet.create({
   big: { fontFamily: F.display, fontSize: 54, color: '#fff', lineHeight: 58 },
   unit: { fontFamily: F.bodyMed, fontSize: 19, color: 'rgba(255,255,255,0.6)' },
   when: { fontFamily: F.body, fontSize: 14, color: 'rgba(255,255,255,0.78)', marginTop: 3 },
-  track: { height: 10, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)', marginTop: 20, justifyContent: 'center' },
+  track: { height: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)', marginTop: 16, justifyContent: 'center' },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 999 },
-  marker: { position: 'absolute', width: 16, height: 16, marginLeft: -8, borderRadius: 8, backgroundColor: '#fff', borderWidth: 3, borderColor: C.coral },
-  ends: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  marker: { position: 'absolute', width: 12, height: 12, marginLeft: -6, borderRadius: 6, backgroundColor: '#fff', borderWidth: 2.5, borderColor: C.coral },
+  ends: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginTop: 7 },
+  endMid: { flex: 1, textAlign: 'center' },
   endTxt: { fontFamily: F.body, fontSize: 12.5, color: 'rgba(255,255,255,0.72)' },
   endB: { fontFamily: F.displaySemi, color: 'rgba(255,255,255,0.85)' },
   pillRow: { marginTop: 12, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, backgroundColor: 'rgba(255,255,255,0.10)',
              borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
   pillTxt: { fontFamily: F.bodySemi, fontSize: 13, color: 'rgba(255,255,255,0.82)', textAlign: 'center' },
   peachB: { fontFamily: F.displaySemi, color: '#FFC2A3' },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 20 },
+  chips: { flexDirection: 'row', gap: 8, marginTop: 16 },
   chip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: 11 },
-  chipK: { fontFamily: F.body, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)', marginBottom: 5 },
+  chipBody: { flex: 1, minWidth: 0 },
+  chipHead: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 },
+  chipK: { flexShrink: 1, fontFamily: F.body, fontSize: 11.5, letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' },
   chipV: { fontFamily: F.displaySemi, fontSize: 17, color: '#fff' },
   chipV2: { fontFamily: F.displaySemi, fontSize: 12, color: 'rgba(255,255,255,0.68)', marginTop: 3 },
   first: { marginTop: 20, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: 12 },
