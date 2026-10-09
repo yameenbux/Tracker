@@ -238,7 +238,7 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="book" label="Acknowledgements" onPress={() => setPage('credits')} />
           <Row icon="info" label="Version" value={build ? `${version} (${build})` : version} last />
         </Group>
-        <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Tidemark · read the trend, not the waves{'\n'}Targets and estimates are guidance, not medical advice.</Text>
+        <Text style={[s.groupFootOut, { textAlign: 'center', marginTop: 4 }]}>Tidemark · the scale jumps, your trend doesn’t{'\n'}Targets and estimates are guidance, not medical advice.</Text>
       </ScrollView>
     </View>
     {page !== 'root' && <Pushed key={page} onBack={back} leaving={leaving} onGone={gone}>{subPage()}</Pushed>}
