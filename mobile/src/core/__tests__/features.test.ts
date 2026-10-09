@@ -136,6 +136,28 @@ describe('calories', () => {
     expect(intakeForPace(2550, 0.5)).toBe(2000);
     expect(estimateExpenditure({}, series(rows), today)).toBeNull();
   });
+  test('a break from weighing gives no estimate, not one built from weeks of change squeezed into three', () => {
+    // 90 kg, then no weigh-ins for 7 weeks, back at 86 kg; 2000 kcal logged every day of the last three weeks.
+    // Dividing that 4 kg by 21 days said 3570 kcal a day and suggested eating 3020 to lose 0.5 kg a week.
+    const today = parseKey('2026-10-09');
+    const rows: [string, number][] = [];
+    for (let i = 90; i >= 56; i--) rows.push([dateKey(addDays(today, -i)), 90]);
+    rows.push([dateKey(addDays(today, -6)), 86], [dateKey(addDays(today, -3)), 86], [dateKey(addDays(today, -1)), 86]);
+    const intake: Record<string, number> = {};
+    for (let i = 1; i <= 21; i++) intake[dateKey(addDays(today, -i))] = 2000;
+    expect(estimateExpenditure(intake, series(rows), today)).toBeNull();
+  });
+  test('the estimate spreads the change over the days it actually took', () => {
+    // Weighed every few days, but the first weigh-in in the window is 3 days in: the change is divided by 18 days, not 21
+    const today = parseKey('2026-10-09');
+    const rows: [string, number][] = [];
+    for (let i = 60; i >= 1; i--) if (i > 21 || i <= 18) rows.push([dateKey(addDays(today, -i)), 90 - (60 - i) * (0.5 / 7)]);
+    const intake: Record<string, number> = {};
+    for (let i = 1; i <= 21; i++) intake[dateKey(addDays(today, -i))] = 2000;
+    const e = estimateExpenditure(intake, series(rows), today)!;
+    expect(e.tdee).toBeGreaterThan(2400);
+    expect(e.tdee).toBeLessThan(2700);
+  });
   test('intake cleaning drops silly numbers', () => {
     expect(cleanIntake({ '2026-10-01': '1850', '2026-10-02': 50, '2026-10-03': 99999, bad: 2000 })).toEqual({ '2026-10-01': 1850 });
   });
