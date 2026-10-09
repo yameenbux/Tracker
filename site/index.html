@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tidemark · The weight tracker that reads the trend</title>
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#120E1C">
 <link rel="icon" href="icon.png">
 <script>document.documentElement.classList.add('js')</script>
 <style>
@@ -15,22 +16,18 @@
   @font-face { font-family: 'Hanken Grotesk'; font-weight: 600; font-display: swap; src: url(fonts/HankenGrotesk_600SemiBold.ttf) format('truetype'); }
 
   /* The app's own palette (mobile/src/theme.ts). The hero is plum in both themes, like the app icon. */
+  /* One dark palette: the page sits on Tidemark's plum night, whatever the device is set to */
   :root {
-    --paper: #FBF7F3; --card: #FFFFFF; --line: #EFE6DC; --ink: #241B33; --soft: #6E6577;
+    color-scheme: dark;
+    --paper: #120E1C; --card: rgba(28,25,37,.78); --line: rgba(242,238,246,.10); --ink: #F2EEF6; --soft: #B3ABBE;
     --plum: #2A1E45; --plum-2: #4B2E73; --plum-deep: #1E1533; --on-plum: #FBF7F3; --on-plum-soft: #C9BFD6;
-    --coral: #FF6B5E; --amber: #FFA24B; --link: #C93A26; --mint: #06704F; --mint-bg: #E4F7EF; --panel: #EDE6F6;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --paper: #121019; --card: #1C1925; --line: #2E2938; --ink: #F2EEF6; --soft: #ADA5B8;
-      --link: #FF8D7D; --mint: #5BD6A9; --mint-bg: #15291F; --panel: #2A2240;
-    }
+    --coral: #FF6B5E; --amber: #FFA24B; --link: #FF8D7D; --mint: #5BD6A9; --mint-bg: rgba(21,41,31,.85); --panel: #2A2240;
   }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 'Hanken Grotesk', -apple-system, system-ui, sans-serif; }
+  body { margin: 0; background: var(--paper); color: var(--ink); position: relative; font: 17px/1.6 'Hanken Grotesk', -apple-system, system-ui, sans-serif; }
   a { color: var(--link); text-underline-offset: 3px; }
   :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
   .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
@@ -44,7 +41,32 @@
   section + section { border-top: 1px solid var(--line); }
 
   /* Header and hero: one plum block, like opening the app */
-  .top { background: radial-gradient(120% 90% at 85% 70%, rgba(255,107,94,.20), transparent 60%), linear-gradient(160deg, #352657 0%, var(--plum) 55%, var(--plum-deep) 100%); color: var(--on-plum); }
+  .top { color: var(--on-plum); }
+
+  /* The page background (after "Elegant dark pattern", in Tidemark colours): a plum glow from the top left, five
+     skewed streaks of amber fading to nothing, a fine grain and a faint dot grid. It's fixed, so the content moves
+     over it like the tide over sand. Everything is CSS: no images to load. */
+  .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--paper); pointer-events: none; }
+  .bg-glow { position: absolute; inset: 0;
+    background: radial-gradient(100% 100% at 0% 0%, #3A2A5E 0%, #120E1C 100%);
+    -webkit-mask: radial-gradient(125% 100% at 0% 0%, #000 0%, rgba(0,0,0,.22) 88%, transparent 100%);
+            mask: radial-gradient(125% 100% at 0% 0%, #000 0%, rgba(0,0,0,.22) 88%, transparent 100%); }
+  .bg-streak { position: absolute; inset: 0; opacity: .16; transform: skewX(45deg);
+    background: linear-gradient(#FFA24B 0%, rgba(255,107,94,.35) 45%, transparent 100%); }
+  .bg-streak:nth-child(1) { -webkit-mask: linear-gradient(90deg, transparent 0%, #000 20%, transparent 36%, #000 55%, rgba(0,0,0,.13) 67%, #000 78%, transparent 97%);
+                                    mask: linear-gradient(90deg, transparent 0%, #000 20%, transparent 36%, #000 55%, rgba(0,0,0,.13) 67%, #000 78%, transparent 97%); }
+  .bg-streak:nth-child(2) { -webkit-mask: linear-gradient(90deg, transparent 11%, #000 25%, rgba(0,0,0,.55) 41%, rgba(0,0,0,.13) 67%, #000 78%, transparent 97%);
+                                    mask: linear-gradient(90deg, transparent 11%, #000 25%, rgba(0,0,0,.55) 41%, rgba(0,0,0,.13) 67%, #000 78%, transparent 97%); }
+  .bg-streak:nth-child(3) { -webkit-mask: linear-gradient(90deg, transparent 9%, #000 20%, rgba(0,0,0,.55) 28%, rgba(0,0,0,.42) 40%, #000 48%, rgba(0,0,0,.27) 54%, rgba(0,0,0,.13) 78%, #000 88%, transparent 97%);
+                                    mask: linear-gradient(90deg, transparent 9%, #000 20%, rgba(0,0,0,.55) 28%, rgba(0,0,0,.42) 40%, #000 48%, rgba(0,0,0,.27) 54%, rgba(0,0,0,.13) 78%, #000 88%, transparent 97%); }
+  .bg-streak:nth-child(4) { -webkit-mask: linear-gradient(90deg, transparent 0%, #000 17%, rgba(0,0,0,.55) 26%, #000 35%, transparent 47%, rgba(0,0,0,.13) 69%, #000 79%, transparent 97%);
+                                    mask: linear-gradient(90deg, transparent 0%, #000 17%, rgba(0,0,0,.55) 26%, #000 35%, transparent 47%, rgba(0,0,0,.13) 69%, #000 79%, transparent 97%); }
+  .bg-streak:nth-child(5) { -webkit-mask: linear-gradient(90deg, transparent 0%, #000 20%, rgba(0,0,0,.55) 27%, #000 42%, transparent 48%, rgba(0,0,0,.13) 67%, #000 74%, #000 82%, rgba(0,0,0,.47) 88%, transparent 97%);
+                                    mask: linear-gradient(90deg, transparent 0%, #000 20%, rgba(0,0,0,.55) 27%, #000 42%, transparent 48%, rgba(0,0,0,.13) 67%, #000 74%, #000 82%, rgba(0,0,0,.47) 88%, transparent 97%); }
+  .bg-grain { position: absolute; inset: 0; opacity: .06; background-size: 150px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .bg-dots { position: absolute; inset: 0; opacity: .14; background-size: 20px 20px;
+    background-image: radial-gradient(circle at 1px 1px, rgba(251,247,243,.6) 1px, transparent 0); }
   nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; }
   .brand { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; font: 700 22px 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
   .brand img { width: 40px; height: 40px; border-radius: 10px; }
@@ -136,21 +158,18 @@
   .soon-line { margin: 14px 6px 4px; text-align: center; color: var(--soft); font-size: 15px; }
   .js .plan .panel:not(.on) { display: none; }
   .panel + .panel { margin-top: 26px; } .js .panel + .panel { margin-top: 0; }
-  @media (prefers-color-scheme: dark) {
-    .dot::after { background: #C2A8F2; } .row:has(input:checked) .dot, .glide { border-color: #C2A8F2; }
+      .dot::after { background: #C2A8F2; } .row:has(input:checked) .dot, .glide { border-color: #C2A8F2; }
     .thumb { background: #2A2633; box-shadow: none; }
-  }
+  
   @media (prefers-reduced-motion: reduce) { .thumb, .glide, .dot, .dot::after { transition: none; } }
   @media (max-width: 760px) { .plans { grid-template-columns: 1fr; } }
   .plan { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 30px; }
-  @media (prefers-color-scheme: dark) {
-    .plan li::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C2A8F2' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5.5 12.5 4.2 4.2 8.8-9.2'/%3E%3C/svg%3E"); }
-  }
+  
   .plan .price { font: 700 34px/1 'Space Grotesk', sans-serif; letter-spacing: -0.02em; margin: 14px 0 4px; }
   .plan .price small { font: 400 16px 'Hanken Grotesk', sans-serif; color: var(--soft); letter-spacing: 0; }
   .plan ul { list-style: none; padding: 0; margin: 22px 0 0; }
   .plan li { padding: 9px 0 9px 32px; border-top: 1px solid var(--line); position: relative; }
-  .plan li::before { content: ''; position: absolute; left: 2px; top: 13px; width: 18px; height: 18px; border-radius: 50%; background: var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234B2E73' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5.5 12.5 4.2 4.2 8.8-9.2'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  .plan li::before { content: ''; position: absolute; left: 2px; top: 13px; width: 18px; height: 18px; border-radius: 50%; background: var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C2A8F2' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5.5 12.5 4.2 4.2 8.8-9.2'/%3E%3C/svg%3E") center / 12px no-repeat; }
   .fine { color: var(--soft); font-size: 15px; margin-top: 18px; }
 
   /* Privacy promise */
@@ -212,13 +231,14 @@
   .policy-note { color: var(--soft); font-size: 15px; margin-top: 14px; }
   @media (prefers-reduced-motion: reduce) { .policy-card summary svg { transition: none; } }
 
-  footer { background: var(--plum-deep); color: var(--on-plum-soft); padding: 40px 0; font-size: 15px; }
+  footer { background: rgba(18,14,28,.6); border-top: 1px solid var(--line); color: var(--on-plum-soft); padding: 40px 0; font-size: 15px; }
   footer .wrap { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
   footer a { color: var(--on-plum); }
   footer p { margin: 0; }
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"><div class="bg-glow"><div class="bg-streak"></div><div class="bg-streak"></div><div class="bg-streak"></div><div class="bg-streak"></div><div class="bg-streak"></div></div><div class="bg-grain"></div><div class="bg-dots"></div></div>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="top">
