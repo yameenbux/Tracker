@@ -36,6 +36,8 @@ import { clearCache } from './io';
 import { C, themed, useScheme } from './theme';
 import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
+import { widgetProps } from './core/widgetData';
+import { syncWidgets } from './widgets/sync';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});   // keep the splash up until saved data has loaded
 setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 6000);   // safety net: never stay on the splash forever
@@ -131,6 +133,11 @@ function Main() {
   const settings = state.settings;
   const series = useMemo(() => (settings ? trendSeries(weightSeries(settings.plan, state.weights)) : []), [settings, state.weights]);
   const rate = useMemo(() => (today ? weeklyRate(series) : null), [series, today]);   // the 28-day window moves with the date
+  // The Home Screen and Lock Screen widgets get a fresh snapshot whenever what they show changes (and at midnight, for
+  // "this week"). With the app lock on they get nothing but the fact that it's locked.
+  useEffect(() => {
+    if (t.ready) syncWidgets(widgetProps(settings ?? null, state.weights, series, state.unit, prefs.lock));
+  }, [t.ready, settings, state.weights, series, state.unit, prefs.lock, today]);
 
   // Any open sheets close when the app locks (and don't reopen on unlock); a tapped reminder's log sheet opens after it.
   // Reacting to the lock (owned by useLock) after the commit; the sheets aren't rendered while locked anyway.

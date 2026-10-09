@@ -26,7 +26,8 @@
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
             "NSPrivacyAccessedAPITypeReasons": [
-              "CA92.1"
+              "CA92.1",
+              "1C8F.1"
             ]
           },
           {
@@ -114,7 +115,41 @@
       ],
       "expo-web-browser",
       "expo-notifications",
-      "expo-iap"
+      "expo-iap",
+      "./plugins/withWidgetPrivacyManifest.js",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.yameenbux.tidemark.ExpoWidgetsTarget",
+          "groupIdentifier": "group.com.yameenbux.tidemark",
+          "widgets": [
+            {
+              "name": "TrendWidget",
+              "displayName": "Trend",
+              "description": "Your trend weight, this week's change and how far you are from your goal.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "systemLarge"
+                ]
+              }
+            },
+            {
+              "name": "LockWidget",
+              "displayName": "Trend on the Lock Screen",
+              "description": "Your progress, your trend or one line above the clock.",
+              "ios": {
+                "supportedFamilies": [
+                  "accessoryCircular",
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     ]
   }
 }
