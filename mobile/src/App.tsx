@@ -37,6 +37,7 @@ import { C, themed, useScheme } from './theme';
 import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
 import { useHealth } from './useHealth';
+import { shareReport } from './report';
 import { widgetProps } from './core/widgetData';
 import { syncWidgets } from './widgets/sync';
 
@@ -97,7 +98,7 @@ function Main() {
   // Reminders: skip today once it's logged, and keep the window rolling (re-run each day and on changes)
   const loggedToday = state.weights[today] != null;
   useEffect(() => { if (t.ready) applyReminder(prefs.reminder, loggedToday); }, [t.ready, prefs.reminder, loggedToday, today]);
-  const med = FEATURES.medication && plusOn ? state.settings?.medication : null, doses = state.doses;
+  const med = FEATURES.medication ? state.settings?.medication : null, doses = state.doses;   // dose reminders are free
   useEffect(() => { if (t.ready) applyDoseReminders(med, doses ?? {}); }, [t.ready, med, doses, today]);
   // Tapping a reminder opens the log sheet. It waits for Face ID when the lock is on, then opens straight after unlock.
   const [pendingLog, setPendingLog] = useState<number | null>(null);
@@ -186,6 +187,11 @@ function Main() {
     const ok = await confirm('Start a new line from here?', `Your goal date moves to ${longDate(next.goalDate)}. Past weeks and every weigh-in stay as they are.`, 'Re-plan', false);
     if (ok) { t.setSettings({ ...settings, plan: next }); success(); show({ message: 'New line from today' }); }
   };
+  // Plus: a PDF for a doctor or nurse, made on the phone and shared where the person chooses
+  const report = async () => {
+    try { await shareReport({ settings, series, unit: state.unit, doses: state.doses, effects: state.effects, measurements: state.measurements, notes: state.notes }); }
+    catch (e) { notify('Couldn’t make the report', e instanceof Error ? e.message : 'Please try again.'); }
+  };
   const hold = async (next: Settings['plan']) => {
     const ok = await confirm(prefs.hide ? 'Hold at your goal?' : `Hold at ${showWeight(next.goalKg, state.unit)}?`, `For the next 26 weeks Tidemark keeps you within ${showAmount(next.holdKg ?? 1.5, state.unit)} either side. Every weigh-in stays as it is, and you can set a new goal any time in Settings.`, 'Hold', false);
     if (ok) { t.setSettings({ ...settings, plan: next }); success(); show({ message: 'Now holding your goal' }); }
@@ -211,7 +217,7 @@ function Main() {
             onBackupHide={() => setBackupHidden(true)} onExport={data.exportData} onRestore={data.restore} onExportRescued={data.exportRescued}
             pendingPlan={pendingPlan} onSavePending={() => { if (pendingPlan) { t.setSettings({ ...settings, plan: pendingPlan }); success(); show({ message: 'Plan saved' }); } setPendingPlan(null); }}
             onDiscardPending={() => setPendingPlan(null)} />} />)}
-        {pane('trend', <TrendTab {...props} scrollTop={top('trend')} onReplan={replan} onHold={hold} onEdit={k => setLog({ key: k, n: Date.now() })} />)}
+        {pane('trend', <TrendTab {...props} scrollTop={top('trend')} onReplan={replan} onHold={hold} onReport={report} onEdit={k => setLog({ key: k, n: Date.now() })} />)}
         {pane('habits', <HabitsTab {...props} scrollTop={top('habits')} onLogSession={(k, dow) => setLift({ k, dow })} />)}
         {pane('body', <BodyTab {...props} scrollTop={top('body')} />)}
 
@@ -254,7 +260,7 @@ function Main() {
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
               appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })}
               hideWeight={prefs.hide} onHideWeightChange={hide => t.setPrefs({ hide })}
-              health={health.available ? { on: health.on, set: health.setHealth } : undefined} reminderBlocked={prefs.reminder.on && notifBlocked}
+              health={health.available ? { on: health.on, set: health.setHealth } : undefined} onReport={report} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               doses={state.doses ?? {}} onDoses={t.setDoses}
               lengthUnit={lengthUnitFor(prefs.length, state.unit)} onLengthUnit={length => t.setPrefs({ length })}

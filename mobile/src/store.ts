@@ -6,7 +6,7 @@ import { dailyWeights, reconcile } from './core/entries';
 import { mergeHealth, type HealthReading } from './core/health';
 import { withNote, type DayNote } from './core/notes';
 import { round2 } from './core/units';
-import type { DoseLog, HabitLog, Measurements, PhotoLog, Settings, TrackerState, Unit } from './core/types';
+import type { DoseLog, EffectLog, HabitLog, Measurements, PhotoLog, Settings, TrackerState, Unit } from './core/types';
 export type { Prefs, Reminder } from './core/storage';
 
 const STORAGE_KEY = 'tracker_state_v1';
@@ -205,6 +205,7 @@ export function useTracker() {
     const r = mergeHealth(s.entries ?? [], added, deleted);
     return r.added || r.removed ? { ...s, entries: r.entries, weights: dailyWeights(r.entries) } : s;
   }), []);
+  const setEffects = useCallback((effects: EffectLog) => setState(s => ({ ...s, effects })), []);
   const setNote = useCallback((k: string, note: DayNote | null) => setState(s => ({ ...s, notes: withNote(s.notes ?? {}, k, note) })), []);
   const setLifts = useCallback((lifts: TrackerState['lifts']) => setState(s => ({ ...s, lifts })), []);
   // Restores, resets and undos hand over a whole state: keep the weigh-in records in step with its day map
@@ -232,7 +233,7 @@ export function useTracker() {
 
   return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
            setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs,
-           discardPending, setDoses, setNote, addHealth };
+           discardPending, setDoses, setNote, addHealth, setEffects };
 }
 export type Tracker = ReturnType<typeof useTracker>;
 

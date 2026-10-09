@@ -12,12 +12,13 @@ export const SUBSCRIPTIONS: string[] = [PLUS_PRODUCTS.monthly, PLUS_PRODUCTS.yea
 export const ALL_PLUS_IDS: string[] = Object.values(PLUS_PRODUCTS);
 
 /** Free keeps the core of the app; these are the Plus extras. */
-export type PlusFeature = 'medication' | 'habits' | 'body' | 'calories' | 'protectedBackups';
+export type PlusFeature = 'medication' | 'report' | 'habits' | 'body' | 'calories' | 'protectedBackups';
 export const FREE_HABITS = 3;
 
 /** The Plus extras: `title` names one (e.g. "Medication log is part of Plus"), `line` is its paywall checklist line. */
 export const PLUS_PERKS: { feature: PlusFeature; title: string; line: string }[] = [
-  { feature: 'medication', title: 'Medication log', line: 'Medication log and dose reminders' },
+  { feature: 'medication', title: 'Medication insights', line: 'Your trend at each dose, injection sites and side effects' },
+  { feature: 'report', title: 'Report for your doctor', line: 'A PDF report for your doctor or nurse' },
   { feature: 'habits', title: 'More habits', line: `Up to 6 habits (free has ${FREE_HABITS})` },
   { feature: 'body', title: 'Measurements and photos', line: 'Measurements and progress photos' },
   { feature: 'calories', title: 'Calories', line: 'Calories and what you really burn' },

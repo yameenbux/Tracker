@@ -30,8 +30,11 @@ export interface Settings {
 }
 
 /** A medication taken on a schedule, e.g. a weekly GLP-1 injection. Tidemark only records it; it never advises on dosing. */
-export interface Medication { name: string; doseMg: number | null; every: 'week' | 'day'; weekday: number; remind?: boolean }   // weekday: 0 = Sunday
-export type DoseLog = Record<string, { mg: number | null }>;   // date -> dose taken that day
+export interface Medication { name: string; doseMg: number | null; every: 'week' | 'day'; weekday: number; remind?: boolean; injected?: boolean }   // weekday: 0 = Sunday
+export type SiteId = 'belly-l' | 'belly-r' | 'thigh-l' | 'thigh-r' | 'arm-l' | 'arm-r';
+export type DoseLog = Record<string, { mg: number | null; site?: SiteId }>;   // date -> dose taken that day (and where, for injections)
+export type EffectId = 'nausea' | 'constipation' | 'diarrhoea' | 'heartburn' | 'tired' | 'headache' | 'noAppetite' | 'site';
+export type EffectLog = Record<string, { effects: EffectId[]; severity: 1 | 2 | 3; text?: string }>;   // date -> how it felt
 
 export type Weights = Record<string, number>;                     // date -> kg
 export type HabitLog = Record<string, Record<string, true>>;       // date -> habit id -> ticked
@@ -46,6 +49,7 @@ export interface TrackerState {
   weights: Weights;                                             // one number a day, derived from `entries`
   entries?: import('./entries').WeighIn[];                     // timestamped weigh-ins: the source of truth
   doses?: DoseLog;                                              // medication doses marked as taken
+  effects?: EffectLog;                                         // side effects noted on a day (medication, Plus)
   notes?: import('./notes').DayNotes;                          // tags and a line of text on a day (why the scale jumped)
   habits: HabitLog;
   unit: Unit;

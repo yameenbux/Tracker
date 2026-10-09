@@ -113,6 +113,7 @@ export interface SettingsProps {
   appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void; reminderBlocked?: boolean;
   hideWeight?: boolean; onHideWeightChange?: (on: boolean) => void;
   health?: { on: boolean; set: (on: boolean) => Promise<boolean> };   // absent where there's no Apple Health
+  onReport?: () => void;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   doses: DoseLog; onDoses: (d: DoseLog) => void;
   lengthUnit: 'cm' | 'in'; onLengthUnit: (u: 'cm' | 'in') => void;
@@ -152,7 +153,7 @@ export function SettingsScreen(p: SettingsProps) {
   const sessionDays = DAY_ORDER.filter(d => settings.sessions[d].title || settings.sessions[d].items.length).length;
   const backupDays = daysSince(p.lastBackup);
   // Reminders are scheduled a few weeks ahead and topped up when Tidemark opens; say how far, so a long break isn't a surprise
-  const until = remindersSetUntil(p.reminder, FEATURES.medication && plus ? settings.medication : null, p.doses, p.weights[dateKey(new Date())] != null);
+  const until = remindersSetUntil(p.reminder, FEATURES.medication ? settings.medication : null, p.doses, p.weights[dateKey(new Date())] != null);
   const reminderEnd = until ? ` Reminders are set up to ${shortDate(until)}; opening Tidemark adds more.` : '';
   const version = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
   const build = Application.nativeBuildVersion ?? Constants.expoConfig?.ios?.buildNumber;
@@ -188,8 +189,8 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="habits" label="Daily habits" value={String(settings.habits.length)} onPress={() => setPage('habits')} />
           <Row icon="trend" label="Weekly sessions" value={sessionDays ? `${sessionDays} day${sessionDays === 1 ? '' : 's'}` : 'None'} onPress={() => setPage('sessions')} />
           <Row icon="meal" label="Meals" value={settings.meals.items.length ? String(settings.meals.items.length) : 'None'} onPress={() => setPage('meals')} />
-{FEATURES.medication &&           <Row icon="pill" label="Medication" value={!plus ? 'Plus' : settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
-            onPress={() => (plus ? setPage('medication') : openPaywall('medication'))} />}
+{FEATURES.medication &&           <Row icon="pill" label="Medication" value={settings.medication ? `${settings.medication.name}${settings.medication.doseMg ? ` ${settings.medication.doseMg} mg` : ''} · ${settings.medication.every === 'day' ? 'daily' : DAY_ABBR[settings.medication.weekday]}` : 'Off'}
+            onPress={() => setPage('medication')} />}
           {/* Free: a plain row that says it's Plus, not a switch that opens a sales sheet */}
           {plus ? <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
             : <Row icon="flame" label="Calorie estimate" value="Plus" onPress={() => openPaywall('calories')} hint="Part of Tidemark Plus" last />}
@@ -217,7 +218,7 @@ export function SettingsScreen(p: SettingsProps) {
             {plusApi.storeAvailable && plusApi.status?.productId !== PLUS_PRODUCTS.lifetime &&
               <Row icon="calendar" label="Manage subscription" onPress={plusApi.manage} hint="Opens your App Store subscriptions" last />}
           </> : <>
-            <Row icon="sparkle" label="Get Plus" value="See plans" onPress={() => openPaywall()} hint="Medication log, 6 habits, measurements, photos, calories"
+            <Row icon="sparkle" label="Get Plus" value="See plans" onPress={() => openPaywall()} hint="Dose insights, doctor report, 6 habits, measurements, photos, calories"
               last={!plusApi.storeAvailable} />
             {plusApi.storeAvailable && <Row icon="download" label="Restore purchases" onPress={() => { plusApi.restore(); }} hint="If you’ve bought Plus before" last />}
           </>}
@@ -228,6 +229,7 @@ export function SettingsScreen(p: SettingsProps) {
           <Row icon="share" label="Export backup" value={backupDays == null ? 'Never' : backupDays === 0 ? 'Today' : `${backupDays}d ago`} onPress={p.onExport}
             hint="Saves a backup file you can restore later" />
           <Row icon="share" label="Export spreadsheet (CSV)" onPress={p.onExportCsv} />
+          {p.onReport && <Row icon="download" label="Report for your doctor (PDF)" value={plus ? undefined : 'Plus'} onPress={() => (plus ? p.onReport!() : openPaywall('report'))} hint="The last 12 weeks: trend, doses, side effects and notes" />}
           <Row icon="download" label="Restore from backup" onPress={p.onRestore} last />
         </Group>
         {!p.lockAvailable && <Text style={s.groupFootOut}>Set up {p.lockName} or a passcode on this phone to use the lock.</Text>}
@@ -542,8 +544,9 @@ function MedicationPage({ settings, doses, onDoses, onSave, onBack }: {
   const [every, setEvery] = useState<'week' | 'day'>(cur?.every ?? 'week');
   const [weekday, setWeekday] = useState(cur?.weekday ?? new Date().getDay());
   const [remind, setRemind] = useState(cur?.remind ?? false);
+  const [injected, setInjected] = useState(cur?.injected ?? (cur?.every ?? 'week') === 'week');
   const mg = num(dose);
-  const result: Settings['medication'] = name.trim() ? { name: name.trim(), doseMg: mg > 0 && mg <= 1000 ? mg : null, every, weekday, remind } : null;
+  const result: Settings['medication'] = name.trim() ? { name: name.trim(), doseMg: mg > 0 && mg <= 1000 ? mg : null, every, weekday, remind, injected } : null;
   const toggleRemind = async (on: boolean) => {
     if (on && !(await allowReminders())) { notify('Notifications are off', 'Turn on notifications for Tidemark in iOS Settings to get dose reminders.'); return; }
     setRemind(on);
@@ -573,6 +576,13 @@ function MedicationPage({ settings, doses, onDoses, onSave, onBack }: {
               ))}
             </View>
           </Field></View>}
+        </View>
+        <View style={[s.form, s.remindRow]}>
+          <View style={{ flex: 1 }}>
+            <Text style={s.remindTitle}>It’s an injection</Text>
+            <Text style={s.hint}>With Plus, Today offers the site used longest ago, so each spot gets a rest.</Text>
+          </View>
+          <Switch value={injected} onValueChange={setInjected} trackColor={{ true: C.mintInk }} accessibilityLabel="It’s an injection" />
         </View>
         <View style={[s.form, s.remindRow]}>
           <View style={{ flex: 1 }}>

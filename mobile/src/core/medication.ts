@@ -2,7 +2,7 @@
 // trend moved on each dose level. Tidemark records what you tell it; it never suggests doses or changes.
 import { addDays, dateKey, daysBetween, parseKey, startOfDay, validKey } from './dates';
 import type { TrendPoint } from './trend';
-import type { DoseLog, Medication } from './types';
+import type { DoseLog, EffectId, EffectLog, Medication, SiteId } from './types';
 import { numOrNull } from './units';
 
 export const MAX_DOSE_MG = 1000;
@@ -14,7 +14,10 @@ export function cleanMedication(v: unknown): Medication | null {
   if (!name) return null;
   const mg = numOrNull(m.doseMg);
   const weekday = Number.isInteger(m.weekday) && (m.weekday as number) >= 0 && (m.weekday as number) <= 6 ? (m.weekday as number) : 1;
-  return { name, doseMg: mg != null && mg > 0 && mg <= MAX_DOSE_MG ? Math.round(mg * 1000) / 1000 : null, every: m.every === 'day' ? 'day' : 'week', weekday, remind: m.remind === true };
+  const every = m.every === 'day' ? 'day' : 'week';
+  // Weekly medicines are injections unless said otherwise (the GLP-1s); daily ones are tablets unless said otherwise
+  const injected = typeof m.injected === 'boolean' ? m.injected : every === 'week';
+  return { name, doseMg: mg != null && mg > 0 && mg <= MAX_DOSE_MG ? Math.round(mg * 1000) / 1000 : null, every, weekday, remind: m.remind === true, injected };
 }
 
 export function cleanDoses(v: unknown): DoseLog {
@@ -22,8 +25,10 @@ export function cleanDoses(v: unknown): DoseLog {
   if (!v || typeof v !== 'object') return out;
   for (const k of Object.keys(v).slice(0, 5000)) {
     if (!validKey(k)) continue;
-    const mg = numOrNull((v as Record<string, { mg?: unknown }>)[k]?.mg);
-    out[k] = { mg: mg != null && mg > 0 && mg <= MAX_DOSE_MG ? mg : null };
+    const e = (v as Record<string, { mg?: unknown; site?: unknown }>)[k];
+    const mg = numOrNull(e?.mg);
+    const site = SITES.some(x => x.id === e?.site) ? (e!.site as SiteId) : undefined;
+    out[k] = { mg: mg != null && mg > 0 && mg <= MAX_DOSE_MG ? mg : null, ...(site ? { site } : {}) };
   }
   return out;
 }
@@ -127,4 +132,70 @@ export function dosePeriods(doses: DoseLog, series: TrendPoint[]): DosePeriod[] 
     r.weeks = Math.max(0, Math.round(daysBetween(parseKey(r.from), parseKey(end)) / 7));
   });
   return runs;
+}
+
+// ---- injection sites (Plus) ----
+// Rotating sites gives each spot time to recover. Tidemark only remembers where the last ones went; it suggests the
+// spot used longest ago, and the person can always pick another.
+export const SITES: { id: SiteId; label: string; short: string }[] = [
+  { id: 'belly-l', label: 'Belly, left', short: 'Belly L' }, { id: 'belly-r', label: 'Belly, right', short: 'Belly R' },
+  { id: 'thigh-l', label: 'Thigh, left', short: 'Thigh L' }, { id: 'thigh-r', label: 'Thigh, right', short: 'Thigh R' },
+  { id: 'arm-l', label: 'Upper arm, left', short: 'Arm L' }, { id: 'arm-r', label: 'Upper arm, right', short: 'Arm R' },
+];
+export const siteLabel = (id: SiteId) => SITES.find(x => x.id === id)!.label;
+
+/** The site used longest ago (never-used sites first, in the list's order). */
+export function suggestSite(doses: DoseLog): SiteId {
+  const last: Partial<Record<SiteId, string>> = {};
+  for (const k of Object.keys(doses)) { const s = doses[k].site; if (s && (!last[s] || k > last[s]!)) last[s] = k; }
+  return SITES.map(x => x.id).reduce((best, id) => (!last[id] ? (last[best] ? id : best) : last[best] && last[id]! < last[best]! ? id : best));
+}
+
+// ---- side effects (Plus) ----
+export const EFFECTS: { id: EffectId; label: string }[] = [
+  { id: 'nausea', label: 'Nausea' }, { id: 'constipation', label: 'Constipation' }, { id: 'diarrhoea', label: 'Diarrhoea' },
+  { id: 'heartburn', label: 'Heartburn' }, { id: 'tired', label: 'Tiredness' }, { id: 'headache', label: 'Headache' },
+  { id: 'noAppetite', label: 'No appetite' }, { id: 'site', label: 'Sore injection site' },
+];
+export const effectLabel = (id: EffectId) => EFFECTS.find(x => x.id === id)!.label;
+export const SEVERITY = ['Mild', 'Moderate', 'Severe'] as const;
+
+export function cleanEffects(v: unknown): EffectLog {
+  const out: EffectLog = {};
+  if (!v || typeof v !== 'object') return out;
+  const ids = new Set<string>(EFFECTS.map(x => x.id));
+  for (const k of Object.keys(v).slice(0, 5000)) {
+    if (!validKey(k)) continue;
+    const e = (v as Record<string, { effects?: unknown; severity?: unknown; text?: unknown }>)[k];
+    const effects = Array.isArray(e?.effects) ? [...new Set(e!.effects.filter((x): x is EffectId => typeof x === 'string' && ids.has(x)))] : [];
+    if (!effects.length) continue;
+    const severity = e!.severity === 2 || e!.severity === 3 ? e!.severity : 1;
+    const text = typeof e!.text === 'string' ? e!.text.replace(/\s+/g, ' ').trim().slice(0, 140) : '';
+    out[k] = { effects, severity, ...(text ? { text } : {}) };
+  }
+  return out;
+}
+
+/** Days since the most recent dose on or before `day` (0 = dose day), or null with no dose before it. */
+export function daysAfterDose(doses: DoseLog, day: string): number | null {
+  const d = lastDose(doses, parseKey(day));
+  return d ? daysBetween(parseKey(d), parseKey(day)) : null;
+}
+
+export interface EffectPattern { id: EffectId; total: number; byDay: number[] }   // byDay[0..6]: days after a dose
+/**
+ * Side effects against the dose cycle: for each effect, how often it was noted 0, 1, 2… 6 days after a dose.
+ * "Nausea is mostly the day after" is a pattern worth taking to a prescriber; Tidemark says nothing about what to do.
+ */
+export function effectPatterns(effects: EffectLog, doses: DoseLog): EffectPattern[] {
+  const by: Partial<Record<EffectId, EffectPattern>> = {};
+  for (const k of Object.keys(effects)) {
+    const n = daysAfterDose(doses, k);
+    for (const id of effects[k].effects) {
+      const p = by[id] ?? (by[id] = { id, total: 0, byDay: [0, 0, 0, 0, 0, 0, 0] });
+      p.total++;
+      if (n != null && n < 7) p.byDay[n]++;
+    }
+  }
+  return Object.values(by).sort((a, b) => b.total - a.total) as EffectPattern[];
 }

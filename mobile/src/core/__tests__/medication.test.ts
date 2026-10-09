@@ -13,9 +13,9 @@ describe('medication', () => {
     expect(cleanMedication({ name: '  ' })).toBeNull();
     expect(cleanMedication(null)).toBeNull();
     expect(cleanMedication({ name: 'x'.repeat(99), doseMg: 5000, every: 'hourly', weekday: 9, remind: 'yes' }))
-      .toEqual({ name: 'x'.repeat(40), doseMg: null, every: 'week', weekday: 1, remind: false });
+      .toEqual({ name: 'x'.repeat(40), doseMg: null, every: 'week', weekday: 1, remind: false, injected: true });
     expect(cleanMedication({ name: 'Mounjaro', doseMg: '7.5', every: 'day', weekday: 0, remind: true }))
-      .toEqual({ name: 'Mounjaro', doseMg: 7.5, every: 'day', weekday: 0, remind: true });
+      .toEqual({ name: 'Mounjaro', doseMg: 7.5, every: 'day', weekday: 0, remind: true, injected: false });
   });
   test('dose logs keep only real dates and plausible strengths', () => {
     expect(cleanDoses({ '2026-10-08': { mg: 2.4 }, 'nope': { mg: 1 }, '2026-10-01': { mg: -3 }, __proto__: { mg: 1 } }))
