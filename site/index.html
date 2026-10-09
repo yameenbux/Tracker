@@ -43,6 +43,19 @@
   section { padding: 88px 0; }
   section + section { border-top: 1px solid var(--line); }
 
+  /* The film: 25 seconds, no sound. It plays while it's on screen and stops when it isn't; with reduced motion
+     it waits for a tap. The button is there because anything that moves for longer than five seconds needs a pause. */
+  .film { position: relative; max-width: 960px; margin: 36px auto 0; border-radius: 22px; overflow: hidden; background: #F3EDE6;
+    box-shadow: 0 30px 70px -30px rgba(42,30,69,.55), 0 0 0 1px var(--line); aspect-ratio: 16 / 9; }
+  .film video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .film-btn { position: absolute; right: 14px; bottom: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+    display: grid; place-items: center; background: rgba(42,30,69,.78); color: #FBF7F3; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .film-btn:hover { background: rgba(42,30,69,.92); }
+  .film-btn:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
+  .film-btn svg { width: 18px; height: 18px; }
+  .film-note { text-align: center; margin: 14px 0 0; font-size: 14px; color: var(--soft); }
+  @media (max-width: 760px) { .film { border-radius: 14px; margin-top: 28px; } .film-btn { right: 10px; bottom: 10px; } }
+
   /* Header and hero: one plum block, like opening the app */
   .top { color: var(--on-plum); }
 
@@ -334,7 +347,7 @@
           <a class="btn btn-main" href="#plus">See Free and Plus</a>
           <a class="btn btn-line" href="#promise">How your data stays private</a>
         </div>
-        <p class="proof rise">Coming soon to iPhone · No account · Nothing leaves your phone</p>
+        <p class="proof rise">Coming soon to iPhone, Android later · No account · Nothing leaves your phone</p>
       </div>
 
       <div class="fan" id="fan">
@@ -353,6 +366,21 @@
 </header>
 
 <main id="main">
+  <section id="film">
+    <div class="wrap">
+      <p class="kicker">Tidemark in 25 seconds</p>
+      <h2>Watch the scale jump and the trend hold.</h2>
+      <div class="film">
+        <video id="film-video" muted playsinline loop preload="none" controls poster="film/poster.webp" width="1920" height="1080"
+          aria-label="A 25-second film with no sound. A morning weigh-in of 87.6 kg jumps about on a chart while the trend line stays calm. Then the app: Today with the trend weight and a 30-day chart, logging a weight in two taps, habits as ticks without streaks, and privacy settings with Face ID lock and backups. It ends on the Tidemark logo: the scale jumps, your trend doesn’t.">
+          <source src="film/tidemark.webm" type="video/webm">
+          <source src="film/tidemark.mp4" type="video/mp4">
+        </video>
+      </div>
+      <p class="film-note" id="film-note">No sound. Plays while it’s on screen.</p>
+    </div>
+  </section>
+
   <section id="extras">
     <div class="wrap">
       <p class="kicker">Inside Tidemark</p>
@@ -802,6 +830,32 @@
 
     showPlay(); render(); caption();
   })();
+</script>
+<script>
+// The film plays only while at least half of it is on screen, never with reduced motion, and always has a pause button.
+(function () {
+  var v = document.getElementById('film-video');
+  if (!v) return;
+  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var paused = still;          // the viewer's choice wins over scrolling
+  if (still) document.getElementById('film-note').textContent = 'No sound. Press play to watch.';
+  v.removeAttribute('controls');
+  var b = document.createElement('button');
+  b.type = 'button'; b.className = 'film-btn';
+  var play = '<svg viewBox="0 0 18 18" aria-hidden="true"><path fill="currentColor" d="M5 3.2v11.6a.8.8 0 0 0 1.2.7l9.3-5.8a.8.8 0 0 0 0-1.4L6.2 2.5A.8.8 0 0 0 5 3.2Z"/></svg>';
+  var pause = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="4" y="3" width="3.6" height="12" rx="1" fill="currentColor"/><rect x="10.4" y="3" width="3.6" height="12" rx="1" fill="currentColor"/></svg>';
+  function show() { var on = !v.paused; b.innerHTML = on ? pause : play; b.setAttribute('aria-label', on ? 'Pause the film' : 'Play the film'); }
+  v.parentNode.appendChild(b);
+  v.addEventListener('play', show); v.addEventListener('pause', show); show();
+  b.addEventListener('click', function () { if (v.paused) { paused = false; v.play(); } else { paused = true; v.pause(); } });
+  if (!('IntersectionObserver' in window)) return;
+  new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (e.isIntersecting && !paused) { v.preload = 'auto'; var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+      else if (!e.isIntersecting && !v.paused) v.pause();
+    });
+  }, { threshold: 0.5 }).observe(v);
+})();
 </script>
 </body>
 </html>

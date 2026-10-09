@@ -106,6 +106,7 @@ addHead(path.join(out, 'index.html'), meta({ title: 'Tidemark · The weight trac
   description: 'A private weight tracker for iPhone. Your trend weight, not the daily noise, with a plan, habits and an optional medication log. No account, and your data stays on your phone.' }));
 fs.copyFileSync(path.join(repo, 'site', 'icon-128.png'), path.join(out, 'icon.png'));   // 128px: it's only ever shown small
 fs.cpSync(path.join(repo, 'site', 'shots'), path.join(out, 'shots'), { recursive: true });
+fs.cpSync(path.join(repo, 'site', 'film'), path.join(out, 'film'), { recursive: true });
 fs.mkdirSync(path.join(out, 'fonts'), { recursive: true });
 for (const f of ['SpaceGrotesk_700Bold.ttf', 'SpaceGrotesk_500Medium.ttf', 'HankenGrotesk_400Regular.ttf', 'HankenGrotesk_600SemiBold.ttf', 'OFL-SpaceGrotesk.txt', 'OFL-HankenGrotesk.txt'])
   fs.copyFileSync(path.join(repo, 'fonts', f), path.join(out, 'fonts', f));
