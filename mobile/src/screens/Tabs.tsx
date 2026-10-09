@@ -9,7 +9,7 @@ import { FEATURES } from '../features';
 import { cloneElement, isValidElement, useEffect, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LengthUnit, lengthUnitFor, measureSummary, showLength } from '../core/body';
-import { estimateExpenditure } from '../core/calories';
+import { estimateExpenditure, kcalRange } from '../core/calories';
 import { addDays, DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { consistency, lineWord, milestoneQuarter } from '../core/insights';
 import { direction, lineStatus, sign } from '../core/plan';
@@ -119,9 +119,9 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
         </Tile>
         {settings.trackCalories && plus ? (
           <Tile icon="flame" label="Calories" onPress={() => go('body')} wide={stack}
-            value={tdee ? `${tdee.tdee.toLocaleString()} kcal` : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
-            sub={tdee ? 'you really burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'Calories eaten today'}
-            a11y={tdee ? `Estimated burn ${tdee.tdee} kcal a day` : 'Calories'} />
+            value={tdee ? kcalRange(tdee.low, tdee.high) : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
+            sub={tdee ? 'kcal you burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'Calories eaten today'}
+            a11y={tdee ? `Estimated burn ${tdee.low} to ${tdee.high} kcal a day` : 'Calories'} />
         ) : (
           // Free: a real number about their own data, not an advert in data's clothing
           !plus ? <Tile icon="scale" label="Weigh-ins" onPress={() => go('trend')} wide={stack}
