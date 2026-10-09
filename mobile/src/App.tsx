@@ -65,7 +65,7 @@ function Main() {
   const { setPrefs } = t;
   const onPlusStatus = useCallback((plus: PlusStatus) => setPrefs({ plus }), [setPrefs]);
   const { state, prefs } = t;
-  const plusOn = plusActive(prefs.plus);   // Tidemark Plus, as Apple last confirmed it
+  const plusOn = FEATURES.webPlus || plusActive(prefs.plus);   // Tidemark Plus, as Apple last confirmed it (or the web preview)
   setWeightsHidden(prefs.hide);            // read by showWeight() during this render, like the colour palette
   const today = useToday();
   useAppearance(prefs.appearance);

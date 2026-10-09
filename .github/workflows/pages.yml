@@ -39,6 +39,7 @@ jobs:
         run: npx expo export --platform web --output-dir dist
         env:
           WEB_BASE_URL: /app
+          EXPO_PUBLIC_WEB_PLUS: '1'   # the web test build is the full app (nothing can be bought on the web)
       - name: Assemble the site
         run: node scripts/pages-site.js dist ../_site "" https://tidemark.ysbdesigns.uk
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1

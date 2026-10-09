@@ -3,6 +3,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import { AppState } from 'react-native';
 import { Paywall } from './components/Paywall';
 import { plusActive, PlusFeature, PlusStatus } from './core/plus';
+import { FEATURES } from './features';
 import { checkPlus, manageSubscription, onStoreUpdates, restore as restoreStore, storeAvailable } from './purchases';
 import { notify } from './dialogs';
 import { success } from './feel';
@@ -68,7 +69,7 @@ export function PlusProvider({ status, onStatus, locked, children }: { status: P
     if (s.active) setPaywall(null);
   }, [onStatus]);
 
-  const plus = plusActive(status, now);
+  const plus = FEATURES.webPlus || plusActive(status, now);
   const api = useMemo<PlusApi>(() => ({
     plus, status, storeAvailable, restore, manage: () => { manageSubscription(); },
     openPaywall: why => setPaywall(why ?? 'any'),

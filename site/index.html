@@ -300,6 +300,7 @@
     padding: 6px 10px; border-radius: 999px; margin-bottom: 12px; }
   .tag-now { color: var(--mint); background: var(--mint-bg); }
   .tag-soon { color: var(--amber); border: 1px solid rgba(255,162,75,.45); }
+  .tag-plus { color: var(--on-plum); background: rgba(255,107,94,.22); border: 1px solid rgba(255,107,94,.5); }
   .extras-note { text-align: center; color: var(--soft); font-size: 15px; max-width: 720px; margin: 22px auto 0; }
 
   /* Reminder choices */
@@ -392,16 +393,16 @@
             <figcaption><span class="tag tag-now">In the app</span><h3>Today, at a glance</h3><p>Your trend with the last 30 days behind it: the weigh-ins jump about, the trend stays calm, and the plan is the dashed line.</p></figcaption>
           </figure>
           <figure class="deck-card tone-deep">
-            <div class="deck-screen"><img src="shots/deck/trend.webp" width="480" height="780" alt="The Trend screen explaining that the last weigh-in dropped 0.8 kg but the trend moved only 0.1 kg." loading="lazy" decoding="async" draggable="false"></div>
-            <figcaption><span class="tag tag-now">In the app</span><h3>The scale jumps. The trend doesn’t.</h3><p>When one weigh-in drops 0.8 kg, Tidemark shows the trend moved 0.1 and explains why that’s water, not fat.</p></figcaption>
+            <div class="deck-screen"><img src="shots/deck/trend.webp" width="480" height="780" alt="The Trend screen: the scale went up 1.3 kg but the trend moved 0.1 kg, and because a salty meal and alcohol were noted the day before, it says that often shows up as water weight." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-now">In the app</span><h3>The scale jumps. The trend doesn’t.</h3><p>When one weigh-in jumps 1.3 kg, Tidemark shows the trend barely moved, and if you noted a salty meal the night before, it says so.</p></figcaption>
           </figure>
           <figure class="deck-card tone-warm">
             <div class="deck-screen"><img src="shots/deck/progress.webp" width="480" height="780" alt="A progress chart of weigh-ins, the trend line and the target line over twelve weeks." loading="lazy" decoding="async" draggable="false"></div>
             <figcaption><span class="tag tag-now">In the app</span><h3>Held against your plan</h3><p>Weigh-ins, your trend and your target on one chart, over four weeks, twelve weeks or the whole plan.</p></figcaption>
           </figure>
           <figure class="deck-card tone-plum">
-            <div class="deck-screen"><img src="shots/deck/log.webp" width="480" height="780" alt="The Log weight sheet, opened on the last weight with plus and minus buttons." loading="lazy" decoding="async" draggable="false"></div>
-            <figcaption><span class="tag tag-now">In the app</span><h3>Logged in a tap or two</h3><p>It opens on your last weight. Nudge it up or down, save, and you’re done.</p></figcaption>
+            <div class="deck-screen"><img src="shots/deck/log.webp" width="480" height="780" alt="The Log weight sheet opened on the last weight, with tags to pick such as salty meal, alcohol, travel, period and poor sleep, and a note." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-now">In the app</span><h3>Logged in a tap or two</h3><p>It opens on your last weight. Nudge it, save, and if you like tag the day: a salty meal, travel, your period. The chart marks it.</p></figcaption>
           </figure>
           <figure class="deck-card tone-deep">
             <div class="deck-screen"><img src="shots/deck/habits.webp" width="480" height="780" alt="The Habits screen with this week’s ticks for water, steps and sleep." loading="lazy" decoding="async" draggable="false"></div>
@@ -410,6 +411,30 @@
           <figure class="deck-card tone-warm">
             <div class="deck-screen"><img src="shots/deck/consistency.webp" width="480" height="780" alt="Thirty-day grids for water, steps and sleep with how often each was done." loading="lazy" decoding="async" draggable="false"></div>
             <figcaption><span class="tag tag-now">In the app</span><h3>Consistency you can see</h3><p>Thirty days of each habit at a glance, and how often it really happens, not how long a streak lasted.</p></figcaption>
+          </figure>
+          <figure class="deck-card tone-plum">
+            <div class="deck-screen"><img src="shots/deck/hide.webp" width="480" height="780" alt="Today with hide my weight on: the headline says Trending down, 0.4 kg this week, with no weight shown." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-now">In the app</span><h3>See the trend, not the number</h3><p>Turn on Hide my weight and Tidemark shows which way you’re heading and by how much. Never the weight itself.</p></figcaption>
+          </figure>
+          <figure class="deck-card tone-deep">
+            <div class="deck-screen"><img src="shots/deck/holding.webp" width="480" height="780" alt="The Trend tab at the goal, offering to switch to holding within 1.5 kg of the goal weight." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-now">In the app</span><h3>Reached your goal? Hold it.</h3><p>Switch to holding and Tidemark keeps you within a range. It stops counting further loss as progress.</p></figcaption>
+          </figure>
+          <figure class="deck-card tone-warm">
+            <div class="deck-screen"><img src="shots/deck/dose.webp" width="480" height="780" alt="A dose card: Mounjaro due today, 7.5 mg, with injection sites to choose and the one used longest ago picked." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-now">In the app</span><h3>Your medication, logged</h3><p>Mark a weekly GLP-1 dose as taken and get a dose-day reminder, free. With Plus, rotate injection sites and note how you feel.</p></figcaption>
+          </figure>
+          <figure class="deck-card tone-plum">
+            <div class="deck-screen"><img src="shots/deck/effects.webp" width="480" height="780" alt="How the trend moved at each dose of Mounjaro, and side effects through the week: nausea most often the day after a dose." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-plus">Plus</span><h3>Your trend at each dose</h3><p>See how your trend moved on each dose, and when side effects tend to show up after one.</p></figcaption>
+          </figure>
+          <figure class="deck-card tone-deep">
+            <div class="deck-screen"><img src="shots/deck/report.webp" width="480" height="780" alt="A weight report: a 12-week trend chart, a weekly table, doses and injection sites, side effects and notes." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-plus">Plus</span><h3>A report for your doctor</h3><p>Twelve weeks of trend, doses, side effects and notes as a PDF, made on your phone and shared only where you choose.</p></figcaption>
+          </figure>
+          <figure class="deck-card tone-warm">
+            <div class="deck-screen"><img src="shots/deck/protein.webp" width="480" height="780" alt="A protein card: 60 of 120 grams today, with buttons to add 10, 20 or 30 grams." loading="lazy" decoding="async" draggable="false"></div>
+            <figcaption><span class="tag tag-plus">Plus</span><h3>A protein minimum</h3><p>A daily floor of 1.2 to 1.6 g per kg, to help keep muscle while you lose fat. Add it in quick taps.</p></figcaption>
           </figure>
           <figure class="deck-card tone-plum">
             <div class="deck-art"><div class="rem" role="img" aria-label="Reminder settings: weigh-in at 7:30 on, dose day at 9:00 on, and, coming soon, a habit nudge, a weekly summary on Sundays and quiet days at weekends.">
@@ -452,12 +477,12 @@
           <button type="button" class="deck-btn" data-go="next" aria-label="Next card"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
         <div class="deck-foot">
-          <span class="deck-count" aria-hidden="true"><b>01</b> / 13</span>
+          <span class="deck-count" aria-hidden="true"><b>01</b> / 19</span>
           <button type="button" class="deck-play" aria-pressed="false">Pause</button>
         </div>
         <p class="deck-sr" aria-live="polite"></p>
       </div>
-      <p class="extras-note"><span class="js-only">Drag the top card away, or use the arrows. </span>Everything marked “In the app” is in the first release. Widgets are built and being tested on iPhone; Apple Watch and the extra reminder choices are planned for an update. The widget and Watch pictures are designs, so the finished versions may differ. Reminders are set up on your iPhone itself, so nothing is sent to a server.</p>
+      <p class="extras-note"><span class="js-only">Drag the top card away, or use the arrows. </span>Everything marked “In the app” is in the first release; cards marked “Plus” are part of Tidemark Plus. Widgets are built and being tested on iPhone; Apple Watch and the extra reminder choices are planned for an update. The widget and Watch pictures are designs, so the finished versions may differ. Reminders are set up on your iPhone itself, so nothing is sent to a server.</p>
     </div>
   </section>
 
@@ -748,6 +773,7 @@
     if (!deck) return;
     var pile = deck.querySelector('.deck-pile'), cards = [].slice.call(pile.children), n = cards.length;
     var cap = deck.querySelector('.deck-cap'), count = deck.querySelector('.deck-count b'), live = deck.querySelector('.deck-sr');
+    count.nextSibling.textContent = ' / ' + n;   // the total follows the cards, so adding one never leaves it wrong
     var play = deck.querySelector('.deck-play');
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var top = 0, busy = false, over = null, lastTouch = 0, playing = !reduce, seen = false, AUTO = 5200;
