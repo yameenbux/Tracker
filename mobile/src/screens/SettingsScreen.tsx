@@ -46,9 +46,10 @@ function Row({ icon, label, value, onPress, right, destructive, last, hint, wide
   icon?: IconName; label: string; value?: string; onPress?: () => void; right?: React.ReactNode; destructive?: boolean; last?: boolean; hint?: string;
   wide?: boolean;   // the control is a wide segmented picker
 }) {
-  // At the largest text sizes a segmented picker can't share a line with its label: it moves underneath
-  const { fontScale } = useWindowDimensions();
-  const stack = wide && fontScale > 1.3;
+  // At the largest text sizes, or on a narrow phone (iPhone SE), a segmented picker can't share a line with its label:
+  // it moves underneath instead of running off the edge
+  const { fontScale, width } = useWindowDimensions();
+  const stack = wide && (fontScale > 1.3 || width < 360);
   const body = (
     <>
       {icon ? <View style={[s.rowIcon, destructive && { backgroundColor: C.coralBg }]}><Icon name={icon} size={18} color={destructive ? C.danger : C.plum2} /></View> : null}
@@ -75,20 +76,22 @@ function SwitchRow({ icon, label, value, onChange, disabled, last }: {
 }) {
   return (
     <Row icon={icon} label={label} last={last} right={
-      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ true: C.mintInk }} accessibilityLabel={label} />
+      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ false: C.control, true: C.mintInk }} accessibilityLabel={label} />
     } />
   );
 }
 
 function PageHeader({ title, onBack, right }: { title: string; onBack: () => void; right?: React.ReactNode }) {
+  // On a narrow phone (iPhone SE) the back button is just the chevron, as in iOS, so the page title fits
+  const narrow = useWindowDimensions().width < 360;
   return (
     <View style={s.bar}>
-      <Pressable onPress={onBack} style={s.back} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back to Settings">
+      <Pressable onPress={onBack} style={[s.back, narrow && s.sideNarrow]} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back to Settings">
         <Icon name="back" size={22} color={C.coralInk} strokeWidth={2.4} />
-        <Text style={s.backTxt}>Settings</Text>
+        {!narrow && <Text style={s.backTxt}>Settings</Text>}
       </Pressable>
       <Text style={s.barTitle} accessibilityRole="header" numberOfLines={1}>{title}</Text>
-      <View style={s.barRight}>{right}</View>
+      <View style={[s.barRight, narrow && s.sideNarrow]}>{right}</View>
     </View>
   );
 }
@@ -199,7 +202,7 @@ export function SettingsScreen(p: SettingsProps) {
           {plus ? <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
             : <Row icon="flame" label="Calorie estimate" value="Plus" onPress={() => openPaywall('calories')} hint="Part of Tidemark Plus" last />}
         </Group>
-        <Text style={s.groupFootOut}>{p.health ? 'Apple Health: weights from your scale or other apps come in by themselves, and weights you log here go to Health. A weight you type always wins for its day. ' : ''}Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
+        <Text style={s.groupFootOut}>{p.health ? 'Apple Health: weights from your scale or other apps come in by themselves, and weights you log here go to Health. A weight you type always wins for its day. ' : ''}Calorie estimate: enter how many calories you ate each day (not burned). After two weeks Tidemark compares that with your trend and works out how many you really burn.</Text>
 
         <Group title="Display" footer="Hide my weight: Tidemark shows which way your trend is going and by how much, never the weight itself. Exports still hold the real numbers.">
           <Row icon="moon" label="Appearance" wide right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} />
@@ -377,7 +380,7 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
           <Text style={[s.hint, { marginTop: 0 }]}>Weeks where the target holds steady: holidays, Christmas, a hard month. Long plans with planned breaks are easier to stick to.</Text>
           {plan.breaks.map((b, i) => (
             <View key={i} style={s.breakRow}>{/* by position: keying on the date remounted the row (closing the picker) on every edit */}
-              <View style={{ flex: 1 }}><DateInput value={b.start} onChange={v => setBreak(i, { start: v })} label={`Break ${i + 1} start`} /></View>
+              <View style={s.breakDate}><DateInput value={b.start} onChange={v => setBreak(i, { start: v })} label={`Break ${i + 1} start`} /></View>
               <View style={s.stepper}>
                 <Pressable onPress={() => setBreak(i, { weeks: Math.max(1, b.weeks - 1) })} style={s.stepBtn} accessibilityRole="button" accessibilityLabel={`Break ${i + 1}: fewer weeks`}><Icon name="minus" size={18} color={C.ink} strokeWidth={2.4} /></Pressable>
                 <Text style={s.stepVal} accessibilityLabel={`${b.weeks} weeks`}>{b.weeks} wk</Text>
@@ -429,19 +432,22 @@ function HabitsPage({ settings, onSave, onBack }: { settings: Settings; onSave: 
         <Text style={s.lead}>Up to {MAX_HABITS}. An icon, a short label (5 letters) and a name; for steps, water, sleep and veg, pick your own amount. Removing a habit hides it; past ticks are kept.</Text>
         <View style={s.form}>
           {habits.map((h, i) => (
-            <View key={h.id}>
+            <View key={h.id} style={[s.habitBlock, i === habits.length - 1 && s.habitBlockLast]}>
             <View style={s.habitRow}>
               <Pressable onPress={() => setPicking(p => (p === h.id ? null : h.id))} style={[s.iconBtn, picking === h.id && s.iconBtnOn]}
                 accessibilityRole="button" accessibilityState={{ expanded: picking === h.id }}
                 accessibilityLabel={`Habit ${i + 1} icon: ${HABIT_ICONS.find(([n]) => n === habitIcon(h.icon, h.name))?.[1]}`} accessibilityHint="Choose a different icon">
                 <Icon name={habitIcon(h.icon, h.name)} size={22} color={C.plum2} />
               </Pressable>
-              <Input value={h.short} onChangeText={v => setHabit(i, { short: v })} style={{ width: 72, textAlign: 'center' }} maxLength={5} placeholder="Label" accessibilityLabel={`Habit ${i + 1} short label`} />
-              <Input value={h.name} onChangeText={v => setHabit(i, { name: v })} style={{ flex: 1, minWidth: 0 }} placeholder="Name" accessibilityLabel={`Habit ${i + 1} name`} />
+              <Input value={h.short} onChangeText={v => setHabit(i, { short: v })} style={{ width: 84, textAlign: 'center' }} maxLength={5} placeholder="Label" accessibilityLabel={`Habit ${i + 1} short label`} />
+              <View style={{ flex: 1 }} />
               <Pressable onPress={() => setHabits(hs => hs.filter((_, j) => j !== i))} style={s.x} accessibilityRole="button" accessibilityLabel={'Remove ' + (h.name || `habit ${i + 1}`)}>
                 <Icon name="close" size={16} color={C.danger} strokeWidth={2.4} />
               </Pressable>
             </View>
+            {/* The name gets the full width (and wraps) so a long one is never cut off or broken mid-word */}
+            <Input value={h.name} onChangeText={v => setHabit(i, { name: v.replace(/\n/g, ' ') })} style={s.habitName} placeholder="Name, e.g. Walk after dinner"
+              accessibilityLabel={`Habit ${i + 1} name`} multiline scrollEnabled={false} blurOnSubmit returnKeyType="done" maxLength={40} />
             <HabitAmount habit={h} onChange={nh => setHabit(i, { name: nh.name })} />
             {!plus && i >= FREE_HABITS && <Text style={s.hint}>Hidden on the free version (its ticks are kept). Shows again with Plus.</Text>}
             {picking === h.id && (
@@ -514,6 +520,8 @@ function SessionsPage({ settings, onSave, onBack }: { settings: Settings; onSave
 }
 
 const MACRO_LABEL = { kcal: 'Calories', p: 'Protein grams', c: 'Carbs grams', f: 'Fat grams' } as const;
+// Above each box, so a filled-in number still says what it is (a placeholder disappears once you type)
+const MACRO_SHORT = { kcal: 'kcal', p: 'Protein', c: 'Carbs', f: 'Fat' } as const;
 
 /** Open-source notices that must travel with the app (fonts under the OFL, libraries under MIT). */
 function CreditsPage({ onBack }: { onBack: () => void }) {
@@ -586,14 +594,14 @@ function MedicationPage({ settings, doses, onDoses, onSave, onBack }: {
             <Text style={s.remindTitle}>It’s an injection</Text>
             <Text style={s.hint}>With Plus, Today offers the site used longest ago, so each spot gets a rest.</Text>
           </View>
-          <Switch value={injected} onValueChange={setInjected} trackColor={{ true: C.mintInk }} accessibilityLabel="It’s an injection" />
+          <Switch value={injected} onValueChange={setInjected} trackColor={{ false: C.control, true: C.mintInk }} accessibilityLabel="It’s an injection" />
         </View>
         <View style={[s.form, s.remindRow]}>
           <View style={{ flex: 1 }}>
             <Text style={s.remindTitle}>Remind me on dose days</Text>
             <Text style={s.hint}>At {timeLabel(DOSE_HOUR, 0)}. The reminder doesn’t name the medication.</Text>
           </View>
-          <Switch value={remind} onValueChange={toggleRemind} trackColor={{ true: C.mintInk }} accessibilityLabel="Remind me on dose days" />
+          <Switch value={remind} onValueChange={toggleRemind} trackColor={{ false: C.control, true: C.mintInk }} accessibilityLabel="Remind me on dose days" />
         </View>
         <Text style={s.hint}>If you change dose, update it here; earlier doses keep the strength they were logged at.</Text>
         {cur && <DoseHistory med={cur} doses={doses} onDoses={onDoses} />}
@@ -653,7 +661,7 @@ function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (
     <View style={s.wrap}>
       <PageHeader title="Meals" onBack={onBack} />
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-        <Text style={s.lead}>Your usual day of eating. Macros are optional. Fill them in to see totals against a daily target.</Text>
+        <Text style={s.lead}>Your usual day of eating. Protein, carbs and fat are in grams and optional. Fill them in to see totals against a daily target.</Text>
         {meals.map((m, i) => (
           <View key={m.id} style={s.form}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -662,11 +670,14 @@ function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (
                 <Icon name="close" size={16} color={C.danger} strokeWidth={2.4} />
               </Pressable>
             </View>
-            <Input value={m.text} onChangeText={v => setMeal(m.id, { text: v })} placeholder="What you eat" style={{ marginTop: 8 }} accessibilityLabel={`Meal ${i + 1} description`} />
+            <Input value={m.text} onChangeText={v => setMeal(m.id, { text: v })} placeholder="What you eat" multiline style={{ marginTop: 8 }} accessibilityLabel={`Meal ${i + 1} description`} />
             <View style={s.macros}>
               {(['kcal', 'p', 'c', 'f'] as const).map(k => (
-                <Input key={k} value={numTxt(m[k])} onChangeText={v => setMeal(m.id, { [k]: numOrNull(v) })} keyboardType="number-pad"
-                  placeholder={k === 'kcal' ? 'kcal' : k.toUpperCase() + ' g'} style={{ flex: 1, minWidth: 0 }} accessibilityLabel={`Meal ${i + 1} ${MACRO_LABEL[k]}`} />
+                <View key={k} style={s.macro}>
+                  <Text style={s.macroLbl} numberOfLines={1}>{MACRO_SHORT[k]}</Text>
+                  <Input value={numTxt(m[k])} onChangeText={v => setMeal(m.id, { [k]: numOrNull(v) })} keyboardType="number-pad"
+                    style={s.macroIn} accessibilityLabel={`Meal ${i + 1} ${MACRO_LABEL[k]}`} />
+                </View>
               ))}
             </View>
           </View>
@@ -677,8 +688,11 @@ function MealsPage({ settings, onSave, onBack }: { settings: Settings; onSave: (
         <View style={s.form}>
           <View style={[s.macros, { marginTop: 0 }]}>
             {(['kcal', 'p', 'c', 'f'] as const).map(k => (
-              <Input key={k} value={numTxt(target[k])} onChangeText={v => setTarget(t => ({ ...t, [k]: numOrNull(v) }))} keyboardType="number-pad"
-                placeholder={k === 'kcal' ? 'kcal' : k.toUpperCase() + ' g'} style={{ flex: 1, minWidth: 0 }} accessibilityLabel={'Daily target ' + MACRO_LABEL[k]} />
+              <View key={k} style={s.macro}>
+                <Text style={s.macroLbl} numberOfLines={1}>{MACRO_SHORT[k]}</Text>
+                <Input value={numTxt(target[k])} onChangeText={v => setTarget(t => ({ ...t, [k]: numOrNull(v) }))} keyboardType="number-pad"
+                  style={s.macroIn} accessibilityLabel={'Daily target ' + MACRO_LABEL[k]} />
+              </View>
             ))}
           </View>
         </View>
@@ -694,6 +708,7 @@ const s = themed(() => StyleSheet.create({
   barTitle: { flex: 1, textAlign: 'center', fontFamily: F.display, fontSize: 17, color: C.ink },
   barRight: { minWidth: 96, alignItems: 'flex-end' },
   back: { minWidth: 96, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 2 },
+  sideNarrow: { minWidth: 64 },
   backTxt: { fontFamily: F.bodySemi, fontSize: 16, color: C.coralInk },
   done: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   doneTxt: { fontFamily: F.bodyBold, fontSize: 16, color: C.coralInk },
@@ -729,11 +744,16 @@ const s = themed(() => StyleSheet.create({
   prevWarn: { backgroundColor: C.warnBg },
   prevErr: { backgroundColor: C.coralBg },
   prevTxt: { fontFamily: F.body, fontSize: 14, color: C.ink, lineHeight: 20 },
-  breakRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  breakRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 10 },
+  // A date needs about 130pt to show in full; on a narrow phone the stepper drops to the next line instead
+  breakDate: { flexGrow: 1, flexBasis: 130, minWidth: 130 },
   stepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.chip, borderRadius: 10 },
   stepBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   stepVal: { fontFamily: F.displaySemi, fontSize: 14, color: C.ink, minWidth: 44, textAlign: 'center' },
   habitRow: { flexDirection: 'row', gap: 6, alignItems: 'center', marginBottom: 10 },
+  habitBlock: { paddingBottom: 14, marginBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line },
+  habitBlockLast: { borderBottomWidth: 0, marginBottom: 4, paddingBottom: 4 },
+  habitName: { marginBottom: 4, minHeight: 44 },
   iconBtn: { width: 54, height: 44, borderRadius: 10, borderWidth: 1, borderColor: C.control, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   iconBtnOn: { borderColor: C.plum2, borderWidth: 2 },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, padding: 8, marginTop: -2, marginBottom: 12, borderRadius: 12, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelLine },
@@ -741,4 +761,7 @@ const s = themed(() => StyleSheet.create({
   iconCellOn: { backgroundColor: C.fill },
   x: { width: 44, height: 44, borderRadius: 10, backgroundColor: C.coralBg, alignItems: 'center', justifyContent: 'center' },
   macros: { flexDirection: 'row', gap: 6, marginTop: 8 },
+  macro: { flex: 1, minWidth: 0, gap: 4 },
+  macroIn: { minWidth: 0 },
+  macroLbl: { fontFamily: F.bodyBold, fontSize: 11.5, letterSpacing: 0.4, textTransform: 'uppercase', color: C.inkSoft },
 }));

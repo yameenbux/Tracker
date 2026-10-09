@@ -109,7 +109,8 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
   const pace = (plan.startKg - plan.goalKg) / Math.max(1, lossWeeks(plan.start, plan.goalDate, plan.breaks));
 
   return (
-    <Card title="Calories">
+    <Card title="Calories eaten">
+      <Text style={s.ask}>How much did you eat and drink {which === 'today' ? 'today' : 'yesterday'}?</Text>
       <View style={s.calRow}>
         <View style={s.dayTabs} accessibilityRole="tablist" accessibilityLabel="Day">
           {(['today', 'yesterday'] as const).map(w => (
@@ -123,16 +124,16 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
           placeholderTextColor={C.placeholder} style={[fieldStyles.fIn, s.calIn]} accessibilityLabel={`Calories eaten, ${which}`} />
       </View>
       {invalid && <Text style={s.err}>Enter a day’s total between 300 and 10,000 kcal. It isn’t saved until it’s in that range.</Text>}
-      <Text style={s.muted}>One number for the whole day is enough. A rough total beats a perfect log you give up on.</Text>
+      <Text style={s.muted}>Enter what you ate, not what you burned, and don’t take exercise off: Tidemark works out your burn for you. One rough total for the day is enough.</Text>
       <View style={s.calStats}>
-        <View style={s.calStat}><Text style={s.k}>7-day average</Text><Text style={s.v}>{avg7 != null ? `${avg7.toLocaleString()} kcal` : '—'}</Text></View>
-        <View style={s.calStat}><Text style={s.k}>Your burn</Text><Text style={s.v}>{est ? `~${est.tdee.toLocaleString()} kcal` : needsWeighIns ? 'Needs weigh-ins' : `${logged}/${CAL_MIN_DAYS} days`}</Text></View>
+        <View style={s.calStat}><Text style={s.k}>Eaten, 7-day average</Text><Text style={s.v}>{avg7 != null ? `${avg7.toLocaleString()} kcal` : '—'}</Text></View>
+        <View style={s.calStat}><Text style={s.k}>You burn (worked out)</Text><Text style={s.v}>{est ? `~${est.tdee.toLocaleString()} kcal` : needsWeighIns ? 'Needs weigh-ins' : `${logged}/${CAL_MIN_DAYS} days`}</Text></View>
       </View>
       <Text style={s.line}>
         {est
           ? <>From what you ate and how your trend moved over {est.window} days, you burn about <Text style={s.b}>{est.tdee.toLocaleString()} kcal a day</Text>. Your plan’s pace means eating around <Text style={s.b}>{intakeForPace(est.tdee, pace).toLocaleString()} kcal</Text>.</>
           : needsWeighIns ? <>There aren’t weigh-ins near both ends of the last {CAL_WINDOW} days, so Tidemark can’t see how your trend really moved. Weigh in for the next couple of weeks and the estimate comes back.</>
-          : <>Log {CAL_MIN_DAYS} of the last {CAL_WINDOW} days and Tidemark estimates what you really burn, from your own data rather than a formula.</>}
+          : <>Log what you eat on {CAL_MIN_DAYS} of the last {CAL_WINDOW} days. Tidemark then compares it with how your trend moved and works out how much you really burn a day, from your own data rather than a formula.</>}
       </Text>
       {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low. An estimate, not medical advice: talk to a GP or dietitian before big changes.</Text>}
     </Card>
@@ -208,6 +209,7 @@ const s = themed(() => StyleSheet.create({
   mileTitle: { fontFamily: F.display, fontSize: 16, color: C.ink },
   mileTxt: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 19, marginTop: 3 },
   muted: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, lineHeight: 18, paddingHorizontal: 4 },
+  ask: { fontFamily: F.bodySemi, fontSize: 14.5, color: C.ink, paddingHorizontal: 4, marginBottom: 8 },
   pat: { paddingHorizontal: 4, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line },
   patHead: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
   patTitle: { fontFamily: F.bodySemi, fontSize: 14, color: C.ink },

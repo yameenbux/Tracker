@@ -129,8 +129,10 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
         const day = habits[key] || {};
         return (
           <View key={key}>
+            {/* The day keeps at least ~84pt for its name; with many habits on a narrow phone the boxes drop to a line of
+                their own (still right-aligned under the icons) rather than squeezing the day name a letter per line */}
             <View style={[s.row, s.dayRow, isToday && s.today]}>
-              <View style={{ flex: 1, minWidth: 0 }}>
+              <View style={s.dayText}>
                 <Text style={s.dayTxt}>{DAY_ABBR[d.getDay()]} {d.getDate()}{isToday ? <Text style={s.todayTag}>  TODAY</Text> : null}</Text>
                 {sess.title ? <Text style={s.sessTitle} numberOfLines={1}>{sess.title}</Text> : null}
                 {(hasSess || hasMeals) && (
@@ -144,6 +146,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
                   </View>
                 )}
               </View>
+              <View style={s.boxes}>
               {H.map(h => {
                 const on = !!day[h.id];
                 return (
@@ -151,6 +154,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
                     onPress={() => onChange(toggleHabit(habits, key, h.id))} />
                 );
               })}
+              </View>
             </View>
             {open?.key === key && (open.kind === 'sess'
               ? <SessionPanel det={sess} onLog={key <= todayKey && onLogSession ? () => onLogSession(key, d.getDay()) : undefined} />
@@ -185,7 +189,9 @@ const s = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 6 },
   icCol: { width: 30, alignItems: 'center' },
   icSmall: { fontFamily: F.bodyBold, fontSize: 9, color: C.inkSoft, marginTop: 3, width: 40, textAlign: 'center' },   // may spill into the 8pt gap, never into the next label
-  dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line },
+  dayRow: { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line, flexWrap: 'wrap', rowGap: 6 },
+  dayText: { flexGrow: 1, flexShrink: 1, flexBasis: 84, minWidth: 84 },
+  boxes: { flexDirection: 'row', gap: 8, marginLeft: 'auto' },
   today: { backgroundColor: C.todayBg, borderLeftWidth: 3, borderLeftColor: C.coral, borderRadius: 10, borderBottomColor: 'transparent' },   // rounded highlight; plain rows keep straight dividers
   dayTxt: { fontFamily: F.displaySemi, fontSize: 14, color: C.ink },
   todayTag: { fontFamily: F.bodyBold, fontSize: 11, color: C.coralInk, letterSpacing: 0.5 },

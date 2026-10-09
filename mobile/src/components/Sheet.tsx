@@ -61,7 +61,7 @@ export function Sheet({ title, onClose, children, footer, closing: closeNow }: {
           <View {...pan.panHandlers} style={s.handleZone}>
             <View style={s.grab} />
             <View style={s.head}>
-              {title ? <Text style={s.title} accessibilityRole="header" numberOfLines={1}>{title}</Text> : <View style={{ flex: 1 }} />}
+              {title ? <Text style={s.title} accessibilityRole="header" numberOfLines={2}>{title}</Text> : <View style={{ flex: 1 }} />}
               <Pressable onPress={close} style={s.x} hitSlop={6} accessibilityRole="button" accessibilityLabel="Close">
                 <Icon name="close" size={18} color={C.inkSoft} strokeWidth={2.4} />
               </Pressable>

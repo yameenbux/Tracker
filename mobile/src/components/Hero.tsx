@@ -161,8 +161,9 @@ const s = themed(() => StyleSheet.create({
              borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
   pillTxt: { fontFamily: F.bodySemi, fontSize: 13, color: 'rgba(255,255,255,0.82)', textAlign: 'center' },
   peachB: { fontFamily: F.displaySemi, color: '#FFC2A3' },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  chip: { flex: 1, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: 11 },
+  // Three across when there's room; on a narrow phone the third wraps to its own row instead of truncating
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
+  chip: { flexGrow: 1, flexBasis: 88, minWidth: 88, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: 11 },
   chipBody: { flex: 1, minWidth: 0 },
   chipHead: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 },
   chipK: { flexShrink: 1, fontFamily: F.body, fontSize: 11.5, letterSpacing: 0.8, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' },

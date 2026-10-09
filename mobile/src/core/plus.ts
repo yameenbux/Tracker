@@ -22,7 +22,7 @@ export const PLUS_PERKS: { feature: PlusFeature; title: string; line: string }[]
   { feature: 'protein', title: 'Protein target', line: 'A daily protein minimum, to keep muscle while you lose' },
   { feature: 'habits', title: 'More habits', line: `Up to 6 habits (free has ${FREE_HABITS})` },
   { feature: 'body', title: 'Measurements and photos', line: 'Measurements and progress photos' },
-  { feature: 'calories', title: 'Calories', line: 'Calories and what you really burn' },
+  { feature: 'calories', title: 'Calories', line: 'Log what you eat; Tidemark works out what you burn' },
   { feature: 'protectedBackups', title: 'Password-protected backups', line: 'Password-protected backups' },
 ];
 

@@ -119,8 +119,8 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
         </Tile>
         {settings.trackCalories && plus ? (
           <Tile icon="flame" label="Calories" onPress={() => go('body')} wide={stack}
-            value={tdee ? `${tdee.tdee.toLocaleString()} kcal` : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log today'}
-            sub={tdee ? 'you really burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'One number a day'}
+            value={tdee ? `${tdee.tdee.toLocaleString()} kcal` : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
+            sub={tdee ? 'you really burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'Calories eaten today'}
             a11y={tdee ? `Estimated burn ${tdee.tdee} kcal a day` : 'Calories'} />
         ) : (
           // Free: a real number about their own data, not an advert in data's clothing
@@ -203,8 +203,8 @@ export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: 
         onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} /></CardBoundary>
       {settings.trackCalories
         ? <CardBoundary name="Calories"><CaloriesCard settings={settings} weights={state.weights} intake={state.intake} onChange={t.setIntake} trend={series} /></CardBoundary>
-        : <Notice icon="flame" title="Calorie estimate (optional)"
-            body="Log one number a day and after two weeks Tidemark works out what you really burn, from your own trend rather than a formula."
+        : <Notice icon="flame" title="Find out what you really burn (optional)"
+            body="Each day, enter roughly how many calories you ate. After two weeks Tidemark compares that with your trend and works out how many you burn a day. You never enter calories burned."
             action="Turn on" onAction={() => { t.setSettings({ ...settings, trackCalories: true }); show({ message: 'Calorie logging on' }); }} />}
     </TabScreen>
   );

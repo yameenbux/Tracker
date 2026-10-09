@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Platform, StyleSheet, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { lengthUnitFor } from './core/body';
 import { FEATURES } from './features';
 import { PlusProvider } from './plus';
@@ -79,6 +79,7 @@ function Main() {
   const [toast, setToast] = useState<ToastMsg | null>(null);
   const [backupHidden, setBackupHidden] = useState(false);
   const lock = useLock(t.ready, prefs, t.setPrefs);
+  const insets = useSafeAreaInsets();
   const health = useHealth(t);
 
   const show = useCallback((m: Omit<ToastMsg, 'id'>) => setToast({ ...m, id: Date.now() }), []);
@@ -254,7 +255,9 @@ function Main() {
         )}
 
         <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={closeSettings}>
-          <View style={s.fill}>
+          {/* On iPhone a page sheet starts below the status bar. The web build (added to the Home Screen) shows it full
+              screen under a see-through status bar, so it needs the notch's height on top or the header sits on the clock */}
+          <View style={[s.fill, Platform.OS === 'web' && { paddingTop: insets.top }]}>
             <SettingsScreen initialPage={settingsPage} settings={settings} unit={state.unit} setUnit={t.setUnit}
               lock={prefs.lock} lockAvailable={lock.lockAvailable} lockName={lock.lockName} onLockChange={on => lock.setLock(on, lock.lockName)}
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}

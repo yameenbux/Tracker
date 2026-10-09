@@ -192,8 +192,9 @@ const s = themed(() => StyleSheet.create({
   dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: C.empty },
   dotOn: { backgroundColor: C.done },
   dotSome: { backgroundColor: C.raised, borderWidth: 2, borderColor: C.done },
-  table: { flexDirection: 'row', gap: 8, paddingHorizontal: 2 },
-  cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
+  // Four across when there's room; on a narrow phone they wrap two by two rather than cutting the numbers off
+  table: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 2 },
+  cell: { flexGrow: 1, flexBasis: 68, minWidth: 68, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' },
   cellK: { fontFamily: F.bodySemi, fontSize: 11, color: C.inkSoft, textTransform: 'uppercase', letterSpacing: 0.6 },
   cellV: { fontFamily: F.display, fontSize: 15, marginTop: 4 },
   foot: { fontFamily: F.body, fontSize: 12, color: C.inkSoft, lineHeight: 17, paddingHorizontal: 4, marginTop: 10 },
