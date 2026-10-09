@@ -47,8 +47,19 @@ export function toLbNum(kg: number): number { return kg / KG_PER_LB; }
 export function stLbToKg(st: number, lb: number): number { return (st * 14 + lb) * KG_PER_LB; }
 export function round2(kg: number): number { return Math.round(kg * 100) / 100; }
 
-/** "90.0 kg" or "14 st 2 lb" */
+// "Hide my weight" (Settings): the app shows how the trend moves, never the weight itself. Set once per render by the
+// app, like the colour palette; exports and backups still carry the real numbers (showWeightAlways).
+let hide = false;
+export function setWeightsHidden(on: boolean) { hide = on; }
+export const weightsHidden = () => hide;
+export const HIDDEN = '•••';
+
+/** "90.0 kg" or "14 st 2 lb", or dots when weights are hidden */
 export function showWeight(kg: number, unit: Unit): string {
+  return hide ? HIDDEN : showWeightAlways(kg, unit);
+}
+/** The weight even when hidden: for files the person exports, and the number they're typing. */
+export function showWeightAlways(kg: number, unit: Unit): string {
   return unit === 'kg' ? fmt(kg) + ' kg' : unit === 'lb' ? fmt(toLbNum(kg)) + ' lb' : toStLb(kg, 0);
 }
 /** Signed difference, e.g. "+0.4" kg or "+0.9" lb */
@@ -76,5 +87,5 @@ export function showChange(kg: number, unit: Unit, dp = 2): string {
 
 /** A weight amount (a difference, not a body weight): "1.2 kg", "5 lb" rather than "0 st 5 lb". */
 export function showAmount(kg: number, unit: Unit): string {
-  return showWeight(kg, unit).replace(/^0 st /, '');
+  return showWeightAlways(kg, unit).replace(/^0 st /, '');
 }

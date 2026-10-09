@@ -2,6 +2,7 @@
 import { cleanPlus, NO_PLUS, PlusStatus } from './plus';
 import { dailyWeights, entriesFor, fromWeights } from './entries';
 import { cleanDoses } from './medication';
+import { cleanNotes } from './notes';
 import { cleanMeasurements, cleanPhotos } from './body';
 import { cleanIntake } from './calories';
 import { cleanHabits, cleanWeights, normalizeSettings } from './plan';
@@ -20,8 +21,9 @@ export interface Prefs {
   appearance: 'system' | 'light' | 'dark';   // follow iOS, or always light / dark
   length: 'cm' | 'in' | null;   // measurement unit; null follows the weight unit
   plus: PlusStatus;             // Tidemark Plus as Apple last confirmed it (re-checked on every launch)
+  hide: boolean;                // "hide my weight": show how the trend moves, never the number
 }
-export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system', length: null, plus: NO_PLUS };
+export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system', length: null, plus: NO_PLUS, hide: false };
 
 /** Milestones are quarters of the way from the start weight to the goal, so they belong to those numbers. */
 export const milestonePlanKey = (p: { start: string; startKg: number; goalKg: number }) => `${p.start}|${p.startKg}|${p.goalKg}`;
@@ -40,6 +42,7 @@ export function cleanPrefs(p: any): Prefs {
     appearance: p.appearance === 'light' || p.appearance === 'dark' ? p.appearance : 'system',
     length: p.length === 'cm' || p.length === 'in' ? p.length : null,
     plus: cleanPlus(p.plus),
+    hide: p.hide === true,
   };
 }
 
@@ -71,5 +74,6 @@ export function hydrate(raw: string): TrackerState {
     intake: cleanIntake(s.intake),
     lifts: cleanSessionLog(s.lifts),
     doses: cleanDoses(s.doses),
+    notes: cleanNotes(s.notes),
   };
 }

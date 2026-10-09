@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { cleanPrefs, DEFAULT_PREFS, hydrate, Prefs, SCHEMA_VERSION } from './core/storage';
 import { reconcile } from './core/entries';
+import { withNote, type DayNote } from './core/notes';
 import { round2 } from './core/units';
 import type { DoseLog, HabitLog, Measurements, PhotoLog, Settings, TrackerState, Unit } from './core/types';
 export type { Prefs, Reminder } from './core/storage';
@@ -198,6 +199,7 @@ export function useTracker() {
     if (kcal == null) delete intake[k]; else intake[k] = Math.round(kcal);
     return { ...s, intake };
   }), []);
+  const setNote = useCallback((k: string, note: DayNote | null) => setState(s => ({ ...s, notes: withNote(s.notes ?? {}, k, note) })), []);
   const setLifts = useCallback((lifts: TrackerState['lifts']) => setState(s => ({ ...s, lifts })), []);
   // Restores, resets and undos hand over a whole state: keep the weigh-in records in step with its day map
   // (unchanged days keep their records and times; edited days are re-recorded)
@@ -224,7 +226,7 @@ export function useTracker() {
 
   return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
            setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs,
-           discardPending, setDoses };
+           discardPending, setDoses, setNote };
 }
 export type Tracker = ReturnType<typeof useTracker>;
 

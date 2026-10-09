@@ -148,19 +148,19 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   );
 }
 
-export function TrendTab({ t, settings, series, today, scrollTop, openSettings, onReplan, onEdit }: TabProps & {
-  onReplan: (next: Settings['plan']) => void; onEdit: (k: string) => void;
+export function TrendTab({ t, settings, series, today, scrollTop, openSettings, onReplan, onHold, onEdit }: TabProps & {
+  onReplan: (next: Settings['plan']) => void; onHold?: (next: Settings['plan']) => void; onEdit: (k: string) => void;
 }) {
   const { state } = t;
   const { plus } = usePlus();
   return (
     <TabScreen eyebrow={`${settings.plan.targets.length - 1}-week plan`} title="Trend" onSettings={() => openSettings()} scrollTop={scrollTop}>
-      <CardBoundary name="Your trend"><TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} trend={series} today={today} /></CardBoundary>
+      <CardBoundary name="Your trend"><TrendCard settings={settings} weights={state.weights} unit={state.unit} onReplan={onReplan} onHold={onHold} trend={series} today={today} notes={state.notes} /></CardBoundary>
       {series.length >= 2 && <ChangeTable series={series} unit={state.unit} today={today} d={sign(direction(settings.plan)) as -1 | 0 | 1} />}
-      <CardBoundary name="The chart"><ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} /></CardBoundary>
+      <CardBoundary name="The chart"><ProgressChart settings={settings} weights={state.weights} unit={state.unit} trend={series} today={today} notes={state.notes} /></CardBoundary>
       {FEATURES.medication && plus && settings.medication && <CardBoundary name="Medication"><MedicationTrend med={settings.medication} doses={t.state.doses ?? {}} series={series} unit={t.state.unit} onHistory={() => openSettings('medication')} /></CardBoundary>}
       <SectionLabel>History</SectionLabel>
-      <CardBoundary name="Weigh-ins"><EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} trend={series} /></CardBoundary>
+      <CardBoundary name="Weigh-ins"><EntriesList settings={settings} weights={state.weights} unit={state.unit} onEdit={onEdit} trend={series} notes={state.notes} /></CardBoundary>
     </TabScreen>
   );
 }

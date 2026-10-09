@@ -6,7 +6,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DAY_ABBR, dateKey, daysBetween, longDate, parseKey, shortDate } from '../core/dates';
 import { weekFraction, weightSeries } from '../core/plan';
 import { trendSeries, TrendPoint } from '../core/trend';
-import { plausible, rangeText, showRangeError, stepWeight, showWeight } from '../core/units';
+import { plausible, rangeText, showRangeError, stepWeight, showWeight, weightsHidden } from '../core/units';
+import type { DayNote, DayNotes } from '../core/notes';
+import { NoteLine, NotePicker } from './Notes';
 import { tick } from '../feel';
 import { Icon } from './Icons';
 import { Sheet } from './Sheet';
@@ -41,8 +43,8 @@ export function EventCard({ settings }: { settings: Settings }) {
  * green would highlight exactly the day-to-day noise the trend is there to ignore. Tap to edit.
  * Pages in 30 at a time, so years of data never render as one long list.
  */
-export function EntriesList({ settings, weights, unit, onEdit, trend }: {
-  settings: Settings; weights: Weights; unit: Unit; onEdit: (k: string) => void; trend?: TrendPoint[];
+export function EntriesList({ settings, weights, unit, onEdit, trend, notes = {} }: {
+  settings: Settings; weights: Weights; unit: Unit; onEdit: (k: string) => void; trend?: TrendPoint[]; notes?: DayNotes;
 }) {
   const [count, setCount] = useState(6);
   const plan = settings.plan;
@@ -64,6 +66,7 @@ export function EntriesList({ settings, weights, unit, onEdit, trend }: {
             <View style={{ flex: 1 }}>
               <Text style={s.eW}>{showWeight(p.kg, unit)}</Text>
               <Text style={s.eD}>{DAY_ABBR[p.d.getDay()]} {longDate(p.k)} · week {wk}</Text>
+              <NoteLine note={notes[p.k]} />
             </View>
             {tr != null && <Text style={s.eT}>trend {showWeight(tr, unit)}</Text>}
             <Icon name="chevron" size={18} color={C.inkSoft} />
@@ -91,15 +94,20 @@ export function EntriesList({ settings, weights, unit, onEdit, trend }: {
 }
 
 /** Bottom sheet for adding or editing one weigh-in. Opens on your last weight with steppers, so a typical log is two taps. */
-export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, onClose }: {
-  initialKey: string | null; weights: Weights; unit: Unit; minKey: string;
-  onSave: (k: string, kg: number) => void; onDelete: (k: string) => void; onClose: () => void;
+export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, onClose, notes = {} }: {
+  initialKey: string | null; weights: Weights; unit: Unit; minKey: string; notes?: DayNotes;
+  onSave: (k: string, kg: number, note: DayNote) => void; onDelete: (k: string) => void; onClose: () => void;
 }) {
   const editing = initialKey != null && weights[initialKey] != null;
   const today = dateKey(new Date());
   const lastKey = Object.keys(weights).sort().at(-1);
+  const hidden = weightsHidden();   // "hide my weight": nothing is prefilled or echoed back, the steppers wait for a number
   const [key, setKey] = useState(initialKey ?? today);
-  const [kg, setKg] = useState<number | null>(initialKey != null ? weights[initialKey] ?? null : lastKey ? weights[lastKey] : null);
+  const [kg, setKg] = useState<number | null>(hidden ? null : initialKey != null ? weights[initialKey] ?? null : lastKey ? weights[lastKey] : null);
+  // The day's tags follow the date picker until they're touched
+  const [note, setNote] = useState<DayNote>(notes[initialKey ?? today] ?? { tags: [] });
+  const [noteTouched, setNoteTouched] = useState(false);
+  const pickDay = (k: string) => { setKey(k); if (!noteTouched) setNote(notes[k] ?? { tags: [] }); };
   const [nudges, setNudges] = useState(0);
   const nudge = (dir: 1 | -1) => {
     if (kg == null) return;
@@ -117,7 +125,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
   return (
     <Sheet title={editing ? 'Edit weigh-in' : 'Log weight'} onClose={() => (then ? then.run() : onClose())} closing={!!then}
       footer={<>
-        <Button label={clash ? 'Save and replace' : 'Save'} disabled={!valid || !!then} onPress={() => { if (valid) setThen({ run: () => onSave(key, kg!) }); }} />
+        <Button label={clash ? 'Save and replace' : 'Save'} disabled={!valid || !!then} onPress={() => { if (valid) setThen({ run: () => onSave(key, kg!, note) }); }} />
         {editing && <Button label="Delete weigh-in" kind="danger" disabled={!!then} onPress={() => setThen({ run: () => onDelete(initialKey!) })} style={{ marginTop: 8 }} />}
       </>}>
       <View style={s.stepRow}>
@@ -133,15 +141,16 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
           <Icon name="plus" size={24} color={C.ink} strokeWidth={2.4} />
         </Tap>
       </View>
-      {!editing && lastKey && kg != null && <Text style={s.hint}>Last: {showWeight(weights[lastKey], unit)} on {lastKey.slice(0, 4) === today.slice(0, 4) ? shortDate(parseKey(lastKey)) : longDate(lastKey)}</Text>}
+      {!editing && !hidden && lastKey && kg != null && <Text style={s.hint}>Last: {showWeight(weights[lastKey], unit)} on {lastKey.slice(0, 4) === today.slice(0, 4) ? shortDate(parseKey(lastKey)) : longDate(lastKey)}</Text>}
       <View style={s.dateRow}>
         <Text style={s.dateLabel}>Date</Text>
-        <DateInput value={key} onChange={setKey} label="Weigh-in date" min={minKey} max={today} />
+        <DateInput value={key} onChange={pickDay} label="Weigh-in date" min={minKey} max={today} />
       </View>
+      <NotePicker value={note} onChange={n => { setNote(n); setNoteTouched(true); }} />
       {!ok && showRangeError(kg) && <Text style={s.err}>{rangeText(unit)}</Text>}
       {future && <Text style={s.err}>That date is in the future.</Text>}
       {early && <Text style={s.err}>That’s before your plan started ({longDate(minKey)}). Change the start date in Settings to log earlier days.</Text>}
-      {clash && <Text style={s.hint}>You already logged {showWeight(weights[key], unit)} on {longDate(key)}. Saving replaces it.</Text>}
+      {clash && <Text style={s.hint}>You already logged {hidden ? 'a weight' : showWeight(weights[key], unit)} on {longDate(key)}. Saving replaces it.</Text>}
     </Sheet>
   );
 }

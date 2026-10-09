@@ -33,7 +33,7 @@ export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }
         <Text style={s.mileTitle}>{MILESTONE_TEXT[quarter]}</Text>
         <Text style={s.mileTxt}>
           {quarter === 4
-            ? 'Your trend has reached your goal. Holding it here for a few weeks is the next win.'
+            ? 'Your trend has reached your goal. From here, holding it is the win: the Trend tab can switch you to a holding range.'
             : `Your trend has moved ${showAmount(Math.abs(lost), unit)} ${lost >= 0 ? 'down' : 'up'} from where you started. That's real change, not a good day on the scale.`}
         </Text>
       </View>

@@ -3,9 +3,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
 import { FIRST_DAYS, firstDaysText, lineWord } from '../core/insights';
-import { direction, latestWeight, lineStatus, sign, weightSeries } from '../core/plan';
+import { direction, latestWeight, lineStatus, reachedGoal, sign, weightSeries } from '../core/plan';
 import type { TrendPoint } from '../core/trend';
-import { fmt, lbPart, showWeight, stPart, toLbNum } from '../core/units';
+import { fmt, lbPart, showChange, showWeight, stPart, toLbNum, weightsHidden } from '../core/units';
+import { changeTable } from '../core/summary';
 import type { Settings, Unit, Weights } from '../core/types';
 import { useAnimatedNumber, useAnimatedPercent } from '../motion';
 import { C, F, themed, useScheme } from '../theme';
@@ -41,7 +42,9 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
   };
   const second = unit !== 'kg';                 // a kg line under pounds can help; a pounds line under kg is noise
   const status = last ? lineStatus(plan, last.trend) : null;
-  const word = status ? lineWord(status, d) : null;
+  // At (or past) the goal is "At goal", never "Ahead": going further isn't the aim any more
+  const atGoal = last ? reachedGoal(plan, last.trend) : false;
+  const word = atGoal ? 'At goal' : status ? lineWord(status, d) : null;
   const short = (kg: number) => showWeight(kg, unit).replace(' kg', '');
   const today = lw?.k === dateKey(new Date());
   // Until there are a few weigh-ins there's nothing to judge yet: say what's next instead of a verdict
@@ -51,10 +54,20 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
   const { width: winW, height: winH, fontScale } = useWindowDimensions();
   const chartH = winH < 720 ? 92 : winW >= 600 ? 150 : 118;
   const icons = fontScale <= 1.3;                // at the largest text sizes the chips need every pixel for the numbers
+  // "Hide my weight": the headline becomes which way the trend is going this week, never the weight itself
+  const hidden = weightsHidden();
+  const wk = hidden && trend?.length ? changeTable(trend, new Date(), [7])[0].change : null;
+  const heading = wk == null ? 'Not enough yet' : Math.abs(wk) < 0.1 ? 'Holding steady' : wk < 0 ? 'Trending down' : 'Trending up';
 
   return (
     <LinearGradient colors={[C.heroA, C.heroB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
-      <Text style={s.label}>{last ? 'Trend weight' : 'Starting weight'}</Text>
+      <Text style={s.label}>{hidden ? 'Your trend this week' : last ? 'Trend weight' : 'Starting weight'}</Text>
+      {hidden ? (
+        <View style={s.current} accessible accessibilityLabel={`Your trend this week: ${heading}${wk != null ? ', ' + showChange(wk, unit, 1) : ''}`}>
+          <Text style={s.hiddenBig} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{heading}</Text>
+          {wk != null && <Text style={s.unit} maxFontSizeMultiplier={1.4}>{showChange(wk, unit, 1)}</Text>}
+        </View>
+      ) : (
       <View style={s.current} accessible accessibilityLabel={(last ? 'Trend weight ' : 'Starting weight ') + showWeight(cur, unit)}
         accessibilityHint={last ? 'Your weight with day-to-day water swings smoothed out' : undefined}>
         {unit === 'kg' || unit === 'lb'
@@ -62,8 +75,9 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
           : <><Text style={s.big} maxFontSizeMultiplier={1.25}>{stPart(shownKg)}</Text><Text style={s.unit} maxFontSizeMultiplier={1.4}>st</Text>
               <Text style={s.big} maxFontSizeMultiplier={1.25}>{fmt(lbPart(shownKg))}</Text><Text style={s.unit} maxFontSizeMultiplier={1.4}>lb</Text></>}
       </View>
+      )}
       <Text style={s.when}>{lw
-        ? (today ? 'Weighed in today' : 'Last weigh-in ' + shortDate(lw.d)) + ' · scale ' + showWeight(lw.kg, unit)
+        ? (today ? 'Weighed in today' : 'Last weigh-in ' + shortDate(lw.d)) + (hidden ? '' : ' · scale ' + showWeight(lw.kg, unit))
         : 'Not logged yet'}</Text>
       {!early && trend && <HeroChart plan={plan} series={trend} unit={unit} height={chartH} />}
 
@@ -133,6 +147,7 @@ const s = themed(() => StyleSheet.create({
   label: { fontFamily: F.bodySemi, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' },
   current: { flexDirection: 'row', alignItems: 'baseline', gap: 7, marginTop: 6, flexWrap: 'wrap' },
   big: { fontFamily: F.display, fontSize: 54, color: '#fff', lineHeight: 58 },
+  hiddenBig: { fontFamily: F.display, fontSize: 36, color: '#fff', lineHeight: 44, flexShrink: 1 },
   unit: { fontFamily: F.bodyMed, fontSize: 19, color: 'rgba(255,255,255,0.6)' },
   when: { fontFamily: F.body, fontSize: 14, color: 'rgba(255,255,255,0.78)', marginTop: 3 },
   track: { height: 6, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.16)', marginTop: 16, justifyContent: 'center' },

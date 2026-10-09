@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Linking, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { addDays, dateKey, DAY_ABBR, DAY_FULL, DAY_ORDER, longDate, mondayOf, parseKey, shortDate, validKey } from '../core/dates';
 import { doseHistoryDays, isDoseDay } from '../core/medication';
-import { assessPlan, buildTargets, cleanBreaks, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
+import { assessPlan, buildTargets, cleanBreaks, direction, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
 import { daysSince } from '../core/summary';
 import { fmt, num, numOrNull, showWeight, toLbNum } from '../core/units';
 import type { DoseLog, Habit, Meal, Medication, PlanBreak, Session, Settings, Unit } from '../core/types';
@@ -111,6 +111,7 @@ export interface SettingsProps {
   lock: boolean; lockAvailable: boolean; lockName: string; onLockChange: (on: boolean) => void;
   reminder: Reminder; onReminderChange: (r: Reminder) => void;
   appearance: AppearancePref; onAppearanceChange: (a: AppearancePref) => void; reminderBlocked?: boolean;
+  hideWeight?: boolean; onHideWeightChange?: (on: boolean) => void;
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   doses: DoseLog; onDoses: (d: DoseLog) => void;
   lengthUnit: 'cm' | 'in'; onLengthUnit: (u: 'cm' | 'in') => void;
@@ -191,8 +192,9 @@ export function SettingsScreen(p: SettingsProps) {
         </Group>
         <Text style={s.groupFootOut}>Calorie estimate: log one number a day and after two weeks Tidemark works out what you really burn from your trend.</Text>
 
-        <Group title="Display">
-          <Row icon="moon" label="Appearance" wide right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} last />
+        <Group title="Display" footer="Hide my weight: Tidemark shows which way your trend is going and by how much, never the weight itself. Exports still hold the real numbers.">
+          <Row icon="moon" label="Appearance" wide right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} />
+          <SwitchRow icon="shield" label="Hide my weight" value={p.hideWeight === true} onChange={v => p.onHideWeightChange?.(v)} last />
         </Group>
 
         <Group title="Reminder" footer={p.reminderBlocked ? 'Notifications for Tidemark are switched off in iOS Settings, so no reminder will appear until they’re allowed again.'
@@ -312,7 +314,9 @@ function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsaved }: {
     const full = { startKg: plan.startKg!, goalKg: plan.goalKg!, start: plan.start, goalDate: plan.goalDate, breaks: cleanBreaks(plan.breaks) };
     return onlyBreaksChanged(settings.plan, plan)
       ? withBreaks(settings.plan, plan.breaks)           // keep past weeks (and any re-plan) as they are
-      : { ...full, targets: buildTargets(full.startKg, full.goalKg, full.start, full.goalDate, full.breaks) };
+      : { ...full, targets: buildTargets(full.startKg, full.goalKg, full.start, full.goalDate, full.breaks),
+          // a holding plan keeps its range while it's still a holding plan
+          ...(settings.plan.holdKg != null && direction(full) === 'maintain' ? { holdKg: settings.plan.holdKg } : {}) };
   };
   // Swiped away (or locked) with a valid, unsaved plan: ask rather than silently dropping it
   const pending = changed ? build() : null;

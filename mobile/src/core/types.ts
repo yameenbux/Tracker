@@ -10,6 +10,7 @@ export interface Plan {
   goalDate: string;   // YYYY-MM-DD
   targets: number[];  // one target per week, week 1 = start date
   breaks?: PlanBreak[];
+  holdKg?: number;    // holding plans: how far either side of the goal still counts as holding (default 1 kg)
 }
 
 export interface TrackerEvent { name: string; date: string; detail: string }
@@ -45,6 +46,7 @@ export interface TrackerState {
   weights: Weights;                                             // one number a day, derived from `entries`
   entries?: import('./entries').WeighIn[];                     // timestamped weigh-ins: the source of truth
   doses?: DoseLog;                                              // medication doses marked as taken
+  notes?: import('./notes').DayNotes;                          // tags and a line of text on a day (why the scale jumped)
   habits: HabitLog;
   unit: Unit;
   measurements: Measurements;

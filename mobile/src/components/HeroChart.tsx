@@ -4,7 +4,7 @@ import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop, Text as SvgText } 
 import { addDays, daysBetween, parseKey, startOfDay } from '../core/dates';
 import { chartRange, targetAt } from '../core/plan';
 import type { TrendPoint } from '../core/trend';
-import { KG_PER_LB, showWeight } from '../core/units';
+import { KG_PER_LB, showWeight, weightsHidden } from '../core/units';
 import type { Plan, Unit } from '../core/types';
 import { C, F, themed } from '../theme';
 
@@ -64,7 +64,7 @@ export function HeroChart({ plan, series, unit, height }: { plan: Plan; series: 
             {grid.map(v => (
               <Line key={v} x1={M.l} x2={M.l + iw} y1={y(unit === 'kg' ? v : v * KG_PER_LB)} y2={y(unit === 'kg' ? v : v * KG_PER_LB)} stroke="rgba(255,255,255,0.08)" />
             ))}
-            {grid.map(v => (
+            {!weightsHidden() && grid.map(v => (
               <SvgText key={'l' + v} x={w - 2} y={y(unit === 'kg' ? v : v * KG_PER_LB) + 4} fontSize={10} fontFamily={F.body} fill="rgba(255,255,255,0.6)" textAnchor="end">{label(v)}</SvgText>
             ))}
             <Path d={`M${x(line[0].d).toFixed(1)},${y(line[0].kg).toFixed(1)} L${x(line[1].d).toFixed(1)},${y(line[1].kg).toFixed(1)}`}

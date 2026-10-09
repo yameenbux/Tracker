@@ -14,7 +14,7 @@ import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
 import { changeTable } from './core/summary';
-import { showWeight, showChange } from './core/units';
+import { setWeightsHidden, showAmount, showWeight, showChange } from './core/units';
 import type { Settings } from './core/types';
 import { CoverContext, CoverOverlay } from './components/Cover';
 import { LogSheet } from './components/Entries';
@@ -64,6 +64,7 @@ function Main() {
   const onPlusStatus = useCallback((plus: PlusStatus) => setPrefs({ plus }), [setPrefs]);
   const { state, prefs } = t;
   const plusOn = plusActive(prefs.plus);   // Tidemark Plus, as Apple last confirmed it
+  setWeightsHidden(prefs.hide);            // read by showWeight() during this render, like the colour palette
   const today = useToday();
   useAppearance(prefs.appearance);
   const [tab, setTab] = useState<Tab>('today');
@@ -137,7 +138,7 @@ function Main() {
   // "this week"). With the app lock on they get nothing but the fact that it's locked.
   useEffect(() => {
     if (t.ready) syncWidgets(widgetProps(settings ?? null, state.weights, series, state.unit, prefs.lock));
-  }, [t.ready, settings, state.weights, series, state.unit, prefs.lock, today]);
+  }, [t.ready, settings, state.weights, series, state.unit, prefs.lock, prefs.hide, today]);
 
   // Any open sheets close when the app locks (and don't reopen on unlock); a tapped reminder's log sheet opens after it.
   // Reacting to the lock (owned by useLock) after the commit; the sheets aren't rendered while locked anyway.
@@ -183,12 +184,16 @@ function Main() {
     const ok = await confirm('Start a new line from here?', `Your goal date moves to ${longDate(next.goalDate)}. Past weeks and every weigh-in stay as they are.`, 'Re-plan', false);
     if (ok) { t.setSettings({ ...settings, plan: next }); success(); show({ message: 'New line from today' }); }
   };
+  const hold = async (next: Settings['plan']) => {
+    const ok = await confirm(prefs.hide ? 'Hold at your goal?' : `Hold at ${showWeight(next.goalKg, state.unit)}?`, `For the next 26 weeks Tidemark keeps you within ${showAmount(next.holdKg ?? 1.5, state.unit)} either side. Every weigh-in stays as it is, and you can set a new goal any time in Settings.`, 'Hold', false);
+    if (ok) { t.setSettings({ ...settings, plan: next }); success(); show({ message: 'Now holding your goal' }); }
+  };
   const props: TabProps = { t, settings, series, rate, today, scrollTop: 0, openSettings: page => { setSettingsPage(page ?? 'root'); setShowSettings(true); }, go: setTab, show };
   const top = (id: Tab) => scrollTop[id];
 
   // All four tabs stay mounted (only the active one is shown), so scroll position and open panels survive switching
   const pane = (id: Tab, el: React.ReactNode) => (
-    <View key={id} style={[s.fill, tab !== id && s.hidden]} pointerEvents={tab === id ? 'auto' : 'none'}
+    <View key={id + (prefs.hide ? '-hidden' : '')} style={[s.fill, tab !== id && s.hidden]} pointerEvents={tab === id ? 'auto' : 'none'}
       accessibilityElementsHidden={tab !== id} importantForAccessibility={tab === id ? 'auto' : 'no-hide-descendants'}>
       <ActivePane.Provider value={tab === id}>{el}</ActivePane.Provider>
     </View>
@@ -204,7 +209,7 @@ function Main() {
             onBackupHide={() => setBackupHidden(true)} onExport={data.exportData} onRestore={data.restore} onExportRescued={data.exportRescued}
             pendingPlan={pendingPlan} onSavePending={() => { if (pendingPlan) { t.setSettings({ ...settings, plan: pendingPlan }); success(); show({ message: 'Plan saved' }); } setPendingPlan(null); }}
             onDiscardPending={() => setPendingPlan(null)} />} />)}
-        {pane('trend', <TrendTab {...props} scrollTop={top('trend')} onReplan={replan} onEdit={k => setLog({ key: k, n: Date.now() })} />)}
+        {pane('trend', <TrendTab {...props} scrollTop={top('trend')} onReplan={replan} onHold={hold} onEdit={k => setLog({ key: k, n: Date.now() })} />)}
         {pane('habits', <HabitsTab {...props} scrollTop={top('habits')} onLogSession={(k, dow) => setLift({ k, dow })} />)}
         {pane('body', <BodyTab {...props} scrollTop={top('body')} />)}
 
@@ -216,19 +221,19 @@ function Main() {
             onSave={l => { t.setLifts(l); success(); setLift(null); show({ message: 'Session saved' }); }} />
         )}
         {log && (
-          <LogSheet key={log.n} initialKey={log.key} weights={state.weights} unit={state.unit} minKey={settings.plan.start} onClose={() => setLog(null)}
-            onSave={(k, kg) => {
+          <LogSheet key={log.n} initialKey={log.key} weights={state.weights} notes={state.notes} unit={state.unit} minKey={settings.plan.start} onClose={() => setLog(null)}
+            onSave={(k, kg, note) => {
               // Remember what this replaces (another day's value, or the old date of a moved entry) so it can be undone
               const moved = log.key && log.key !== k ? { k: log.key, kg: state.weights[log.key] } : null;
-              const replaced = state.weights[k];
+              const replaced = state.weights[k], oldNote = state.notes?.[k] ?? null;
               if (moved) t.setWeight(moved.k, null);
-              t.setWeight(k, kg); success(); setLog(null);
-              const undo = () => { t.setWeight(k, replaced ?? null); if (moved) t.setWeight(moved.k, moved.kg); };
+              t.setWeight(k, kg); t.setNote(k, note); success(); setLog(null);
+              const undo = () => { t.setWeight(k, replaced ?? null); t.setNote(k, oldNote); if (moved) t.setWeight(moved.k, moved.kg); };
               // Say what the weigh-in did to the trend, the number that matters, not just that it saved
               const after = { ...state.weights, [k]: kg };
               if (moved) delete after[moved.k];
               const wk = changeTable(trendSeries(weightSeries(settings.plan, after)), new Date(), [7])[0].change;
-              show({ message: `${showWeight(kg, state.unit)} saved for ${k === today ? 'today' : longDate(k)}`
+              show({ message: `${prefs.hide ? 'Weigh-in' : showWeight(kg, state.unit)} saved for ${k === today ? 'today' : longDate(k)}`
                        + (wk != null ? ` · trend ${showChange(wk, state.unit, 1)} this week` : ''),
                      ...(replaced != null || moved ? { action: 'Undo', onAction: undo } : {}) });
             }}
@@ -244,7 +249,8 @@ function Main() {
             <SettingsScreen initialPage={settingsPage} settings={settings} unit={state.unit} setUnit={t.setUnit}
               lock={prefs.lock} lockAvailable={lock.lockAvailable} lockName={lock.lockName} onLockChange={on => lock.setLock(on, lock.lockName)}
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
-              appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })} reminderBlocked={prefs.reminder.on && notifBlocked}
+              appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })}
+              hideWeight={prefs.hide} onHideWeightChange={hide => t.setPrefs({ hide })} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               doses={state.doses ?? {}} onDoses={t.setDoses}
               lengthUnit={lengthUnitFor(prefs.length, state.unit)} onLengthUnit={length => t.setPrefs({ length })}
