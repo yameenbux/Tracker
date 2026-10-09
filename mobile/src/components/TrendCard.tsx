@@ -2,10 +2,11 @@ import { EmptyState } from './States';
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { longDate } from '../core/dates';
-import { direction, lineStatus, GAIN_WARN_PCT, replanFromHere, sign, weightSeries } from '../core/plan';
+import { direction, holdBand, holdingPlan, lineStatus, GAIN_WARN_PCT, replanFromHere, sign, weightSeries } from '../core/plan';
 import { latestJump, projectedGoalDate, trendSeries, TrendPoint, weeklyRate } from '../core/trend';
 import { showChange, showAmount, showWeight } from '../core/units';
 import type { Plan, Settings, Unit, Weights } from '../core/types';
+import { tagPhrase, tagsNear, type DayNotes } from '../core/notes';
 import { C, F, themed, useScheme } from '../theme';
 import { Button, Card } from './ui';
 
@@ -15,8 +16,8 @@ const change = (kg: number, unit: Unit) => showChange(kg, unit, 1);   // one dec
  * Trend weight: what the scale is really doing once daily water swings are smoothed out,
  * the honest weekly rate, and why a sudden jump on the scale isn't fat.
  */
-export const TrendCard = memo(function TrendCard({ settings, weights, unit, onReplan, trend }: {
-  settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void; trend?: TrendPoint[]; today?: string;
+export const TrendCard = memo(function TrendCard({ settings, weights, unit, onReplan, onHold, trend, notes = {} }: {
+  settings: Settings; weights: Weights; unit: Unit; onReplan?: (next: Plan) => void; onHold?: (next: Plan) => void; trend?: TrendPoint[]; today?: string; notes?: DayNotes;
 }) {
   useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const plan = settings.plan;
@@ -32,10 +33,12 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
   const rate = weeklyRate(series);
   const eta = projectedGoalDate(last.trend, plan.goalKg, rate);
   const jump = latestJump(series);
+  const tagged = jump ? tagsNear(notes, last.k) : [];   // what the person noted on the day (or the day before)
   const pct = rate ? Math.abs(rate.perWeek) / last.trend * 100 : 0;
   const dir = direction(plan), d = sign(dir);
   const along = rate ? rate.perWeek * (d || -1) : 0;              // + when moving the way the plan wants
-  const atGoal = d === 0 ? Math.abs(last.trend - plan.goalKg) <= 1 : (plan.goalKg - last.trend) * d <= 0;
+  const band = holdBand(plan);
+  const atGoal = d === 0 ? Math.abs(last.trend - plan.goalKg) <= band : (plan.goalKg - last.trend) * d <= 0;
   const tooFast = dir === 'gain' ? pct > GAIN_WARN_PCT && rate!.perWeek > 0 : dir === 'lose' ? pct > 1 && rate!.perWeek < 0 : false;
   // Well behind the line (over 1 kg and 1% of body weight): offer a fresh line from here instead of a guilt trip
   const behind = lineStatus(plan, last.trend).off;
@@ -61,10 +64,10 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
           ? <>The weekly rate shows once you have 4 weigh-ins spread over 10 days or more.</>
           : dir === 'maintain'
             ? atGoal
-              ? <>You’re holding within {unit === 'kg' ? 'a kilo' : 'about 2 lb'} of {showWeight(plan.goalKg, unit)}. That’s what maintenance looks like.</>
+              ? <>You’re holding within {showAmount(band, unit)} of {showWeight(plan.goalKg, unit)}. That’s what maintenance looks like.</>
               : <>Your trend has drifted {showAmount(Math.abs(last.trend - plan.goalKg), unit)} {last.trend > plan.goalKg ? 'above' : 'below'} where you’re holding. Small, steady corrections work better than a crash week.</>
             : atGoal
-              ? <>You’re at your goal. Holding it for a few weeks is the next win.</>
+              ? <>You’ve reached your goal. From here, holding it is the win, not going further.</>
               : eta
                 ? <>At this pace you reach {showWeight(plan.goalKg, unit)} around <Text style={s.b}>{longDate(eta)}</Text>
                     {eta <= plan.goalDate ? ': ahead' : ': behind'} of the plan’s {longDate(plan.goalDate)}.</>
@@ -86,6 +89,15 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
               ? `Gaining that much fat would take about ${jump.fatKcal.toLocaleString()} kcal over what you burn. It's almost certainly water: salt, carbs, a late meal or a hard workout. It usually settles in a few days.`
               : `Losing that much fat would need a ${jump.fatKcal.toLocaleString()} kcal deficit. Most of this drop is water, so don't be surprised if some comes back. The trend is the number to trust.`}
           </Text>
+          {tagged.length > 0 && <Text style={s.jumpTag}>You noted {tagPhrase(tagged)}{jump.direction === 'up' ? ', which often shows up as water weight for a day or two.' : '. The trend has already allowed for it.'}</Text>}
+        </View>
+      )}
+      {atGoal && d !== 0 && onHold && (
+        <View style={s.replan}>
+          <Text style={s.replanTxt}>
+            Switch to holding and Tidemark keeps you within {showAmount(1.5, unit)} of {showWeight(plan.goalKg, unit)}. It stops counting further loss as progress; drifting either way gets the same calm note.
+          </Text>
+          <Button label="Switch to holding" kind="primary" small onPress={() => onHold(holdingPlan(plan))} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
         </View>
       )}
       {replan && onReplan && (
@@ -114,6 +126,7 @@ const s = themed(() => StyleSheet.create({
   jumpDown: { backgroundColor: C.mintBg, borderColor: C.mintLine },
   jumpTitle: { fontFamily: F.bodyBold, fontSize: 14, color: C.ink, marginBottom: 4 },
   jumpTxt: { fontFamily: F.body, fontSize: 13.5, color: C.inkSoft, lineHeight: 18 },
+  jumpTag: { fontFamily: F.bodySemi, fontSize: 13.5, color: C.ink, lineHeight: 18, marginTop: 6 },
   replan: { marginTop: 12, marginHorizontal: 4, backgroundColor: C.panel, borderWidth: 1, borderColor: C.panelEdge, borderRadius: 12, padding: 12 },
   replanTxt: { fontFamily: F.body, fontSize: 13.5, color: C.ink, lineHeight: 18 },
   foot: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, lineHeight: 18, paddingHorizontal: 4, marginTop: 10 },

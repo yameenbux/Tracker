@@ -1,18 +1,21 @@
 // Backup format is shared with the web app (index.html), so a .txt exported from either one restores in the other.
 import { dailyWeights, entriesFor, WeighIn } from './entries';
-import { cleanDoses } from './medication';
+import { cleanDoses, cleanEffects } from './medication';
+import { cleanNotes } from './notes';
+import { cleanProtein } from './protein';
+import type { DayNotes } from './notes';
 import { dateKey, longDate, shortDate } from './dates';
 import { legacySettings, LEGACY_START } from './legacy';
 import { cleanMeasurements, MEASURES } from './body';
 import { cleanIntake } from './calories';
 import { cleanSessionLog } from './progression';
 import { cleanHabits, cleanWeights, latestWeight, mergeLegacyActuals, normalizeSettings, weekDate } from './plan';
-import { fmt, showWeight, toStLb } from './units';
+import { fmt, showWeightAlways as showWeight, toStLb } from './units';
 import type { DoseLog, HabitLog, Measurements, Settings, TrackerState, Unit, Weights } from './types';
 
 /** What a backup holds. Photos are not included: they stay on the device (they'd make the file huge). */
 export interface Restored { settings: Settings; weights: Weights; habits: HabitLog; measurements: Measurements;
-  intake: TrackerState['intake']; lifts: TrackerState['lifts']; unit?: Unit; entries?: WeighIn[]; doses?: DoseLog }
+  intake: TrackerState['intake']; lifts: TrackerState['lifts']; unit?: Unit; entries?: WeighIn[]; doses?: DoseLog; notes?: DayNotes; effects?: TrackerState['effects']; protein?: TrackerState['protein'] }
 
 /**
  * Accepts a .txt export (reads the JSON after the "raw backup" line) or a bare JSON file.
@@ -37,7 +40,7 @@ export function parseBackup(text: string, current: Settings | null): Restored {
     const entries = entriesFor(raw.entries, cleanWeights(raw.weights)) ?? undefined;
     return { settings, weights: entries ? dailyWeights(entries) : cleanWeights(raw.weights), habits: cleanHabits(raw.habits),
              measurements: cleanMeasurements(raw.measurements), intake: cleanIntake(raw.intake), lifts: cleanSessionLog(raw.lifts), unit,
-             ...(entries ? { entries } : {}), ...(raw.doses ? { doses: cleanDoses(raw.doses) } : {}) };
+             ...(entries ? { entries } : {}), ...(raw.doses ? { doses: cleanDoses(raw.doses) } : {}), ...(raw.notes ? { notes: cleanNotes(raw.notes) } : {}), ...(raw.effects ? { effects: cleanEffects(raw.effects) } : {}), ...(raw.protein ? { protein: cleanProtein(raw.protein) } : {}) };
   }
   // Old web-app exports: identified by their weight fields, never by habits alone
   if (raw.actuals || raw.dailyW) {
@@ -97,6 +100,6 @@ export function buildExportText(state: Omit<TrackerState, 'photos'> & { settings
   L.push('Progress photos are kept on your phone and are not included in this file.');
   L.push('');
   L.push('--- raw backup (keep this to restore) ---');
-  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, intake, lifts, unit, entries: state.entries, doses: state.doses }));
+  L.push(JSON.stringify({ app: 'tracker', version: 2, settings, weights, habits, measurements, intake, lifts, unit, entries: state.entries, doses: state.doses, notes: state.notes, effects: state.effects, protein: state.protein }));
   return L.join('\n');
 }

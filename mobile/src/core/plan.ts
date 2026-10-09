@@ -1,5 +1,6 @@
 import { habitIcon } from './habitIcons';
 import { cleanMedication } from './medication';
+import { cleanPerKg } from './protein';
 import { addDays, dateKey, daysBetween, parseKey, startOfDay, validKey, WEEK_MS } from './dates';
 import { numOrNull, plausible, round2 } from './units';
 import type { Habit, HabitLog, Macros, Plan, PlanBreak, Session, Settings, Weights } from './types';
@@ -163,6 +164,8 @@ export function normalizeSettings(s: any): Settings | null {
   const breaks = cleanBreaks(p.breaks);
   if (targets.length !== weeks + 1 || !targets.every(plausible)) targets = buildTargets(startKg, goalKg, p.start, p.goalDate, breaks);
   const plan: Plan = { start: p.start, startKg, goalKg, goalDate: p.goalDate, targets: [...targets], breaks };
+  const hold = numOrNull(p.holdKg);
+  if (hold != null && hold >= MIN_HOLD_KG && hold <= MAX_HOLD_KG) plan.holdKg = Math.round(hold * 10) / 10;
 
   const ev = s.event && s.event.name && validKey(s.event.date)
     ? { name: str(s.event.name, 60), date: s.event.date, detail: str(s.event.detail, 120) } : null;
@@ -189,7 +192,8 @@ export function normalizeSettings(s: any): Settings | null {
       kcal: numOrNull(x.kcal), p: numOrNull(x.p), c: numOrNull(x.c), f: numOrNull(x.f) })),
     target: { kcal: numOrNull(mt.kcal), p: numOrNull(mt.p), c: numOrNull(mt.c), f: numOrNull(mt.f) },
   };
-  return { plan, event: ev, habits, sessions, meals, trackCalories: s.trackCalories === true, medication: cleanMedication(s.medication) };
+  const protein = s.protein && typeof s.protein === 'object' ? { on: s.protein.on === true, perKg: cleanPerKg(s.protein.perKg) } : undefined;
+  return { plan, event: ev, habits, sessions, meals, trackCalories: s.trackCalories === true, medication: cleanMedication(s.medication), ...(protein ? { protein } : {}) };
 }
 
 export function cleanWeights(obj: unknown): Weights {
@@ -346,15 +350,17 @@ export function behindBy(plan: Plan, trendNow: number, today: Date = new Date())
   return d === 0 ? Math.abs(off) : -d * off;
 }
 
-/** Within this much of the line counts as "on the line" (kg); a maintenance plan allows a kilo either way. */
-export const ON_LINE_KG = 0.3, HOLD_KG = 1;
+/** Within this much of the line counts as "on the line" (kg); a maintenance plan allows a kilo either way by default. */
+export const ON_LINE_KG = 0.3, HOLD_KG = 1, MIN_HOLD_KG = 0.5, MAX_HOLD_KG = 3;
+/** How far either side of the goal a holding plan allows. */
+export const holdBand = (plan: Plan) => plan.holdKg ?? HOLD_KG;
 /**
  * The one answer to "how am I doing against the line?", used by every screen so they can never disagree.
  * `off` is how far behind (positive) or ahead (negative) the trend is today, in kg.
  */
 export function lineStatus(plan: Plan, trendNow: number, today: Date = new Date()): { off: number; onLine: boolean; ahead: boolean } {
   const off = behindBy(plan, trendNow, today);
-  const tol = direction(plan) === 'maintain' ? HOLD_KG : ON_LINE_KG;
+  const tol = direction(plan) === 'maintain' ? holdBand(plan) : ON_LINE_KG;
   return { off, onLine: off <= tol, ahead: direction(plan) !== 'maintain' && off < -tol };
 }
 
@@ -403,4 +409,27 @@ export function chartWindow(plan: Plan, range: ChartRange, latest: Date | null, 
   if (end < start) end = addDays(start, range === '4w' ? 28 : 84);
   const from = addDays(end, range === '4w' ? -28 : -84);
   return [from < start ? start : from, end];
+}
+
+// ---- after the goal: holding ----
+/** Weeks a holding plan runs for before it asks again (it can be extended any time in Settings). */
+export const HOLD_WEEKS = 26;
+/** The range a holding plan starts with: 1.5 kg either side, about the size of normal day-to-day water swings. */
+export const DEFAULT_HOLD_KG = 1.5;
+
+/** A losing or gaining plan whose trend has reached the goal. Holding plans never "reach" anything. */
+export function reachedGoal(plan: Plan, trendNow: number): boolean {
+  const d = sign(direction(plan));
+  return d !== 0 && (plan.goalKg - trendNow) * d <= 0;
+}
+
+/**
+ * The plan after the goal: hold the goal weight, within a range, from today. Further loss isn't the aim any more,
+ * so nothing praises it; drifting outside the range either way gets the same calm note.
+ */
+export function holdingPlan(plan: Plan, today: Date = new Date(), holdKg = DEFAULT_HOLD_KG): Plan {
+  const start = dateKey(startOfDay(today));
+  const goalDate = dateKey(addDays(startOfDay(today), HOLD_WEEKS * 7));
+  return { start, startKg: plan.goalKg, goalKg: plan.goalKg, goalDate, targets: buildTargets(plan.goalKg, plan.goalKg, start, goalDate), breaks: [],
+           holdKg: Math.min(MAX_HOLD_KG, Math.max(MIN_HOLD_KG, holdKg)) };
 }

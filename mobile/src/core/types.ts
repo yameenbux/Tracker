@@ -10,6 +10,7 @@ export interface Plan {
   goalDate: string;   // YYYY-MM-DD
   targets: number[];  // one target per week, week 1 = start date
   breaks?: PlanBreak[];
+  holdKg?: number;    // holding plans: how far either side of the goal still counts as holding (default 1 kg)
 }
 
 export interface TrackerEvent { name: string; date: string; detail: string }
@@ -26,11 +27,15 @@ export interface Settings {
   meals: { items: Meal[]; target: Macros };
   trackCalories?: boolean;   // optional one-number-a-day calorie logging
   medication?: Medication | null;   // optional GLP-1 (or other) medication companion
+  protein?: { on: boolean; perKg: import('./protein').PerKg };   // Plus: a daily protein minimum
 }
 
 /** A medication taken on a schedule, e.g. a weekly GLP-1 injection. Tidemark only records it; it never advises on dosing. */
-export interface Medication { name: string; doseMg: number | null; every: 'week' | 'day'; weekday: number; remind?: boolean }   // weekday: 0 = Sunday
-export type DoseLog = Record<string, { mg: number | null }>;   // date -> dose taken that day
+export interface Medication { name: string; doseMg: number | null; every: 'week' | 'day'; weekday: number; remind?: boolean; injected?: boolean }   // weekday: 0 = Sunday
+export type SiteId = 'belly-l' | 'belly-r' | 'thigh-l' | 'thigh-r' | 'arm-l' | 'arm-r';
+export type DoseLog = Record<string, { mg: number | null; site?: SiteId }>;   // date -> dose taken that day (and where, for injections)
+export type EffectId = 'nausea' | 'constipation' | 'diarrhoea' | 'heartburn' | 'tired' | 'headache' | 'noAppetite' | 'site';
+export type EffectLog = Record<string, { effects: EffectId[]; severity: 1 | 2 | 3; text?: string }>;   // date -> how it felt
 
 export type Weights = Record<string, number>;                     // date -> kg
 export type HabitLog = Record<string, Record<string, true>>;       // date -> habit id -> ticked
@@ -45,6 +50,9 @@ export interface TrackerState {
   weights: Weights;                                             // one number a day, derived from `entries`
   entries?: import('./entries').WeighIn[];                     // timestamped weigh-ins: the source of truth
   doses?: DoseLog;                                              // medication doses marked as taken
+  effects?: EffectLog;
+  protein?: import('./protein').ProteinLog;                     // grams of protein eaten a day (Plus)                                         // side effects noted on a day (medication, Plus)
+  notes?: import('./notes').DayNotes;                          // tags and a line of text on a day (why the scale jumped)
   habits: HabitLog;
   unit: Unit;
   measurements: Measurements;

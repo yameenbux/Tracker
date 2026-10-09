@@ -132,10 +132,17 @@ describe('the free version', () => {
     onExport: jest.fn(), onExportCsv: jest.fn(), onRestore: jest.fn(), onReset: jest.fn(), onEraseAll: jest.fn(), ...over,
   });
   test('Plus features in Settings open the paywall instead', async () => {
-    const p = props();
-    render(<Harness><SettingsScreen {...p} /></Harness>);
+    const onReport = jest.fn();
+    render(<Harness><SettingsScreen {...props()} onReport={onReport} /></Harness>);
+    fireEvent.press(screen.getByLabelText(/^Report for your doctor/));
+    expect(await screen.findAllByText(/Report for your doctor is part of Plus/)).toHaveLength(1);   // one paywall, shown in the Settings window
+    expect(onReport).not.toHaveBeenCalled();
+  });
+  test('logging a medication is free: its page opens without the paywall', async () => {
+    render(<Harness><SettingsScreen {...props()} /></Harness>);
     fireEvent.press(screen.getByLabelText(/^Medication/));
-    expect(await screen.findAllByText(/Medication log is part of Plus/)).toHaveLength(1);   // one paywall, shown in the Settings window
+    expect(await screen.findByLabelText('Medication name')).toBeTruthy();
+    expect(screen.queryByText(/is part of Plus/)).toBeNull();
   });
   test('a 4th habit needs Plus; with Plus all 6 are available', () => {
     const { unmount } = render(<Harness><SettingsScreen {...props()} initialPage="habits" /></Harness>);

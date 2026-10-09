@@ -29,10 +29,19 @@ describe('error reports', () => {
 describe('launch switches', () => {
   test('both risky features are on unless a build turns them off', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    jest.isolateModules(() => { expect(require('../features').FEATURES).toEqual({ medication: true, protectedBackups: true }); });
+    jest.isolateModules(() => { expect(require('../features').FEATURES).toEqual({ medication: true, protectedBackups: true, webPlus: false }); });
+  });
+  test('the web preview switch can never unlock Plus in the iPhone app', () => {
+    process.env.EXPO_PUBLIC_WEB_PLUS = '1';
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      jest.isolateModules(() => { expect(require('../features').FEATURES.webPlus).toBe(false); });   // tests run as iOS
+    } finally { delete process.env.EXPO_PUBLIC_WEB_PLUS; }
+  });
+  test('a build can turn each risky feature off', () => {
     process.env.EXPO_PUBLIC_DISABLE_MEDICATION = '1';
     process.env.EXPO_PUBLIC_DISABLE_PROTECTED_BACKUPS = '1';
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    jest.isolateModules(() => { expect(require('../features').FEATURES).toEqual({ medication: false, protectedBackups: false }); });
+    jest.isolateModules(() => { expect(require('../features').FEATURES).toEqual({ medication: false, protectedBackups: false, webPlus: false }); });
   });
 });
