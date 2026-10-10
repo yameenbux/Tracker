@@ -37,6 +37,7 @@ import { C, themed, useScheme } from './theme';
 import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
 import { useHealth } from './useHealth';
+import { useAutoBackup } from './useAutoBackup';
 import { shareReport } from './report';
 import { widgetProps } from './core/widgetData';
 import { syncWidgets } from './widgets/sync';
@@ -81,6 +82,7 @@ function Main() {
   const lock = useLock(t.ready, prefs, t.setPrefs);
   const insets = useSafeAreaInsets();
   const health = useHealth(t);
+  const autoBackup = useAutoBackup(t);
 
   const show = useCallback((m: Omit<ToastMsg, 'id'>) => setToast({ ...m, id: Date.now() }), []);
   const hideToast = useCallback(() => setToast(null), []);
@@ -263,7 +265,7 @@ function Main() {
               reminder={prefs.reminder} onReminderChange={setReminder} lastBackup={prefs.lastBackup}
               appearance={prefs.appearance} onAppearanceChange={a => t.setPrefs({ appearance: a })}
               hideWeight={prefs.hide} onHideWeightChange={hide => t.setPrefs({ hide })}
-              health={health.available ? { on: health.on, set: health.setHealth } : undefined} onReport={report} reminderBlocked={prefs.reminder.on && notifBlocked}
+              health={health.available ? { on: health.on, set: health.setHealth } : undefined} onReport={report} autoBackup={autoBackup.available ? autoBackup : undefined} reminderBlocked={prefs.reminder.on && notifBlocked}
               weighIns={Object.keys(state.weights).length} weights={state.weights} onPlanLeftUnsaved={setPendingPlan}
               doses={state.doses ?? {}} onDoses={t.setDoses}
               lengthUnit={lengthUnitFor(prefs.length, state.unit)} onLengthUnit={length => t.setPrefs({ length })}

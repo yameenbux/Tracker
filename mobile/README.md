@@ -63,9 +63,15 @@ introductory offer) and `com.yameenbux.tidemark.plus.lifetime` (non-consumable).
 - **Doctor report** (Plus, `src/core/report.ts`): the last 12 weeks as a PDF made on the phone with `expo-print`.
 - **Protein minimum** (Plus, `src/core/protein.ts`): 1.2–1.6 g per kg of the lower of trend and goal weight.
 - **Settings**: an iOS grouped list — plan and breaks, event, units, habits, sessions, meals, calories, a daily weigh-in
-  reminder, Face ID lock, export (backup or CSV), restore, clear, erase everything, privacy policy.
+  reminder, Face ID lock, automatic backup, export (backup or CSV), restore, clear, erase everything, privacy policy.
 - **Safety**: saved data that can't be read is copied aside rather than overwritten; a snapshot is taken before restore;
   the lock hides everything (including the app-switcher preview).
+- **Automatic backups** (free, iOS): the person picks a folder once (on the phone or in iCloud Drive) and Tidemark
+  writes that day's backup there about 15 seconds after any change and as the app leaves the screen, keeping the newest
+  14 (`src/core/autoBackup.ts`, `src/useAutoBackup.ts`). The folder is held as a security-scoped bookmark by a small local
+  Swift module, `modules/backup-folder`; Expo Go, the web build and Android don't have it, so the feature is hidden
+  there. Nothing is written while saved data failed to load, so a bad start can't overwrite a good backup. The files
+  are ordinary plain-text backups (no photos, no password) that Restore reads like any other.
 - **Backups** use the same format as the web app, so a `.txt` exported from the website restores here, and the other way round.
   The website keeps the parts it doesn't show (doses, measurements, calories, session weights, pounds) and writes them
   back out, so nothing is lost passing through it; weigh-in records are rebuilt from the daily weights.
@@ -105,6 +111,12 @@ What each protection is, and what it isn't:
 
 - **Apple Health sync is built but untested on a device**: Expo Go can't use HealthKit. Test it in a development or
   TestFlight build (EAS turns on the HealthKit capability from the config plugin).
+- **Automatic backups are built but untested on a device**: the Swift module can't be compiled here. Before release,
+  in a development or TestFlight build: pick a folder on the phone and one in iCloud Drive, change data, check the file
+  appears, relaunch (the folder must still work), rename and delete the folder (Settings and Today must say it isn't
+  saving), and restore from one of the files. Writing health data into a folder the person picked in iCloud Drive is
+  their choice, not Tidemark syncing to iCloud, but it sits close to Guideline 5.1.3(ii): describe it plainly in the
+  App Review notes.
 - **iCloud sync** — not built. App Review Guideline 5.1.3(ii) says apps using HealthKit may not store personal health
   information in iCloud. Settle that (e.g. ask App Review, or sync only what didn't come from Health) before building it.
 - **Apple Watch app** — not built. It needs a native watchOS target (Swift), which can't be compiled or tested here; an

@@ -1,3 +1,4 @@
+import { backupFolder } from '../modules/backup-folder';
 import { buildExportText, parseBackup } from './core/backup';
 import { isVault, MIN_PASSWORD, openAsync, sealAsync } from './core/vault';
 import { secureRandom } from './secureRandom';
@@ -98,13 +99,14 @@ export function useDataActions(t: Tracker, show: Show, done: () => void, plus = 
   };
 
   const eraseAll = async () => {
-    if (!(await confirm('Delete all your data?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.', 'Erase'))) return;
+    if (!(await confirm('Delete all your data?', 'This deletes your plan, every weigh-in, habit, measurement and progress photo from this phone. It can’t be undone. Export a backup first if you might want any of it.' + (prefs.autoBackup.on ? ' Automatic backups already in your backup folder are kept.' : ''), 'Erase'))) return;
     if (!(await confirm('Are you sure?', 'Tidemark will start again from setup.', 'Delete everything'))) return;
     t.discardPending();   // a save still waiting must not bring the old data back after erasing
     if (!(await eraseStorage())) { notify('Couldn’t erase', 'Nothing was deleted. Try again.'); return; }
     for (const day of Object.values(state.photos)) for (const ref of Object.values(day)) if (ref) deletePhoto(ref);
     deleteAllPhotos();
     clearCache();                                  // exported files, picked backups, photo-picker leftovers
+    backupFolder?.forget();                        // stop automatic backups (files already in that folder are the person's)
     await applyReminder({ ...prefs.reminder, on: false });
     await applyDoseReminders(null, {});
     done();
