@@ -111,7 +111,7 @@ What each protection is, and what it isn't:
 
 - **Apple Health sync is built but untested on a device**: Expo Go can't use HealthKit. Test it in a development or
   TestFlight build (EAS turns on the HealthKit capability from the config plugin).
-- **Automatic backups are built but untested on a device**: the Swift module can't be compiled here. Before release,
+- **Automatic backups are built but untested on a device**: the Swift module compiles in CI (`ios-build.yml`) but hasn't run on a phone. Before release,
   in a development or TestFlight build: pick a folder on the phone and one in iCloud Drive, change data, check the file
   appears, relaunch (the folder must still work), rename and delete the folder (Settings and Today must say it isn't
   saving), and restore from one of the files. The files leave out readings from Apple Health (`withoutHealth` in
@@ -123,6 +123,52 @@ What each protection is, and what it isn't:
   untested target could break the whole iOS build.
 - **Widgets need a development or App Store build**: Expo Go has no widget extension. They're built with the app by
   EAS; nothing to set up beyond letting EAS register the app group the first time it asks.
+
+## Device test plan
+
+Nothing native has run on an iPhone yet. CI now compiles it all for the simulator (`.github/workflows/ios-build.yml`),
+which proves it builds, not that it works. Run this once on a real iPhone in a **development build** (`npx eas-cli build
+-p ios --profile development`), then the purchase steps again in **TestFlight** with a sandbox tester. Each line says
+what should happen; anything else is a bug.
+
+**Data and locking**
+1. Log weigh-ins on three days, force-quit, reopen: all three are there.
+2. Turn on the Face ID lock, send the app to the background: the app-switcher picture is blank; reopening asks for Face ID.
+3. Lock the phone for 10 minutes with the app in the background, unlock, open: nothing lost, no "couldn't read" notice.
+
+**Apple Health** (Settings → Apple Health)
+4. Turn it on, allow read and write: weights already in Health appear as weigh-ins.
+5. Log a weight in Tidemark: it shows in the Health app as one sample from Tidemark.
+6. Edit that weigh-in: Health still has **one** Tidemark sample for the day, with the new value.
+7. Delete it in Tidemark: Tidemark's sample leaves Health; a scale's reading for that day stays.
+8. Add a weight in the Health app: it appears in Tidemark within a few seconds of reopening.
+9. Export a backup, delete a Health-only day in Tidemark, restore the backup: the Health readings come back.
+
+**Automatic backups** (Settings → Automatic backup)
+10. Choose a folder on the phone: a `Tidemark backup <date>.txt` appears in Files within 20 seconds.
+11. Open the file: weights you typed are in it; readings from Health are not.
+12. Relaunch the app, change data: the same day's file is updated (the folder is remembered).
+13. Rename or delete the folder in Files: Settings and Today say backups aren't saving.
+14. Restore from one of the files: it works like any other backup.
+
+**Widgets**
+15. Add the medium and small widgets and a Lock Screen widget: they show the trend.
+16. Log a weigh-in: the widgets update.
+17. Turn on the Face ID lock: widgets show "locked", no numbers.
+18. Leave the phone locked overnight: the next morning the widgets still show the last trend (not blank or an error).
+    This is the open question about `NSFileProtectionComplete`; if they go blank, tell Claude and the protection class
+    for the shared snapshot gets changed.
+
+**Plus** (TestFlight, sandbox tester, products set up in App Store Connect)
+19. The paywall shows Apple's prices; with the launch offer set, yearly says "£11.99 for the first year, then £19.99 a year".
+20. Buy monthly: Plus features unlock at once. Delete and reinstall, tap Restore: Plus comes back.
+21. Cancel in Settings → Apple ID → Subscriptions, let the sandbox period run out: Plus ends; data entered in Plus stays.
+22. Buy lifetime on a second sandbox account: unlocks, and Restore brings it back.
+
+**Reminders and the rating prompt**
+23. Set a weigh-in reminder two minutes ahead, lock the phone: the notification arrives and doesn't show a weight.
+24. In a development build with 14+ weigh-ins over 21+ days and a good week, log today's weight: Apple's rating
+    prompt appears about 2.5 seconds later (development builds always show it; TestFlight never does).
 
 ## Before a release
 
