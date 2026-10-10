@@ -162,6 +162,44 @@ describe('the hero', () => {
     expect(screen.queryByText(/ lb$/)).toBeNull();
     expect(screen.getByText(/goal by/)).toBeTruthy();
   });
+  // A trend 1 kg above today's target but losing 1 kg a week reaches the goal well before its date
+  const losing = (n: number, from: number) => Array.from({ length: n }, (_, i) => {
+    const d = addDays(today, i - n + 1); return { d, k: dateKey(d), kg: from - i / 7, trend: from - i / 7 };
+  });
+  test('behind the line but on pace to finish early says “Catching up”, never “Behind” beside an early date', () => {
+    const tr = losing(28, 92.9);                                  // about 89 kg today against a target near 88
+    render(<Hero settings={s2} weights={{}} unit="kg" trend={tr} />);
+    expect(screen.getByText('Catching up')).toBeTruthy();
+    expect(screen.queryByText('Behind')).toBeNull();
+    expect(screen.getByText(/kg behind$/)).toBeTruthy();
+  });
+  test('with “hide my weight” on, progress is a share of the way: no kilos lost or left', () => {
+    setWeightsHidden(true);
+    try {
+      render(<Hero settings={s2} weights={{}} unit="kg" trend={losing(28, 89)} />);
+      expect(screen.getByText('Progress')).toBeTruthy();
+      expect(screen.getByText(/^\d+%$/)).toBeTruthy();
+      expect(screen.queryByText('To goal')).toBeNull();
+      expect(screen.queryByText('Lost')).toBeNull();
+      expect(screen.queryByText(/behind$/)).toBeNull();
+    } finally { setWeightsHidden(false); }
+  });
+});
+
+describe('free waist', () => {
+  test('logging the waist keeps hips and chest measured with Plus', async () => {
+    const day = dateKey(today);
+    const onMeasurements = jest.fn();
+    render(<BodyCard waistOnly settings={settings} weights={{}} unit="kg" lengthUnit="cm" onLengthUnit={jest.fn()} photos={{}} onPhotos={jest.fn()}
+      measurements={{ [day]: { hips: 100, chest: 98 } }} onMeasurements={onMeasurements} />);
+    expect(screen.queryByText('Photos')).toBeNull();                              // photos stay Plus
+    fireEvent.press(screen.getByText('Measure'));
+    expect(screen.queryByLabelText('Hips')).toBeNull();
+    fireEvent.changeText(screen.getByLabelText('Waist'), '88');
+    fireEvent.press(screen.getByText('Save'));
+    await waitFor(() => expect(onMeasurements).toHaveBeenCalled());
+    expect(onMeasurements.mock.calls[0][0][day]).toEqual({ waist: 88, hips: 100, chest: 98 });
+  });
 });
 
 describe('free Settings', () => {

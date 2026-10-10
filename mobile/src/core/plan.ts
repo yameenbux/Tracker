@@ -351,7 +351,8 @@ export function behindBy(plan: Plan, trendNow: number, today: Date = new Date())
 }
 
 /** Within this much of the line counts as "on the line" (kg); a maintenance plan allows a kilo either way by default. */
-export const ON_LINE_KG = 0.3, HOLD_KG = 1, MIN_HOLD_KG = 0.5, MAX_HOLD_KG = 3;
+// Within half a kilo of the line counts as on it: the trend is smooth, but not so smooth that 0.3 kg can't flip back
+export const ON_LINE_KG = 0.5, HOLD_KG = 1, MIN_HOLD_KG = 0.5, MAX_HOLD_KG = 3;
 /** How far either side of the goal a holding plan allows. */
 export const holdBand = (plan: Plan) => plan.holdKg ?? HOLD_KG;
 /**

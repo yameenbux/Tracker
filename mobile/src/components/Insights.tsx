@@ -42,8 +42,9 @@ export function Tile({ icon, label, value, valueColor, sub, spark, children, onP
   wide?: boolean;   // one tile per row (very large text)
 }) {
   const [w, setW] = useState(0);
+  const plain = !spark && !children;   // nothing to draw underneath: no room kept for a chart that never comes
   return (
-    <Tap onPress={onPress} style={[s.tile, wide && s.tileWide]}
+    <Tap onPress={onPress} style={[s.tile, wide && s.tileWide, plain && { minHeight: 0 }]}
       accessibilityRole="button" accessibilityLabel={a11y} accessibilityHint={`Opens ${label}`}>
       <View style={s.tileHead}>
         <Icon name={icon} size={16} color={C.inkSoft} />
@@ -52,9 +53,9 @@ export function Tile({ icon, label, value, valueColor, sub, spark, children, onP
       </View>
       <Text style={[s.tileValue, valueColor ? { color: valueColor } : null]} numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3}>{value}</Text>
       {sub ? <Text style={s.tileSub} numberOfLines={2} maxFontSizeMultiplier={1.5}>{sub}</Text> : null}
-      <View style={{ marginTop: 'auto', paddingTop: 10 }} onLayout={e => setW(e.nativeEvent.layout.width)}>
+      {!plain && <View style={{ marginTop: 'auto', paddingTop: 10 }} onLayout={e => setW(e.nativeEvent.layout.width)}>
         {spark && w > 0 ? <Sparkline points={spark} width={w} /> : children}
-      </View>
+      </View>}
     </Tap>
   );
 }
@@ -139,7 +140,7 @@ export function HabitSummary({ pct, onPress }: { pct: number | null; onPress: ()
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.empty} strokeWidth={stroke} fill="none" />
         {v > 0 && <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.done} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${(c * v).toFixed(1)} ${c.toFixed(1)}`} />}
       </Svg>
-      <Text style={s.sumTxt} maxFontSizeMultiplier={1.4}>{pct == null ? '—' : `${pct}%`} · 30 days</Text>
+      <Text style={s.sumTxt} maxFontSizeMultiplier={1.4}>Habits {pct == null ? '—' : `${pct}%`} · 30 days</Text>
       <Icon name="chevron" size={14} color={C.inkSoft} />
     </Tap>
   );

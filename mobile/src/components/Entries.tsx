@@ -152,7 +152,7 @@ export function LogSheet({ initialKey, weights, unit, minKey, onSave, onDelete, 
       {showNote
         ? <NotePicker value={note} onChange={n => { setNote(n); setNoteTouched(true); }} />
         : <Button label="Add a note" icon="plus" kind="ghost" small style={{ alignSelf: 'center', marginTop: 14 }} onPress={() => setNoteOpen(true)} />}
-      {!ok && showRangeError(kg) && <Text style={s.err}>{rangeText(unit)}</Text>}
+      {!ok && showRangeError(kg, unit) && <Text style={s.err}>{rangeText(unit)}</Text>}
       {future && <Text style={s.err}>That date is in the future.</Text>}
       {early && <Text style={s.err}>That’s before your plan started ({longDate(minKey)}). Change the start date in Settings to log earlier days.</Text>}
       {clash && <Text style={s.hint}>You already logged {hidden ? 'a weight' : showWeight(weights[key], unit)} on {longDate(key)}. Saving replaces it.</Text>}

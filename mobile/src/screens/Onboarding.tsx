@@ -139,7 +139,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
             <Text style={s.h2} accessibilityRole="header">What do you weigh now?</Text>
             <Text style={s.sub}>A rough number is fine. You can change it later.</Text>
             <BigWeight unit={unit} kg={startKg} onChange={setStartKg} />
-            {showRangeError(startKg) && <Text style={s.err} accessibilityLiveRegion="polite">{rangeText(unit)}</Text>}
+            {showRangeError(startKg, unit) && <Text style={s.err} accessibilityLiveRegion="polite">{rangeText(unit)}</Text>}
             <View style={{ alignItems: 'center' }}><UnitToggle unit={unit} onChange={setUnit} /></View>
           </>
         )}
@@ -149,7 +149,7 @@ export function Onboarding({ unit, setUnit, lockAvailable, lockName, onDone, onR
             <Text style={s.h2} accessibilityRole="header">What’s your goal weight?</Text>
             <Text style={s.sub}>Starting from {startKg ? showWeight(startKg, unit) : '—'}.</Text>
             <BigWeight unit={unit} kg={goalKg} onChange={setGoalKg} />
-            {showRangeError(goalKg) && <Text style={s.err} accessibilityLiveRegion="polite">{rangeText(unit)}</Text>}
+            {showRangeError(goalKg, unit) && <Text style={s.err} accessibilityLiveRegion="polite">{rangeText(unit)}</Text>}
             {goalNote && <Text style={s.note}>{goalNote}</Text>}
           </>
         )}

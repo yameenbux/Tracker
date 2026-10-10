@@ -55,9 +55,12 @@ function LoadingImage({ uri, style, label }: { uri: string; style: ImageStyle; l
   );
 }
 
-export const BodyCard = memo(function BodyCard({ settings, weights, unit, lengthUnit, onLengthUnit, measurements, photos, onMeasurements, onPhotos }: {
+/** Free: the waist only (the one measurement that answers "is the trend real?"); the rest and photos are Plus. */
+const WAIST_ONLY = MEASURES.filter(m => m.key === 'waist');
+
+export const BodyCard = memo(function BodyCard({ settings, weights, unit, lengthUnit, onLengthUnit, measurements, photos, onMeasurements, onPhotos, waistOnly = false }: {
   settings: Settings; weights: Weights; unit: Unit; lengthUnit: LengthUnit; onLengthUnit: (u: LengthUnit) => void; measurements: Measurements; photos: PhotoLog;
-  onMeasurements: (m: Measurements) => void; onPhotos: (p: PhotoLog) => void;
+  onMeasurements: (m: Measurements) => void; onPhotos: (p: PhotoLog) => void; waistOnly?: boolean;
 }) {
   useScheme();                                   // repaint when the appearance changes (memo skips parent renders)
   const [sheet, setSheet] = useState<null | 'measure' | 'photos'>(null);
@@ -66,7 +69,8 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, length
   const [thenKey, setThenKey] = useState<string | null>(null);
   const before = thenKey && dates.includes(thenKey) ? thenKey : dates[0];
   const after = dates[dates.length - 1];
-  const summaries = MEASURES.map(m => ({ m, s: measureSummary(measurements, m.key) })).filter(x => x.s);
+  const list = waistOnly ? WAIST_ONLY : MEASURES;
+  const summaries = list.map(m => ({ m, s: measureSummary(measurements, m.key) })).filter(x => x.s);
   const series = useMemo(() => trendSeries(weightSeries(settings.plan, weights)), [settings.plan, weights]);
 
   const photoBox = (k: string, label: string) => {
@@ -81,9 +85,9 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, length
   };
 
   return (
-    <Card title="Measurements & photos" right={<View style={{ flexDirection: 'row', gap: 6 }}>
+    <Card title={waistOnly ? 'Waist' : 'Measurements & photos'} right={<View style={{ flexDirection: 'row', gap: 6 }}>
       <Button icon="plus" label="Measure" kind="ghost" small onPress={() => setSheet('measure')} />
-      <Button icon="plus" label="Photos" kind="ghost" small onPress={() => setSheet('photos')} />
+      {!waistOnly && <Button icon="plus" label="Photos" kind="ghost" small onPress={() => setSheet('photos')} />}
     </View>}>
       {summaries.length > 0 ? (
         <View style={s.chips}>
@@ -103,7 +107,7 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, length
         <EmptyState compact icon="ruler" title="No measurements yet" body="Your waist often keeps shrinking in weeks the scale stalls. Measure every 2–4 weeks, same time of day." action="Add a measurement" onAction={() => setSheet('measure')} />
       )}
 
-      {dates.length > 0 || photoDates(photos).length > 0 ? (
+      {waistOnly ? null : dates.length > 0 || photoDates(photos).length > 0 ? (
         <View style={{ marginTop: 14 }}>
           <Tabs value={pose} onChange={setPose} label="Photo pose" options={POSES.map(p => ({ id: p.key, label: p.label }))} />
           {dates.length >= 2 ? (
@@ -128,18 +132,20 @@ export const BodyCard = memo(function BodyCard({ settings, weights, unit, length
         <EmptyState compact icon="body" title="No progress photos yet" body="They stay private on this phone, never in your camera roll. Same spot, same light, every few weeks." action="Add photos" onAction={() => setSheet('photos')} />
       )}
 
-      {sheet === 'measure' && <MeasureSheet unit={lengthUnit} onUnit={onLengthUnit} measurements={measurements} onClose={() => setSheet(null)}
+      {sheet === 'measure' && <MeasureSheet list={list} unit={lengthUnit} onUnit={onLengthUnit} measurements={measurements} onClose={() => setSheet(null)}
         onSave={m => { onMeasurements(m); setSheet(null); }} />}
       {sheet === 'photos' && <PhotoSheet photos={photos} onClose={() => setSheet(null)} onChange={onPhotos} />}
     </Card>
   );
 });
 
-function MeasureSheet({ unit, onUnit, measurements, onSave, onClose }: {
-  unit: LengthUnit; onUnit: (u: LengthUnit) => void; measurements: Measurements; onSave: (m: Measurements) => void; onClose: () => void;
+function MeasureSheet({ list, unit, onUnit, measurements, onSave, onClose }: {
+  list: typeof MEASURES; unit: LengthUnit; onUnit: (u: LengthUnit) => void; measurements: Measurements; onSave: (m: Measurements) => void; onClose: () => void;
 }) {
+  // Measurements this sheet doesn't show (kept from Plus) stay as they are when the day is saved or cleared
+  const others = (day: string) => Object.fromEntries(Object.entries(measurements[day] ?? {}).filter(([key]) => !list.some(m => m.key === key))) as Partial<Record<MeasureKey, number>>;
   const [k, setK] = useState(dateKey(new Date()));
-  const toText = (day: string) => Object.fromEntries(MEASURES.map(m => {
+  const toText = (day: string) => Object.fromEntries(list.map(m => {
     const cm = measurements[day]?.[m.key];
     return [m.key, cm != null ? cmToUnit(cm, unit).toFixed(1) : ''];
   })) as Record<MeasureKey, string>;
@@ -148,7 +154,7 @@ function MeasureSheet({ unit, onUnit, measurements, onSave, onClose }: {
   // Switching cm/in converts whatever is already typed, so nothing is saved in the wrong unit
   const switchUnit = (u: LengthUnit) => {
     if (u === unit) return;
-    setTxt(t => Object.fromEntries(MEASURES.map(m => {
+    setTxt(t => Object.fromEntries(list.map(m => {
       const v = num(t[m.key]);
       return [m.key, t[m.key].trim() && isFinite(v) && v > 0 ? cmToUnit(lengthToCm(v, unit), u).toFixed(1) : t[m.key]];
     })) as Record<MeasureKey, string>);
@@ -156,27 +162,27 @@ function MeasureSheet({ unit, onUnit, measurements, onSave, onClose }: {
   };
   const values: Partial<Record<MeasureKey, number>> = {};
   let bad = false;
-  for (const m of MEASURES) {
+  for (const m of list) {
     if (!txt[m.key].trim()) continue;
     const cm = lengthToCm(num(txt[m.key]), unit);
     if (plausibleCm(cm)) values[m.key] = cm; else bad = true;
   }
   const today = dateKey(new Date());
-  const existing = measurements[k] != null;
+  const existing = list.some(m => measurements[k]?.[m.key] != null);
   const any = Object.keys(values).length > 0;
   const [then, setThen] = useState<null | { run: () => void }>(null);   // animate away, then save
   return (
     <Sheet title="Measurements" onClose={() => (then ? then.run() : onClose())} closing={!!then} footer={<>
-      <Button label="Save" disabled={bad || !any || !!then} onPress={() => setThen({ run: () => onSave(setMeasureDay(measurements, k, values)) })} />
+      <Button label="Save" disabled={bad || !any || !!then} onPress={() => setThen({ run: () => onSave(setMeasureDay(measurements, k, { ...others(k), ...values })) })} />
       {existing && <Button label={`Delete ${longDate(k)}`} kind="danger" style={{ marginTop: 8 }}
-        onPress={() => confirmDelete('Delete these measurements?', `Removes everything measured on ${longDate(k)}.`, () => setThen({ run: () => onSave(setMeasureDay(measurements, k, null)) }))} />}
+        onPress={() => confirmDelete('Delete these measurements?', `Removes everything measured on ${longDate(k)}.`, () => setThen({ run: () => { const rest = others(k); onSave(setMeasureDay(measurements, k, Object.keys(rest).length ? rest : null)); } }))} />}
     </>}>
       <View style={s.dateRow}><Text style={s.dateLabel}>Date</Text><DateInput value={k} onChange={changeDate} label="Measurement date" max={today} /></View>
       <View style={s.dateRow}><Text style={s.dateLabel}>Measure in</Text>
         <Tabs value={unit} onChange={switchUnit} label="Measure in" options={[{ id: 'cm', label: 'cm' }, { id: 'in', label: 'inches' }]} />
       </View>
       <View style={s.mGrid}>
-        {MEASURES.map(m => (
+        {list.map(m => (
           <View key={m.key} style={s.mCell}>
             <Field label={`${m.label} (${unit})`}>
               <DoneInput style={[fieldStyles.fIn, { fontFamily: F.displaySemi }]} value={txt[m.key]} keyboardType="decimal-pad"

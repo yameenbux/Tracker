@@ -40,10 +40,13 @@ export function useDataActions(t: Tracker, show: Show, done: () => void, plus = 
       // Photos aren't in backups, so the ones already on this phone are kept
       t.replaceAll({ settings: b.settings, weights: b.weights, entries: b.entries, habits: b.habits, measurements: b.measurements, photos: state.photos,
         intake: b.intake, lifts: b.lifts, doses: b.doses ?? {}, notes: b.notes ?? {}, effects: b.effects ?? {}, protein: b.protein ?? {}, unit: b.unit ?? state.unit });
+      // Read Apple Health from the start again: readings newer than the backup come back, and none is added twice
+      const rereadHealth = () => { if (prefs.health.on) t.setPrefs({ health: { on: true, anchor: null } }); };
+      rereadHealth();
       done();
       // Undo puts back the newest snapshot (what was here before this restore), or the copy in memory if it wasn't written
       show({ message: `Restored ${nW} weigh-in${nW === 1 ? '' : 's'}`, action: 'Undo',
-        onAction: async () => t.replaceAll((saved && (await latestSnapshot())) || before) });
+        onAction: async () => { t.replaceAll((saved && (await latestSnapshot())) || before); rereadHealth(); } });
     } catch (e) {
       notify("Couldn't restore", e instanceof Error ? e.message : "That file couldn't be read.");
     }

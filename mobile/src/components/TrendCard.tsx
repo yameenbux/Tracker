@@ -52,9 +52,11 @@ export const TrendCard = memo(function TrendCard({ settings, weights, unit, onRe
           <Text style={s.big} maxFontSizeMultiplier={1.3} adjustsFontSizeToFit numberOfLines={1}>{showWeight(last.trend, unit)}</Text>
         </View>
         <View style={s.cell}>
-          <Text style={s.k}>Per week</Text>
+          {/* An average over recent weeks, not this week's change (Today shows that): named so the two never look like a contradiction */}
+          <Text style={s.k}>Average a week</Text>
           {rate
-            ? <Text style={[s.big, { color: d === 0 ? C.ink : along > 0.05 ? C.mintInk : along < -0.05 ? C.coralInk : C.ink }]}>{change(rate.perWeek, unit)}</Text>
+            ? <><Text style={[s.big, { color: d === 0 ? C.ink : along > 0.05 ? C.mintInk : along < -0.05 ? C.coralInk : C.ink }]}>{change(rate.perWeek, unit)}</Text>
+                <Text style={s.over}>over the last {rate.days} days</Text></>
             : <Text style={s.pending}>Not enough data yet</Text>}
         </View>
       </View>
@@ -119,6 +121,7 @@ const s = themed(() => StyleSheet.create({
   cell: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.line, borderRadius: 13, padding: 12 },
   k: { fontFamily: F.bodySemi, fontSize: 11.5, letterSpacing: 1, textTransform: 'uppercase', color: C.inkSoft, marginBottom: 5 },
   big: { fontFamily: F.display, fontSize: 21, color: C.ink },
+  over: { fontFamily: F.body, fontSize: 12.5, color: C.inkSoft, marginTop: 2 },
   pending: { fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft, marginTop: 4 },
   line: { fontFamily: F.body, fontSize: 14.5, color: C.ink, lineHeight: 20, paddingHorizontal: 4, marginTop: 12 },
   b: { fontFamily: F.bodyBold },

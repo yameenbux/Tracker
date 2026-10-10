@@ -34,7 +34,9 @@ export function MilestoneBanner({ quarter, settings, trendNow, unit, onDismiss }
         <Text style={s.mileTxt}>
           {quarter === 4
             ? 'Your trend has reached your goal. From here, holding it is the win: the Trend tab can switch you to a holding range.'
-            : `Your trend has moved ${showAmount(Math.abs(lost), unit)} ${lost >= 0 ? 'down' : 'up'} from where you started. That's real change, not a good day on the scale.`}
+            : weightsHidden()
+              ? `Your trend is more than ${['', 'a quarter', 'half', 'three quarters'][quarter]} of the way from where you started. That's real change, not a good day on the scale.`
+              : `Your trend has moved ${showAmount(Math.abs(lost), unit)} ${lost >= 0 ? 'down' : 'up'} from where you started. That's real change, not a good day on the scale.`}
         </Text>
       </View>
       <Pressable onPress={onDismiss} hitSlop={13} accessibilityRole="button" accessibilityLabel="Dismiss milestone"><Icon name="close" size={18} color={C.inkSoft} /></Pressable>
@@ -138,7 +140,7 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
               : eat.floored ? <> Your plan’s pace would mean eating less than {MIN_INTAKE.toLocaleString()} kcal a day, so Tidemark won’t suggest a number. A slower pace is safer: talk to your GP or a dietitian.</>
               : <> To keep your plan’s pace, eat around <Text style={s.b}>{kcalRange(eat.low, eat.high)} kcal</Text>.</>}</>
           : needsWeighIns ? <>There aren’t weigh-ins near both ends of the last {CAL_WINDOW} days, so Tidemark can’t see how your trend really moved. Weigh in for the next couple of weeks and the estimate comes back.</>
-          : <>Log what you eat on {CAL_MIN_DAYS} of the last {CAL_WINDOW} days. Tidemark then compares it with how your trend moved and works out how much you really burn a day, from your own data rather than a formula.</>}
+          : <>Log what you eat on {CAL_MIN_DAYS} of the last {CAL_WINDOW} days. Tidemark then compares it with how your trend moved and estimates how much you burn a day, from your own data rather than a formula.</>}
       </Text>
       {est && <Text style={s.foot}>A range, because some of what you lose is water and muscle, not just fat. Only as accurate as the logging: forgotten snacks make it low. An estimate, not medical advice: talk to a GP or dietitian before big changes.</Text>}
     </Card>

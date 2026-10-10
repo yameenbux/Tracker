@@ -70,8 +70,6 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode; onLog: (d
   useEffect(() => { if (legacy) t.setPrefs({ milestoneFor: planKey }); }, [legacy, planKey, t]);
   const eta = trendNow != null ? projectedGoalDate(trendNow, settings.plan.goalKg, rate) : null;
   const H = usableHabits(settings.habits, plus);   // free: the first few; the rest are kept for Plus
-  const last7 = Array.from({ length: 7 }, (_, i) => dateKey(addDays(now, -i)));
-  const weighIns7 = last7.filter(k => state.weights[k] != null).length;
   // A week's change needs weigh-ins in that week: someone who's had a break is told so, not asked for a week's data
   const lapsed = Object.keys(state.weights).some(k => k < dateKey(addDays(now, -7)));
   // Nothing ticked in 30 days (usually day one) shows a dash, not a 0% that reads like a mark
@@ -109,20 +107,20 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode; onLog: (d
           valueColor={week == null || d === 0 ? C.ink : week * d > 0.05 ? C.mintInk : week * d < -0.05 ? C.coralInk : C.ink}
           sub={week != null ? 'change in your trend, last 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
           a11y={week != null ? `This week: trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'This week: needs a week of weigh-ins'}
-          foot={eta ? `At this pace you’ll reach ${prefs.hide ? 'your goal' : showWeight(settings.plan.goalKg, unit)} around ${longDate(eta)}.` : undefined} />}
+          // The pace is the average over recent weeks (the same figure as Trend's "Average a week"), so say so: it's
+          // why it can differ from this week's change above
+          foot={eta && rate ? (prefs.hide
+            ? `At your average pace you’ll reach your goal around ${longDate(eta)}.`
+            : `At your average pace (${showChange(rate.perWeek, unit, 1)} a week) you’ll reach ${showWeight(settings.plan.goalKg, unit)} around ${longDate(eta)}.`) : undefined} />}
       </CardBoundary>
-      {/* In the first week the free tile would only repeat the first-week dots */}
-      {!(firstWeekNow && !plus && !settings.trackCalories) && <View style={s.tiles}>
+      {/* Plus: calories or the waist beside the week (free has its weigh-in count inside the week card) */}
+      {plus && <View style={s.tiles}>
         {settings.trackCalories && plus ? (
           <Tile icon="flame" label="Calories" onPress={() => go('body')}
             value={tdee ? kcalRange(tdee.low, tdee.high) : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
             sub={tdee ? 'kcal you burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'Calories eaten today'}
             a11y={tdee ? `Estimated burn ${tdee.low} to ${tdee.high} kcal a day` : 'Calories'} />
         ) : (
-          // Free: a real number about their own data, not an advert in data's clothing
-          !plus ? <Tile icon="scale" label="Weigh-ins" onPress={() => go('trend')}
-            value={`${weighIns7} of 7`} sub="days weighed, last 7 days"
-            a11y={`Weigh-ins: ${weighIns7} of the last 7 days`} /> :
           <Tile icon="ruler" label="Body" onPress={() => go('body')}
             value={waist && waist.first.k !== waist.latest.k ? lengthChange(waist.change, lu) : waist ? showLength(waist.latest.cm, lu) : 'Measure'}
             sub={waist && waist.first.k !== waist.latest.k ? `waist since ${shortDate(parseKey(waist.first.k))} · now ${showLength(waist.latest.cm, lu)}`
@@ -182,11 +180,15 @@ export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: 
   const { state, prefs } = t;
   const { plus } = usePlus();
   if (!plus) {
-    const kept = Object.keys(state.measurements).length > 0 || Object.keys(state.photos).length > 0 || Object.keys(state.intake).length > 0;
+    // Free: the waist, so the tab is never just a locked door; the rest is Plus
+    const kept = Object.values(state.measurements).some(d => Object.keys(d).some(k => k !== 'waist')) || Object.keys(state.photos).length > 0 || Object.keys(state.intake).length > 0;
     return (
       <TabScreen eyebrow="Beyond the scale" title="Body" onSettings={() => openSettings()} scrollTop={scrollTop}>
-        <PlusTeaser feature="body" icon="body" kept={kept} title="Measurements, photos and calories"
-          body="Your waist often keeps shrinking in weeks the scale stalls. Measurements, private progress photos and a calorie estimate are part of Tidemark Plus." />
+        <CardBoundary name="Waist"><BodyCard waistOnly settings={settings} weights={state.weights} unit={state.unit} lengthUnit={lengthUnitFor(prefs.length, state.unit)}
+          onLengthUnit={length => t.setPrefs({ length })} measurements={state.measurements} photos={state.photos}
+          onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} /></CardBoundary>
+        <PlusTeaser feature="body" icon="body" kept={kept} title="Hips, chest, arms, photos and calories"
+          body="Private progress photos, more measurements and an estimate of the calories you burn are part of Tidemark Plus." />
       </TabScreen>
     );
   }
@@ -197,8 +199,8 @@ export function BodyTab({ t, settings, series, scrollTop, openSettings, show }: 
         onMeasurements={m => { t.setMeasurements(m); success(); }} onPhotos={t.setPhotos} /></CardBoundary>
       {settings.trackCalories
         ? <CardBoundary name="Calories"><CaloriesCard settings={settings} weights={state.weights} intake={state.intake} onChange={t.setIntake} trend={series} /></CardBoundary>
-        : <Notice icon="flame" title="Find out what you really burn (optional)"
-            body="Each day, enter roughly how many calories you ate. After two weeks Tidemark compares that with your trend and works out how many you burn a day. You never enter calories burned."
+        : <Notice icon="flame" title="Estimate what you burn (optional)"
+            body="Each day, enter roughly how many calories you ate. After two weeks Tidemark compares that with your trend and estimates how many you burn a day. You never enter calories burned."
             action="Turn on" onAction={() => { t.setSettings({ ...settings, trackCalories: true }); show({ message: 'Calorie logging on' }); }} />}
     </TabScreen>
   );

@@ -2,9 +2,9 @@ import { memo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
-import { FIRST_DAYS, firstDaysText, lineWord } from '../core/insights';
+import { FIRST_DAYS, firstDaysText, planWord } from '../core/insights';
 import { direction, latestWeight, lineStatus, reachedGoal, sign, weightSeries } from '../core/plan';
-import type { TrendPoint } from '../core/trend';
+import { projectedGoalDate, weeklyRate, type TrendPoint } from '../core/trend';
 import { fmt, lbPart, showChange, showWeight, stPart, toLbNum, weightsHidden } from '../core/units';
 import { changeTable } from '../core/summary';
 import type { Settings, Unit, Weights } from '../core/types';
@@ -44,7 +44,9 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
   const status = last ? lineStatus(plan, last.trend) : null;
   // At (or past) the goal is "At goal", never "Ahead": going further isn't the aim any more
   const atGoal = last ? reachedGoal(plan, last.trend) : false;
-  const word = atGoal ? 'At goal' : status ? lineWord(status, d) : null;
+  const eta = last && trend ? projectedGoalDate(last.trend, plan.goalKg, weeklyRate(trend)) : null;   // the same pace Today's week card quotes
+  const word = atGoal ? 'At goal' : status ? planWord(status, d, eta, plan.goalDate) : null;
+  const good = !!status && (status.onLine || status.ahead || word === 'Catching up' || atGoal);
   const short = (kg: number) => showWeight(kg, unit).replace(' kg', '');
   const today = lw?.k === dateKey(new Date());
   // Until there are a few weigh-ins there's nothing to judge yet: say what's next instead of a verdict
@@ -126,6 +128,15 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
         </View>
       ) : (
       <View style={s.chips}>
+        {hidden ? (
+          // "Hide my weight": how far along, as a share of the way, never kilos lost or left
+          <View style={s.chip} accessible accessibilityLabel={d === 0 ? 'Holding your goal' : `Progress ${Math.round(pct)} percent of the way`}>
+            <View style={s.chipBody}>
+            <View style={s.chipHead}>{icons && <Icon name="flag" size={14} color={C.amber} strokeWidth={2.4} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>Progress</Text></View>
+            <Text style={[s.chipV, progress > 0.05 && s.good]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{d === 0 ? 'Holding' : `${Math.round(pct)}%`}</Text>
+            </View>
+          </View>
+        ) : <>
         <View style={s.chip} accessible accessibilityLabel={`${changeLabel} ${kgOrLb(change, true)}`}>
           <View style={s.chipBody}>
           <View style={s.chipHead}>{icons && <Icon name={change > 0.05 ? 'up' : 'down'} size={14} color={C.amber} strokeWidth={2.4} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{changeLabel}</Text></View>
@@ -140,13 +151,14 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
           {second && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(togo, false)}</Text>}
           </View>
         </View>
-        <View style={s.chip} accessible accessibilityLabel={`${d === 0 ? 'Goal' : 'Plan'}: ${!status || !word ? 'no weigh-in yet' : status.onLine ? word : `${word} by ${kgOrLb(status.off, true)}`}`}>
+        </>}
+        <View style={s.chip} accessible accessibilityLabel={`${d === 0 ? 'Goal' : 'Plan'}: ${!status || !word ? 'no weigh-in yet' : status.onLine || hidden || atGoal ? word : `${word}, ${kgOrLb(Math.abs(status.off), true)} ${status.off > 0 ? 'behind' : 'ahead of'} the line`}`}>
           <View style={s.chipBody}>
-          <View style={s.chipHead}>{icons && <Icon name={!status || status.onLine || status.ahead ? 'check' : 'info'} size={14} strokeWidth={2.4} color={!status ? 'rgba(255,255,255,0.7)' : status.onLine || status.ahead ? C.heroGood : C.heroOver} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{d === 0 ? 'Goal' : 'Plan'}</Text></View>
-          <Text style={[s.chipV, !status ? null : status.onLine || status.ahead ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
+          <View style={s.chipHead}>{icons && <Icon name={!status || good ? 'check' : 'info'} size={14} strokeWidth={2.4} color={!status ? 'rgba(255,255,255,0.7)' : good ? C.heroGood : C.heroOver} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{d === 0 ? 'Goal' : 'Plan'}</Text></View>
+          <Text style={[s.chipV, !status ? null : good ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
             {word ?? '—'}
           </Text>
-          {status && !status.onLine && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>by {kgOrLb(status.off, true)}</Text>}
+          {status && !status.onLine && !hidden && !atGoal && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(Math.abs(status.off), true)} {status.off > 0 ? 'behind' : 'ahead'}</Text>}
           </View>
         </View>
       </View>

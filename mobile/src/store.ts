@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { cleanPrefs, DEFAULT_PREFS, hydrate, Prefs, SCHEMA_VERSION } from './core/storage';
-import { dailyWeights, reconcile } from './core/entries';
+import { dailyWeights, reconcile, type WeighIn } from './core/entries';
 import { mergeHealth, type HealthReading } from './core/health';
 import { withNote, type DayNote } from './core/notes';
 import { round2 } from './core/units';
@@ -201,10 +201,21 @@ export function useTracker() {
     return { ...s, intake };
   }), []);
   /** Readings from Apple Health: added as records; a weight typed in Tidemark still wins for its day. */
+  // Saved at once: the sync's anchor moves on as soon as this returns, so readings left waiting would never come back
   const addHealth = useCallback((added: HealthReading[], deleted: string[]) => setState(s => {
     const r = mergeHealth(s.entries ?? [], added, deleted);
-    return r.added || r.removed ? { ...s, entries: r.entries, weights: dailyWeights(r.entries) } : s;
+    if (!r.added && !r.removed) return s;
+    urgent.current = true;
+    return { ...s, entries: r.entries, weights: dailyWeights(r.entries) };
   }), []);
+  /** Puts a day's records back exactly as they were (an undo), so a scale's reading stays the scale's. */
+  const putDay = useCallback((day: string, records: WeighIn[]) => { urgent.current = true; setState(s => {
+    const entries = [...(s.entries ?? []).filter(e => e.day !== day), ...records].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+    const weights = { ...s.weights };
+    const kg = dailyWeights(records)[day];
+    if (kg == null) delete weights[day]; else weights[day] = kg;
+    return { ...s, weights, entries };
+  }); }, []);
   const setProtein = useCallback((protein: import('./core/protein').ProteinLog) => setState(s => ({ ...s, protein })), []);
   const setEffects = useCallback((effects: EffectLog) => setState(s => ({ ...s, effects })), []);
   const setNote = useCallback((k: string, note: DayNote | null) => setState(s => ({ ...s, notes: withNote(s.notes ?? {}, k, note) })), []);
@@ -234,7 +245,7 @@ export function useTracker() {
 
   return { state, prefs, ready, recovered, saveFailed, loadFailed, retryLoad, dismissRecovered,
            setWeight, setUnit, setSettings, setHabits, setMeasurements, setPhotos, setIntake, setLifts, replaceAll, snapshot, setPrefs,
-           discardPending, setDoses, setNote, addHealth, setEffects, setProtein };
+           discardPending, setDoses, setNote, addHealth, putDay, setEffects, setProtein };
 }
 export type Tracker = ReturnType<typeof useTracker>;
 
