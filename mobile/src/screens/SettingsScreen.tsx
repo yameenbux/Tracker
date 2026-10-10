@@ -23,7 +23,8 @@ import { HabitAmount } from '../components/HabitAmount';
 import { choose, confirm, notify } from '../dialogs';
 import { success, tap } from '../feel';
 import { FEATURES } from '../features';
-import { PRIVACY_URL, SUPPORT_EMAIL } from '../support';
+import { APP_STORE_ID, PRIVACY_URL, SUPPORT_EMAIL } from '../support';
+import { writeReviewUrl } from '../core/reviewAsk';
 import { PaywallSlot, usePlus } from '../plus';
 import { FREE_HABITS, PLUS_PRODUCTS } from '../core/plus';
 import { useReducedMotion } from '../motion';
@@ -166,6 +167,7 @@ export function SettingsScreen(p: SettingsProps) {
   const reminderEnd = until ? ` Reminders are set up to ${shortDate(until)}; opening Tidemark adds more.` : '';
   const version = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
   const build = Application.nativeBuildVersion ?? Constants.expoConfig?.ios?.buildNumber;
+  const reviewUrl = Platform.OS === 'ios' ? writeReviewUrl(APP_STORE_ID) : null;   // chosen by the person, so allowed any time
 
   // The root list stays mounted underneath a pushed page (keeps its scroll position, and the page can slide back over it)
   return (
@@ -256,8 +258,10 @@ export function SettingsScreen(p: SettingsProps) {
 
         <Group title="About" footer={`Support: ${SUPPORT_EMAIL}`}>
           <Row icon="shield" label="Privacy policy" onPress={() => WebBrowser.openBrowserAsync(PRIVACY_URL, { controlsColor: C.coralInk }).catch(() => Linking.openURL(PRIVACY_URL).catch(() => {}))} hint="Opens the policy" />
-          <Row icon="mail" label="Contact support" hint={`Opens Mail to ${SUPPORT_EMAIL}`}
+          <Row icon="mail" label="Send feedback or get help" hint={`Opens Mail to ${SUPPORT_EMAIL}`}
             onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Tidemark ${version}`)}`).catch(() => notify('No mail app', `Email ${SUPPORT_EMAIL} from any device.`))} />
+          {reviewUrl && <Row icon="heart" label="Rate Tidemark" hint="Opens the App Store to write a review"
+            onPress={() => Linking.openURL(reviewUrl).catch(() => {})} />}
           <Row icon="book" label="Acknowledgements" onPress={() => setPage('credits')} />
           <Row icon="info" label="Version" value={build ? `${version} (${build})` : version} last />
         </Group>

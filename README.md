@@ -300,6 +300,29 @@ Rules that hold whatever the price:
 - **No dark patterns.** No countdown timers, no fake "only today" prices, no
   pre-ticked anything.
 
+### Asking for a rating
+
+Tidemark only uses Apple's own rating prompt (guideline 5.6.1). iOS decides
+whether it appears, at most three times a year, and never tells the app what
+was given. So the app's only job is choosing the moment
+(`mobile/src/core/reviewAsk.ts`). It asks right after today's weigh-in is saved,
+and only when all of these are true:
+
+- at least 14 weigh-ins over at least 21 days;
+- a good week: the trend moved the way the plan goes, the goal is reached, or
+  a holding plan is inside its band;
+- 90 days since the last ask, and never twice in one app version.
+
+It never asks with *Hide my weight* on, the day after a side effect is logged,
+during setup, or after a purchase or an error. There's no "Enjoying Tidemark?"
+screen deciding who gets sent to the App Store. Unhappy people get
+**Send feedback or get help** in Settings → About, and **Rate Tidemark** sits
+next to it for anyone who wants to.
+
+The **Rate Tidemark** row needs the app's App Store ID. Fill in `APP_STORE_ID`
+in `mobile/src/support.ts` once the app exists in App Store Connect; until then
+the row is hidden.
+
 ---
 
 ## When something goes wrong
@@ -345,7 +368,9 @@ In App Store Connect, once the developer account is approved:
    `com.yameenbux.tidemark.plus.monthly` (£2.99, no trial) and `.yearly` (£19.99,
    with the launch offer above, then a one-week free trial), and the
    non-consumable `com.yameenbux.tidemark.plus.lifetime` (£49.99).
-5. **Build and test**: `npx eas-cli build -p ios --profile production`, then
+5. **Fill in the App Store ID** (App Information → Apple ID) as `APP_STORE_ID`
+   in `mobile/src/support.ts`, so Settings can link to the review page.
+6. **Build and test**: `npx eas-cli build -p ios --profile production`, then
    `npx eas-cli submit -p ios --latest`, then buy, restore and cancel in
    TestFlight with a sandbox tester.
 

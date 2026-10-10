@@ -12,6 +12,9 @@ import { PlusProvider } from './plus';
 import { plusActive, type PlusStatus } from './core/plus';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
+import { asked, shouldAskForReview } from './core/reviewAsk';
+import { requestReview } from './review';
+import { marketingVersion } from './support';
 import { trendSeries, weeklyRate } from './core/trend';
 import { setWeightsHidden, showAmount, showWeight } from './core/units';
 import type { Settings } from './core/types';
@@ -48,6 +51,8 @@ setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 6000);   // safety ne
 interface ToastMsg { id: number; message: string; action?: string; onAction?: () => void }
 
 /** Re-renders when the app comes back to the foreground and at midnight, so "today" is never yesterday. */
+const REVIEW_DELAY_MS = 2500;   // the rating prompt waits until the save message has been read
+
 function useToday(): string {
   const [day, setDay] = useState(() => dateKey(new Date()));
   useEffect(() => {
@@ -244,8 +249,15 @@ function Main() {
               // Say what the weigh-in did to the trend, the number that matters, not just that it saved
               const after = { ...state.weights, [k]: kg };
               if (moved) delete after[moved.k];
-              show({ message: weighInMessage({ series: trendSeries(weightSeries(settings.plan, after)), day: k, today: new Date(), unit: state.unit, hidden: prefs.hide }),
+              const series = trendSeries(weightSeries(settings.plan, after)), now = new Date();
+              show({ message: weighInMessage({ series, day: k, today: now, unit: state.unit, hidden: prefs.hide }),
                      ...(replaced != null || moved ? { action: 'Undo', onAction: undo } : {}) });
+              // On a good week, after weeks of use, Apple's rating prompt, once the save message has been read
+              const version = marketingVersion();
+              if (k === dateKey(now) && !moved && shouldAskForReview({ plan: settings.plan, weights: after, series, today: now, hidden: prefs.hide, effects: state.effects, ask: prefs.reviewAsk, version })) {
+                t.setPrefs({ reviewAsk: asked(prefs.reviewAsk, version, now) });
+                setTimeout(() => { requestReview(); }, REVIEW_DELAY_MS);
+              }
             }}
             onDelete={k => {
               const kg = state.weights[k];
