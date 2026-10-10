@@ -8,6 +8,7 @@ import { addDays, dateKey, DAY_ABBR, DAY_FULL, DAY_ORDER, longDate, mondayOf, pa
 import { doseHistoryDays, isDoseDay } from '../core/medication';
 import { assessPlan, buildTargets, cleanBreaks, direction, MAX_BREAK_WEEKS, MAX_HABITS, normalizeSettings, onlyBreaksChanged, planChanged, withBreaks } from '../core/plan';
 import { daysSince } from '../core/summary';
+import { AUTO_KEEP, describeAutoBackup, type AutoBackup } from '../core/autoBackup';
 import { fmt, num, numOrNull, showWeight, toLbNum } from '../core/units';
 import type { DoseLog, Habit, Meal, Medication, PlanBreak, Session, Settings, Unit } from '../core/types';
 import type { Reminder } from '../core/storage';
@@ -107,7 +108,10 @@ const numTxt = (v: number | null) => (v == null ? '' : String(v));
 
 // ---------- screen ----------
 
-export type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals' | 'credits' | 'medication';
+export type Page = 'root' | 'plan' | 'event' | 'habits' | 'sessions' | 'meals' | 'credits' | 'medication' | 'backup';
+
+/** Automatic backups, where the phone can do them (iOS build with the native folder module). */
+export interface AutoBackupApi { prefs: AutoBackup; choose: () => Promise<{ ok: boolean; error?: string }>; turnOff: () => void; backUpNow: () => Promise<boolean> }
 
 export interface SettingsProps {
   settings: Settings; unit: Unit; setUnit: (u: Unit) => void;
@@ -117,6 +121,7 @@ export interface SettingsProps {
   hideWeight?: boolean; onHideWeightChange?: (on: boolean) => void;
   health?: { on: boolean; set: (on: boolean) => Promise<boolean> };   // absent where there's no Apple Health
   onReport?: () => void;
+  autoBackup?: AutoBackupApi;   // absent where automatic backups can't run (web, Expo Go, Android)
   lastBackup: string | null; weighIns: number; weights: Record<string, number>;
   doses: DoseLog; onDoses: (d: DoseLog) => void;
   lengthUnit: 'cm' | 'in'; onLengthUnit: (u: 'cm' | 'in') => void;
@@ -148,6 +153,7 @@ export function SettingsScreen(p: SettingsProps) {
   if (page === 'habits') return <HabitsPage settings={settings} onSave={keep<Habit[]>('habits')} onBack={back} />;
   if (page === 'sessions') return <SessionsPage settings={settings} onSave={keep<Settings['sessions']>('sessions')} onBack={back} />;
   if (page === 'credits') return <CreditsPage onBack={back} />;
+  if (page === 'backup' && p.autoBackup) return <BackupPage api={p.autoBackup} onBack={back} />;
   if (page === 'medication') return <MedicationPage settings={settings} doses={p.doses} onDoses={p.onDoses} onSave={keep<Settings['medication']>('medication')} onBack={back} />;
   return <MealsPage settings={settings} onSave={keep<Settings['meals']>('meals')} onBack={back} />;
   }
@@ -233,6 +239,8 @@ export function SettingsScreen(p: SettingsProps) {
 
         <Group title="Privacy & data" footer="Everything lives on this phone only. Tidemark has no account and no servers. A backup file kept somewhere safe off this phone is the only copy if you lose it.">
           <SwitchRow icon="lock" label={`Lock with ${p.lockName}`} value={p.lock} onChange={p.onLockChange} disabled={!p.lockAvailable} />
+          {p.autoBackup && <Row icon="download" label="Automatic backup" value={p.autoBackup.prefs.on ? (describeAutoBackup(p.autoBackup.prefs).warn ? 'Not saving' : p.autoBackup.prefs.folder ?? 'On') : 'Off'}
+            onPress={() => setPage('backup')} hint="Saves a backup into a folder you choose, every day something changes" />}
           <Row icon="share" label="Export backup" value={backupDays == null ? 'Never' : backupDays === 0 ? 'Today' : `${backupDays}d ago`} onPress={p.onExport}
             hint="Saves a backup file you can restore later" />
           <Row icon="share" label="Export spreadsheet (CSV)" onPress={p.onExportCsv} />
@@ -524,6 +532,46 @@ const MACRO_LABEL = { kcal: 'Calories', p: 'Protein grams', c: 'Carbs grams', f:
 const MACRO_SHORT = { kcal: 'kcal', p: 'Protein', c: 'Carbs', f: 'Fat' } as const;
 
 /** Open-source notices that must travel with the app (fonts under the OFL, libraries under MIT). */
+function BackupPage({ api, onBack }: { api: AutoBackupApi; onBack: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const a = api.prefs;
+  const status = describeAutoBackup(a);
+  const act = async (fn: () => Promise<void>) => { if (busy) return; setBusy(true); try { await fn(); } finally { setBusy(false); } };
+  const pick = () => act(async () => {
+    const r = await api.choose();
+    if (r.ok) success();
+    else if (r.error) notify('Couldn’t use that folder', r.error);
+  });
+  const now = () => act(async () => { if (await api.backUpNow()) success(); });
+  const off = async () => {
+    if (await confirm('Turn off automatic backups?', 'The backups already in the folder stay there.', 'Turn off')) api.turnOff();
+  };
+  return (
+    <View style={s.wrap}>
+      <PageHeader title="Automatic backup" onBack={onBack} />
+      <ScrollView contentContainerStyle={s.scroll}>
+        <Text style={s.lead}>Tidemark saves a backup into a folder you choose, every day something changes. Choose a folder in iCloud Drive and your history survives losing or replacing this phone.</Text>
+        <View style={s.form}>
+          {a.on ? <>
+            <Text style={s.backupFolder} numberOfLines={2}>{a.folder ?? 'Your folder'}</Text>
+            <Text style={[s.backupStatus, status.warn && { color: C.danger }]} accessibilityLiveRegion="polite">{status.text}</Text>
+            <View style={s.backupBtns}>
+              <Button label="Back up now" icon="download" small disabled={busy} onPress={now} />
+              <Button label="Change folder" kind="ghost" small disabled={busy} onPress={pick} />
+            </View>
+          </> : <>
+            <Text style={s.backupStatus}>Off. Your data is only on this phone until you export a backup.</Text>
+            <View style={s.backupBtns}><Button label="Choose a folder" icon="download" disabled={busy} onPress={pick} /></View>
+          </>}
+        </View>
+        <Text style={s.hint}>Files are named like “Tidemark backup 2026-10-10.txt”. The newest {AUTO_KEEP} are kept and older ones deleted; nothing else in the folder is touched. To restore one, use Settings › Restore from backup.</Text>
+        <Text style={s.hint}>Backups hold your weigh-ins, plan, habits, notes, doses and settings, not progress photos. They aren’t password-protected, so anyone who can open the folder can read them. In iCloud Drive they’re stored by Apple in your iCloud account.</Text>
+        {a.on && <Button label="Turn off automatic backups" kind="danger" small style={{ alignSelf: 'flex-start', marginTop: 8 }} onPress={off} />}
+      </ScrollView>
+    </View>
+  );
+}
+
 function CreditsPage({ onBack }: { onBack: () => void }) {
   return (
     <View style={s.wrap}>
@@ -736,6 +784,9 @@ const s = themed(() => StyleSheet.create({
   remindTitle: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   creditName: { fontFamily: F.bodySemi, fontSize: 15, color: C.ink },
   creditTxt: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 18, marginTop: 2 },
+  backupFolder: { fontFamily: F.bodySemi, fontSize: 17, color: C.ink },
+  backupStatus: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 20, marginTop: 4 },
+  backupBtns: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   lead: { fontFamily: F.body, fontSize: 14, color: C.inkSoft, lineHeight: 20, marginBottom: 14, marginHorizontal: 4 },
   form: { backgroundColor: C.card, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, borderColor: C.line, padding: 14, marginBottom: 18 },
   hint: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 18, marginTop: 10, marginBottom: 10 },

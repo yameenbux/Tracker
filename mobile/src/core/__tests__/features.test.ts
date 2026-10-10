@@ -1,6 +1,6 @@
 import { assessPlan, behindBy, buildTargets, cleanBreaks, habitAmount, HABIT_AMOUNTS, isBreakStep, lossWeeks, planChanged, replanFromHere, SUGGESTED_HABITS, withHabitAmount } from '../plan';
 import { consistency, habitInsight, milestoneQuarter, trendAt, weeksOfData } from '../insights';
-import { cleanIntake, estimateExpenditure, intakeForPace } from '../calories';
+import { cleanIntake, estimateExpenditure, intakeRange, MIN_INTAKE } from '../calories';
 import { cleanSessionLog, exerciseName, lastLift, suggestNext } from '../progression';
 import { toCsv } from '../csv';
 import { trendSeries } from '../trend';
@@ -131,9 +131,16 @@ describe('calories', () => {
     const e = estimateExpenditure(intake, series(rows), today)!;
     expect(e.logged).toBeGreaterThanOrEqual(14);
     expect(e.avgIntake).toBe(2000);
-    expect(e.tdee).toBeGreaterThan(2400);                              // 0.5 kg/week ≈ 550 kcal/day deficit (trend lags a little)
-    expect(e.tdee).toBeLessThan(2650);
-    expect(intakeForPace(2550, 0.5)).toBe(2000);
+    // 0.5 kg/week is a 390–550 kcal/day gap, depending on how much of the loss is fat (trend lags a little)
+    expect(e.low).toBeGreaterThan(2300);
+    expect(e.high).toBeLessThan(2650);
+    expect(e.high - e.low).toBeGreaterThanOrEqual(100);                // a range, not false precision
+    expect(e.low % 50).toBe(0);
+    // Eating what you ate keeps the pace you lost at, whatever the tissue mix
+    const r = intakeRange(e, 0.5);
+    expect(r.floored).toBe(false);
+    expect(r.low).toBeGreaterThanOrEqual(1900);
+    expect(r.high).toBeLessThanOrEqual(2100);
     expect(estimateExpenditure({}, series(rows), today)).toBeNull();
   });
   test('a break from weighing gives no estimate, not one built from weeks of change squeezed into three', () => {
@@ -155,8 +162,18 @@ describe('calories', () => {
     const intake: Record<string, number> = {};
     for (let i = 1; i <= 21; i++) intake[dateKey(addDays(today, -i))] = 2000;
     const e = estimateExpenditure(intake, series(rows), today)!;
-    expect(e.tdee).toBeGreaterThan(2400);
-    expect(e.tdee).toBeLessThan(2700);
+    expect(e.low).toBeGreaterThan(2300);
+    expect(e.high).toBeLessThan(2700);
+  });
+  test('never suggests eating below the floor', () => {
+    // Eating 1300 and losing slowly, on a plan that wants 1 kg a week: the maths says well under 1,000 kcal
+    const est = { low: 1400, high: 1450, avgIntake: 1300, kgPerDay: 0.02, logged: 21, window: 21 };
+    const r = intakeRange(est, 1);
+    expect(r.floored).toBe(true);
+    expect(r.low).toBe(MIN_INTAKE);
+    expect(r.high).toBe(MIN_INTAKE);
+    // A plan to hold or gain is never floored
+    expect(intakeRange({ ...est, avgIntake: 2200, kgPerDay: 0 }, 0).floored).toBe(false);
   });
   test('intake cleaning drops silly numbers', () => {
     expect(cleanIntake({ '2026-10-01': '1850', '2026-10-02': 50, '2026-10-03': 99999, bad: 2000 })).toEqual({ '2026-10-01': 1850 });

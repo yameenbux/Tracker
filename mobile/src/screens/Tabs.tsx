@@ -9,7 +9,8 @@ import { FEATURES } from '../features';
 import { cloneElement, isValidElement, useEffect, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LengthUnit, lengthUnitFor, measureSummary, showLength } from '../core/body';
-import { estimateExpenditure } from '../core/calories';
+import { estimateExpenditure, kcalRange } from '../core/calories';
+import { describeAutoBackup } from '../core/autoBackup';
 import { addDays, DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { consistency, lineWord, milestoneQuarter } from '../core/insights';
 import { direction, lineStatus, sign } from '../core/plan';
@@ -119,9 +120,9 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
         </Tile>
         {settings.trackCalories && plus ? (
           <Tile icon="flame" label="Calories" onPress={() => go('body')} wide={stack}
-            value={tdee ? `${tdee.tdee.toLocaleString()} kcal` : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
-            sub={tdee ? 'you really burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'Calories eaten today'}
-            a11y={tdee ? `Estimated burn ${tdee.tdee} kcal a day` : 'Calories'} />
+            value={tdee ? kcalRange(tdee.low, tdee.high) : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
+            sub={tdee ? 'kcal you burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'Calories eaten today'}
+            a11y={tdee ? `Estimated burn ${tdee.low} to ${tdee.high} kcal a day` : 'Calories'} />
         ) : (
           // Free: a real number about their own data, not an advert in data's clothing
           !plus ? <Tile icon="scale" label="Weigh-ins" onPress={() => go('trend')} wide={stack}
@@ -221,7 +222,12 @@ export function TodayNotices({ part = 'urgent', t, lockLost, onLockLostDismiss, 
   const lastBackupDays = daysSince(prefs.lastBackup);
   // The backup nudge waits while anything more urgent is showing, so Today never opens on a stack of cards
   const urgent = t.recovered || !!pendingPlan || lockLost || t.saveFailed;
-  const showBackup = part === 'nudge' && !urgent && !backupHidden && backupDue(prefs.lastBackup, Object.keys(state.weights).length);
+  // Automatic backups that are working make the nudge unnecessary; ones that have stopped working say so instead
+  const auto = prefs.autoBackup.on ? describeAutoBackup(prefs.autoBackup) : null;
+  const showBackup = part === 'nudge' && !urgent && !backupHidden && (auto ? auto.warn : backupDue(prefs.lastBackup, Object.keys(state.weights).length));
+  if (part === 'nudge' && auto?.warn) return showBackup ? <Notice tone="warn" icon="download" title="Automatic backup isn’t saving"
+    body={auto.text + ' Check the folder in Settings › Automatic backup, or export a backup by hand.'}
+    action="Export a backup" onAction={onExport} onDismiss={onBackupHide} /> : null;
   if (part === 'nudge') return showBackup ? <Notice icon="download" title={lastBackupDays == null ? 'Make your first backup' : `Last backup ${lastBackupDays} days ago`}
     body="Your data lives only on this phone. A backup file kept somewhere safe off this phone means a lost phone isn’t lost data."
     action="Back up now" onAction={onExport} onDismiss={onBackupHide} /> : null;

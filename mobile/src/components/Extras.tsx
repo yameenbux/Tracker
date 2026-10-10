@@ -4,13 +4,13 @@ import { EmptyState } from './States';
 import { habitIcon } from '../core/habitIcons';
 import { memo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { estimateExpenditure, intakeForPace, CAL_MIN_DAYS, CAL_WINDOW } from '../core/calories';
+import { estimateExpenditure, intakeRange, kcalRange, CAL_MIN_DAYS, CAL_WINDOW, MIN_INTAKE } from '../core/calories';
 import { addDays, dateKey, DAY_ABBR, longDate, parseKey, startOfDay } from '../core/dates';
 import { habitInsight, INSIGHT_MIN_WEEKS, MILESTONE_TEXT, weeksOfData } from '../core/insights';
 import { lossWeeks, weightSeries } from '../core/plan';
 import { exerciseName, lastLift, suggestNext } from '../core/progression';
 import { trendSeries, TrendPoint } from '../core/trend';
-import { KG_PER_LB, num, showChange, showAmount } from '../core/units';
+import { KG_PER_LB, num, showChange, showAmount, weightsHidden } from '../core/units';
 import type { HabitLog, Session, Settings, TrackerState, Unit, Weights } from '../core/types';
 import { C, F, themed, useScheme } from '../theme';
 import { fieldStyles } from './Fields';
@@ -107,6 +107,7 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
   const needsWeighIns = !est && logged >= CAL_MIN_DAYS;   // enough food logged, but no recent weigh-ins at an edge
   const plan = settings.plan;
   const pace = (plan.startKg - plan.goalKg) / Math.max(1, lossWeeks(plan.start, plan.goalDate, plan.breaks));
+  const eat = est ? intakeRange(est, pace) : null;
 
   return (
     <Card title="Calories eaten">
@@ -127,15 +128,19 @@ export function CaloriesCard({ settings, weights, intake, onChange, trend }: {
       <Text style={s.muted}>Enter what you ate, not what you burned, and don’t take exercise off: Tidemark works out your burn for you. One rough total for the day is enough.</Text>
       <View style={s.calStats}>
         <View style={s.calStat}><Text style={s.k}>Eaten, 7-day average</Text><Text style={s.v}>{avg7 != null ? `${avg7.toLocaleString()} kcal` : '—'}</Text></View>
-        <View style={s.calStat}><Text style={s.k}>You burn (worked out)</Text><Text style={s.v}>{est ? `~${est.tdee.toLocaleString()} kcal` : needsWeighIns ? 'Needs weigh-ins' : `${logged}/${CAL_MIN_DAYS} days`}</Text></View>
+        <View style={s.calStat}><Text style={s.k}>You burn (worked out)</Text><Text style={s.v}>{est ? `${kcalRange(est.low, est.high)} kcal` : needsWeighIns ? 'Needs weigh-ins' : `${logged}/${CAL_MIN_DAYS} days`}</Text></View>
       </View>
       <Text style={s.line}>
         {est
-          ? <>From what you ate and how your trend moved over {est.window} days, you burn about <Text style={s.b}>{est.tdee.toLocaleString()} kcal a day</Text>. Your plan’s pace means eating around <Text style={s.b}>{intakeForPace(est.tdee, pace).toLocaleString()} kcal</Text>.</>
+          ? <>From what you ate and how your trend moved over {est.window} days, you burn somewhere around <Text style={s.b}>{kcalRange(est.low, est.high)} kcal a day</Text>.
+            {/* With "hide my weight" on, no eating target: that setting is for people who'd rather not live by numbers */}
+            {weightsHidden() || !eat ? null
+              : eat.floored ? <> Your plan’s pace would mean eating less than {MIN_INTAKE.toLocaleString()} kcal a day, so Tidemark won’t suggest a number. A slower pace is safer: talk to your GP or a dietitian.</>
+              : <> To keep your plan’s pace, eat around <Text style={s.b}>{kcalRange(eat.low, eat.high)} kcal</Text>.</>}</>
           : needsWeighIns ? <>There aren’t weigh-ins near both ends of the last {CAL_WINDOW} days, so Tidemark can’t see how your trend really moved. Weigh in for the next couple of weeks and the estimate comes back.</>
           : <>Log what you eat on {CAL_MIN_DAYS} of the last {CAL_WINDOW} days. Tidemark then compares it with how your trend moved and works out how much you really burn a day, from your own data rather than a formula.</>}
       </Text>
-      {est && <Text style={s.foot}>Only as accurate as the logging: forgotten snacks make the estimate low. An estimate, not medical advice: talk to a GP or dietitian before big changes.</Text>}
+      {est && <Text style={s.foot}>A range, because some of what you lose is water and muscle, not just fat. Only as accurate as the logging: forgotten snacks make it low. An estimate, not medical advice: talk to a GP or dietitian before big changes.</Text>}
     </Card>
   );
 }

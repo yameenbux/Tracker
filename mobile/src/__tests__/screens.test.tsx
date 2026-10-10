@@ -7,6 +7,7 @@ import { Hero } from '../components/Hero';
 import { addDays, dateKey } from '../core/dates';
 import { buildTargets, defaultSettings, DEFAULT_HABITS } from '../core/plan';
 import { DEFAULT_PREFS } from '../core/storage';
+import { setWeightsHidden } from '../core/units';
 import type { Medication } from '../core/types';
 import { SettingsScreen, SettingsProps } from '../screens/SettingsScreen';
 import { NO_PLUS } from '../core/plus';
@@ -96,6 +97,36 @@ describe('body and extras', () => {
     fireEvent.changeText(input, '2100');
     fireEvent(input, 'blur');   // saved when you leave the field
     expect(onChange).toHaveBeenCalledWith(dateKey(today), 2100);
+  });
+  describe('calorie advice', () => {
+    // 30 days of weigh-ins changing by `perDay`, and `kcal` eaten on each of the last 21 days
+    const data = (perDay: number, kcal: number) => {
+      const trend = Array.from({ length: 30 }, (_, i) => { const d = addDays(today, i - 30); d.setHours(0, 0, 0, 0); const kg = 90 - i * perDay; return { d, k: dateKey(d), kg, trend: kg }; });
+      const intake: Record<string, number> = {};
+      for (let i = 1; i <= 21; i++) intake[dateKey(addDays(today, -i))] = kcal;
+      return { trend, intake };
+    };
+    const card = (perDay: number, kcal: number) => { const d = data(perDay, kcal);
+      return <CaloriesCard settings={{ ...settings, trackCalories: true }} weights={{}} intake={d.intake} trend={d.trend} onChange={jest.fn()} />; };
+    test('gives the burn and what to eat as ranges, not one exact number', () => {
+      render(card(0.5 / 7, 2000));
+      expect(screen.getByText(/you burn somewhere around/)).toBeTruthy();
+      expect(screen.getByText(/To keep your plan’s pace, eat around/)).toBeTruthy();
+      expect(screen.getAllByText(/\d,\d{3}–\d,\d{3} kcal/).length).toBeGreaterThan(0);
+    });
+    test('never suggests eating under the floor: it says to slow down and ask a professional', () => {
+      render(card(0, 1250));      // not losing on 1,250 kcal, plan wants about half a kilo a week
+      expect(screen.getByText(/won’t suggest a number/)).toBeTruthy();
+      expect(screen.queryByText(/eat around/)).toBeNull();
+    });
+    test('with "hide my weight" on there is no eating target at all', () => {
+      setWeightsHidden(true);
+      try {
+        render(card(0.5 / 7, 2000));
+        expect(screen.getByText(/you burn somewhere around/)).toBeTruthy();
+        expect(screen.queryByText(/eat around/)).toBeNull();
+      } finally { setWeightsHidden(false); }
+    });
   });
   test('a session\'s weights are recorded per exercise', async () => {
     const onSave = jest.fn();
