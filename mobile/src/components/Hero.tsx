@@ -1,6 +1,6 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Animated, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { dateKey, longDate, shortDate } from '../core/dates';
 import { FIRST_DAYS, firstDaysText, lineWord } from '../core/insights';
 import { direction, latestWeight, lineStatus, reachedGoal, sign, weightSeries } from '../core/plan';
@@ -58,10 +58,23 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
   const hidden = weightsHidden();
   const wk = hidden && trend?.length ? changeTable(trend, new Date(), [7])[0].change : null;
   const heading = wk == null ? 'Not enough yet' : Math.abs(wk) < 0.1 ? 'Holding steady' : wk < 0 ? 'Trending down' : 'Trending up';
+  // "Trend weight" is the app's one idea; a tap on it says what it means, in a sentence
+  const [why, setWhy] = useState(false);
+  const explainable = !hidden && !!last;
 
   return (
     <LinearGradient colors={[C.heroA, C.heroB]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
-      <Text style={s.label}>{hidden ? 'Your trend this week' : last ? 'Trend weight' : 'Starting weight'}</Text>
+      {explainable ? (
+        <Pressable onPress={() => setWhy(w => !w)} style={s.labelRow} hitSlop={8} accessibilityRole="button"
+          accessibilityLabel="What is trend weight?" accessibilityState={{ expanded: why }}>
+          <Text style={s.label}>Trend weight</Text>
+          <Icon name="info" size={14} color="rgba(255,255,255,0.7)" strokeWidth={2.2} />
+          <Text style={s.whyLink}>{why ? 'Hide' : 'What’s this?'}</Text>
+        </Pressable>
+      ) : <Text style={s.label}>{hidden ? 'Your trend this week' : 'Starting weight'}</Text>}
+      {explainable && why && (
+        <Text style={s.why} maxFontSizeMultiplier={1.5}>A smoothed average of your weigh-ins. It filters out day-to-day swings from water, salt and food, so it shows what’s really happening. It’s the number to watch.</Text>
+      )}
       {hidden ? (
         <View style={s.current} accessible accessibilityLabel={`Your trend this week: ${heading}${wk != null ? ', ' + showChange(wk, unit, 1) : ''}`}>
           <Text style={s.hiddenBig} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>{heading}</Text>
@@ -127,9 +140,9 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
           {second && <Text style={s.chipV2} maxFontSizeMultiplier={1.25} numberOfLines={1}>{kgOrLb(togo, false)}</Text>}
           </View>
         </View>
-        <View style={s.chip} accessible accessibilityLabel={!status || !word ? 'Versus the plan: no weigh-in yet' : status.onLine ? word : `${word} by ${kgOrLb(status.off, true)}`}>
+        <View style={s.chip} accessible accessibilityLabel={`${d === 0 ? 'Goal' : 'Plan'}: ${!status || !word ? 'no weigh-in yet' : status.onLine ? word : `${word} by ${kgOrLb(status.off, true)}`}`}>
           <View style={s.chipBody}>
-          <View style={s.chipHead}>{icons && <Icon name={!status || status.onLine || status.ahead ? 'check' : 'info'} size={14} strokeWidth={2.4} color={!status ? 'rgba(255,255,255,0.7)' : status.onLine || status.ahead ? C.heroGood : C.heroOver} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{d === 0 ? 'vs goal' : 'vs plan'}</Text></View>
+          <View style={s.chipHead}>{icons && <Icon name={!status || status.onLine || status.ahead ? 'check' : 'info'} size={14} strokeWidth={2.4} color={!status ? 'rgba(255,255,255,0.7)' : status.onLine || status.ahead ? C.heroGood : C.heroOver} />}<Text style={s.chipK} maxFontSizeMultiplier={1.3} numberOfLines={1}>{d === 0 ? 'Goal' : 'Plan'}</Text></View>
           <Text style={[s.chipV, !status ? null : status.onLine || status.ahead ? s.good : s.over]} maxFontSizeMultiplier={1.25} adjustsFontSizeToFit numberOfLines={1}>
             {word ?? '—'}
           </Text>
@@ -145,6 +158,9 @@ export const Hero = memo(function Hero({ settings, weights, unit, trend }: {
 const s = themed(() => StyleSheet.create({
   hero: { borderRadius: 22, paddingTop: 24, paddingHorizontal: 22, paddingBottom: 20, marginBottom: 16 },
   label: { fontFamily: F.bodySemi, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase', color: 'rgba(255,255,255,0.7)' },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 24 },
+  whyLink: { fontFamily: F.bodySemi, fontSize: 12.5, color: 'rgba(255,255,255,0.85)', textDecorationLine: 'underline' },
+  why: { fontFamily: F.body, fontSize: 13.5, lineHeight: 19, color: 'rgba(255,255,255,0.92)', marginTop: 6, marginBottom: 2 },
   current: { flexDirection: 'row', alignItems: 'baseline', gap: 7, marginTop: 6, flexWrap: 'wrap' },
   big: { fontFamily: F.display, fontSize: 54, color: '#fff', lineHeight: 58 },
   hiddenBig: { fontFamily: F.display, fontSize: 36, color: '#fff', lineHeight: 44, flexShrink: 1 },

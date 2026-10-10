@@ -52,6 +52,14 @@ describe('log weight sheet', () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledWith('2026-01-05', 92.3, { tags: ['travel', 'salty'], text: 'wedding' }));
   });
 
+  test('on a day with nothing noted, the tags wait behind "Add a note" so Save stays in reach', () => {
+    render(<LogSheet initialKey={null} weights={{ '2026-01-05': 92.3 }} unit="kg" minKey="2026-01-01" onSave={jest.fn()} onDelete={jest.fn()} onClose={jest.fn()} />);
+    expect(screen.queryByLabelText('Salty meal')).toBeNull();
+    fireEvent.press(screen.getByText('Add a note'));
+    expect(screen.getByLabelText('Salty meal')).toBeTruthy();
+    expect(screen.queryByText('Add a note')).toBeNull();
+  });
+
   test('with "hide my weight" on, the last weight is neither filled in nor shown', () => {
     setWeightsHidden(true);
     try {

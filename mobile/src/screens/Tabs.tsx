@@ -25,7 +25,7 @@ import { CaloriesCard, MilestoneBanner, PatternsCard } from '../components/Extra
 import { HabitsCard } from '../components/HabitsCard';
 import { Hero } from '../components/Hero';
 import { ChangeTable, HabitGrids, HabitSummary, Tile, TodayHabits } from '../components/Insights';
-import { WeekCard } from '../components/WeekCard';
+import { FirstWeekCard, WeekCard } from '../components/WeekCard';
 import { ProgressChart } from '../components/ProgressChart';
 import { Notice, SectionLabel, Tab, TabScreen } from '../components/Shell';
 import { TrendCard } from '../components/TrendCard';
@@ -80,6 +80,8 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode; onLog: (d
   const waist = measureSummary(state.measurements, 'waist');
   const tdee = settings.trackCalories ? estimateExpenditure(state.intake, series) : null;
   const week = changeTable(series, now, [7])[0].change;
+  // New, not back from a break: there's no week to show yet, so show the first week filling in instead
+  const firstWeekNow = week == null && !lapsed && Object.keys(state.weights).length > 0;
   const d = sign(direction(settings.plan));
   // On a dose day, or when a dose looks missed, the card goes straight under today's list; otherwise it sits lower.
   // It stays put once taken, so Undo doesn't jump away.
@@ -102,14 +104,15 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode; onLog: (d
       )}
       {/* This week across the full width: the trend through each of the last seven days, each labelled */}
       <CardBoundary name="This week">
-        <WeekCard series={series} weights={state.weights} unit={unit} onPress={() => go('trend')}
+        {firstWeekNow ? <FirstWeekCard weights={state.weights} /> : <WeekCard series={series} weights={state.weights} unit={unit} onPress={() => go('trend')}
           value={week != null ? showChange(week, unit, 1) : '—'}
           valueColor={week == null || d === 0 ? C.ink : week * d > 0.05 ? C.mintInk : week * d < -0.05 ? C.coralInk : C.ink}
-          sub={week != null ? 'trend change, last 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
+          sub={week != null ? 'change in your trend, last 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
           a11y={week != null ? `This week: trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'This week: needs a week of weigh-ins'}
-          foot={eta ? `At this pace you’ll reach ${prefs.hide ? 'your goal' : showWeight(settings.plan.goalKg, unit)} around ${longDate(eta)}.` : undefined} />
+          foot={eta ? `At this pace you’ll reach ${prefs.hide ? 'your goal' : showWeight(settings.plan.goalKg, unit)} around ${longDate(eta)}.` : undefined} />}
       </CardBoundary>
-      <View style={s.tiles}>
+      {/* In the first week the free tile would only repeat the first-week dots */}
+      {!(firstWeekNow && !plus && !settings.trackCalories) && <View style={s.tiles}>
         {settings.trackCalories && plus ? (
           <Tile icon="flame" label="Calories" onPress={() => go('body')}
             value={tdee ? kcalRange(tdee.low, tdee.high) : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
@@ -126,7 +129,7 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode; onLog: (d
               : waist ? 'waist · measure again in a few weeks' : 'Waist and photos show what the scale can’t'}
             a11y={waist ? `Waist ${showLength(waist.latest.cm, lu)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, lu)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
         )}
-      </View>
+      </View>}
       {/* No habits yet: the invitation stays where the habit figures would be */}
       {!H.length && (
         <View style={s.tiles}>
