@@ -3,8 +3,29 @@
 // "Restore from backup" reads them like any other. This file is the pure part: names, pruning, change detection and
 // the status line; the writing itself is in src/useAutoBackup.ts and modules/backup-folder.
 import { daysBetween, shortDate, validKey } from './dates';
+import { dailyWeights } from './entries';
+import type { TrackerState } from './types';
 
 export const AUTO_KEEP = 14;      // daily files kept: two weeks of days on which something changed
+
+/**
+ * What an automatic backup holds: everything except readings from Apple Health. The folder can be in iCloud Drive, and
+ * Apple's rule (guideline 5.1.3) is that health data from HealthKit isn't stored in iCloud. Nothing is lost: Health
+ * keeps those readings, and restoring a backup reads Health again from the start. A day that has only a Health reading
+ * is left out; a day with a weight typed in Tidemark keeps that weight.
+ */
+export function withoutHealth<T extends Pick<TrackerState, 'weights' | 'entries'>>(state: T): T {
+  if (!state.entries?.some(e => e.source === 'health')) return state;
+  const entries = state.entries.filter(e => e.source !== 'health');
+  const typed = dailyWeights(entries);
+  const fromHealth = new Set(state.entries.filter(e => e.source === 'health').map(e => e.day));
+  const weights: TrackerState['weights'] = {};
+  for (const [day, kg] of Object.entries(state.weights)) {
+    if (typed[day] != null) weights[day] = typed[day];
+    else if (!fromHealth.has(day)) weights[day] = kg;              // a day with no records at all (an older save) stays
+  }
+  return { ...state, entries, weights };
+}
 
 export interface AutoBackup {
   on: boolean;

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { backupFolder } from '../modules/backup-folder';
-import { backupName, fingerprint, NO_AUTO_BACKUP, toPrune, type AutoBackup } from './core/autoBackup';
+import { backupName, fingerprint, NO_AUTO_BACKUP, toPrune, withoutHealth, type AutoBackup } from './core/autoBackup';
 import { buildExportText } from './core/backup';
 import type { Tracker } from './store';
 
@@ -36,7 +36,8 @@ export function useAutoBackup(t: Tracker) {
       const bf = backupFolder;
       const { state: st, ab } = latest.current;
       if (!bf || !ab.on || !st.settings || loadFailed) return false;
-      const { photos: _photos, ...data } = st;                      // photos stay on the phone, as in every backup
+      const { photos: _photos, ...all } = st;                       // photos stay on the phone, as in every backup
+      const data = withoutHealth(all);                              // and Apple Health's readings stay in Health
       const hash = fingerprint(JSON.stringify(data));
       if (!force && hash === ab.lastHash) return true;
       const now = new Date();

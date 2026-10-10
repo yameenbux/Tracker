@@ -114,9 +114,9 @@ What each protection is, and what it isn't:
 - **Automatic backups are built but untested on a device**: the Swift module can't be compiled here. Before release,
   in a development or TestFlight build: pick a folder on the phone and one in iCloud Drive, change data, check the file
   appears, relaunch (the folder must still work), rename and delete the folder (Settings and Today must say it isn't
-  saving), and restore from one of the files. Writing health data into a folder the person picked in iCloud Drive is
-  their choice, not Tidemark syncing to iCloud, but it sits close to Guideline 5.1.3(ii): describe it plainly in the
-  App Review notes.
+  saving), and restore from one of the files. The files leave out readings from Apple Health (`withoutHealth` in
+  `core/autoBackup.ts`), so a folder in iCloud Drive never holds HealthKit data (Guideline 5.1.3(ii)); after a
+  restore, Tidemark reads Health again from the start. Say this in the App Review notes.
 - **iCloud sync** — not built. App Review Guideline 5.1.3(ii) says apps using HealthKit may not store personal health
   information in iCloud. Settle that (e.g. ask App Review, or sync only what didn't come from Health) before building it.
 - **Apple Watch app** — not built. It needs a native watchOS target (Swift), which can't be compiled or tested here; an

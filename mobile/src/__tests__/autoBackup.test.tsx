@@ -58,6 +58,18 @@ describe('automatic backups', () => {
     expect(mockNative.write.mock.calls.length).toBe(writes + 1);
   });
 
+  test('the file written leaves out readings from Apple Health', async () => {
+    const st = { ...baseState(), weights: { '2026-10-08': 88.4, '2026-10-09': 88.2 },
+      entries: [{ id: 'w1', at: '2026-10-08T06:00:00.000Z', day: '2026-10-08', kg: 88.4, source: 'manual' as const },
+                { id: 'hB', at: '2026-10-09T05:00:00.000Z', day: '2026-10-09', kg: 88.2, source: 'health' as const }] } as TrackerState;
+    harness({ state: st });
+    await act(async () => { await Promise.resolve(); });
+    const text = mockFiles.get(backupName(new Date()))!;
+    expect(text).toMatch(/88\.4/);
+    expect(text).not.toMatch(/2026-10-09/);
+    expect(text).not.toMatch(/"health"/);
+  });
+
   test('keeps only the newest files of its own', async () => {
     for (let i = 0; i < AUTO_KEEP + 2; i++) mockFiles.set(backupName(new Date(2026, 0, 1 + i)), 'old');
     mockFiles.set('my notes.txt', 'mine');

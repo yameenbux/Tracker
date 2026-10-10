@@ -27,7 +27,7 @@ export function BackupPage({ api, onBack }: { api: AutoBackupApi; onBack: () => 
     <View style={s.wrap}>
       <PageHeader title="Automatic backup" onBack={onBack} />
       <ScrollView contentContainerStyle={s.scroll}>
-        <Text style={s.lead}>Tidemark saves a backup into a folder you choose, every day something changes. Choose a folder in iCloud Drive and your history survives losing or replacing this phone.</Text>
+        <Text style={s.lead}>Tidemark saves a backup into a folder you choose, every day something changes. Choose one that’s kept somewhere other than this phone and your history survives losing or replacing it.</Text>
         <View style={s.form}>
           {a.on ? <>
             <Text style={s.backupFolder} numberOfLines={2}>{a.folder ?? 'Your folder'}</Text>
@@ -42,7 +42,7 @@ export function BackupPage({ api, onBack }: { api: AutoBackupApi; onBack: () => 
           </>}
         </View>
         <Text style={s.hint}>Files are named like “Tidemark backup 2026-10-10.txt”. The newest {AUTO_KEEP} are kept and older ones deleted; nothing else in the folder is touched. To restore one, use Settings › Restore from backup.</Text>
-        <Text style={s.hint}>Backups hold your weigh-ins, plan, habits, notes, doses and settings, not progress photos. They aren’t password-protected, so anyone who can open the folder can read them. In iCloud Drive they’re stored by Apple in your iCloud account.</Text>
+        <Text style={s.hint}>Backups hold the weigh-ins you typed, your plan, habits, notes, doses and settings. Readings from Apple Health and progress photos are left out: Health keeps its readings, and restoring a backup reads them from Health again. Backups aren’t password-protected, so anyone who can open the folder can read them.</Text>
         {a.on && <Button label="Turn off automatic backups" kind="danger" small style={{ alignSelf: 'flex-start', marginTop: 8 }} onPress={off} />}
       </ScrollView>
     </View>
