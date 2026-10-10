@@ -158,7 +158,7 @@ describe('the free version', () => {
     const onReport = jest.fn();
     render(<Harness><SettingsScreen {...props()} onReport={onReport} /></Harness>);
     fireEvent.press(screen.getByLabelText(/^Report for your doctor/));
-    expect(await screen.findAllByText(/Report for your doctor is part of Plus/)).toHaveLength(1);   // one paywall, shown in the Settings window
+    expect(await screen.findAllByText(/The report for your doctor is part of Plus/)).toHaveLength(1);   // one paywall, shown in the Settings window
     expect(onReport).not.toHaveBeenCalled();
   });
   test('logging a medication is free: its page opens without the paywall', async () => {

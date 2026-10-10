@@ -139,7 +139,7 @@ export function HabitSummary({ pct, onPress }: { pct: number | null; onPress: ()
         <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.empty} strokeWidth={stroke} fill="none" />
         {v > 0 && <Circle cx={size / 2} cy={size / 2} r={r} stroke={C.done} strokeWidth={stroke} fill="none" strokeLinecap="round" strokeDasharray={`${(c * v).toFixed(1)} ${c.toFixed(1)}`} />}
       </Svg>
-      <Text style={s.sumTxt} maxFontSizeMultiplier={1.4}>{pct == null ? '—' : `${pct}%`} · 30 days</Text>
+      <Text style={s.sumTxt} maxFontSizeMultiplier={1.4}>Habits {pct == null ? '—' : `${pct}%`} · 30 days</Text>
       <Icon name="chevron" size={14} color={C.inkSoft} />
     </Tap>
   );

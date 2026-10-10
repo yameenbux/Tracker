@@ -67,11 +67,20 @@ export function milestoneQuarter(plan: Plan, trendNow: number): number {
   const done = (plan.startKg - trendNow) / (plan.startKg - plan.goalKg);   // works for gaining too (both negative)
   return Math.max(0, Math.min(4, Math.floor(done * 4 + 1e-9)));
 }
-export const MILESTONE_TEXT = ['', 'A quarter of the way there', 'Halfway to your goal', 'Three quarters of the way', 'Goal reached'];
+export const MILESTONE_TEXT = ['', 'Past a quarter of the way', 'Past halfway to your goal', 'Past three quarters of the way', 'Goal reached'];
 
 /** The one status vocabulary for "trend vs the plan's line", used by the hero, the Pace tile and the Trend tab. */
 export function lineWord(status: { onLine: boolean; ahead: boolean }, d: number): 'On track' | 'Ahead' | 'Behind' | 'Off' {
   return status.onLine ? 'On track' : status.ahead ? 'Ahead' : d === 0 ? 'Off' : 'Behind';
+}
+
+/**
+ * The plan verdict, with the pace taken into account: behind the line today but on course to reach the goal by its date
+ * is "Catching up", so the chip never says "Behind" next to "at this pace you'll get there early".
+ */
+export function planWord(status: { onLine: boolean; ahead: boolean }, d: number, eta: string | null, goalDate: string): 'On track' | 'Ahead' | 'Behind' | 'Catching up' | 'Off' {
+  const w = lineWord(status, d);
+  return w === 'Behind' && eta != null && eta <= goalDate ? 'Catching up' : w;
 }
 
 /** Weigh-ins before the hero gives a verdict (the same 4 the weekly rate needs). */

@@ -55,7 +55,7 @@ describe('habit summary', () => {
     const { rerender } = render(<HabitSummary pct={60} onPress={jest.fn()} />);
     expect(screen.getByRole('button', { name: 'Habits: 60 percent over the last 30 days' })).toBeTruthy();
     rerender(<HabitSummary pct={null} onPress={jest.fn()} />);
-    expect(screen.getByText(/^— · 30 days/)).toBeTruthy();
+    expect(screen.getByText(/^Habits — · 30 days/)).toBeTruthy();
   });
 });
 

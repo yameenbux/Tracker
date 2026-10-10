@@ -63,7 +63,8 @@ test('daily use: log a weigh-in from Today, see the trend change, and move betwe
   fireEvent.press(screen.getByRole('tab', { name: 'Habits' }));
   expect(await screen.findAllByText('This week')).toBeTruthy();
   fireEvent.press(screen.getByRole('tab', { name: 'Body' }));
-  expect(await screen.findByText('Measurements, photos and calories')).toBeTruthy();   // free version: Body is part of Plus
+  expect(await screen.findByText('Hips, chest, arms, photos and calories')).toBeTruthy();   // free version: the waist is free, the rest is Plus
+  expect(screen.getByText('Waist')).toBeTruthy();
 });
 
 const seeded = async (prefs: object = {}) => {

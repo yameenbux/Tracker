@@ -16,14 +16,15 @@ export type PlusFeature = 'medication' | 'report' | 'protein' | 'habits' | 'body
 export const FREE_HABITS = 3;
 
 /** The Plus extras: `title` names one (e.g. "Medication log is part of Plus"), `line` is its paywall checklist line. */
+// Ordered by how many people each one is for: everyone first, people on medication last
 export const PLUS_PERKS: { feature: PlusFeature; title: string; line: string }[] = [
-  { feature: 'medication', title: 'Medication insights', line: 'Your trend at each dose, injection sites and side effects' },
-  { feature: 'report', title: 'Report for your doctor', line: 'A PDF report for your doctor or nurse' },
-  { feature: 'protein', title: 'Protein target', line: 'A daily protein minimum, to keep muscle while you lose' },
   { feature: 'habits', title: 'More habits', line: `Up to 6 habits (free has ${FREE_HABITS})` },
-  { feature: 'body', title: 'Measurements and photos', line: 'Measurements and progress photos' },
-  { feature: 'calories', title: 'Calories', line: 'Log what you eat; Tidemark works out what you burn' },
-  { feature: 'protectedBackups', title: 'Password-protected backups', line: 'Password-protected backups' },
+  { feature: 'body', title: 'Body tracking', line: 'Progress photos, and hips, chest and arms as well as waist' },
+  { feature: 'calories', title: 'The calorie estimate', line: 'Log what you eat; Tidemark estimates what you burn' },
+  { feature: 'protein', title: 'The protein target', line: 'A daily protein minimum to aim for' },
+  { feature: 'report', title: 'The report for your doctor', line: 'A PDF report for your doctor or nurse' },
+  { feature: 'protectedBackups', title: 'Password-protected backup', line: 'Password-protected backups' },
+  { feature: 'medication', title: 'Medication insights', line: 'If you take a weight-loss medication: your trend at each dose, and side effects' },
 ];
 
 /** What the phone last knew about Plus. Kept so Plus works offline; re-checked with Apple whenever the app opens. */

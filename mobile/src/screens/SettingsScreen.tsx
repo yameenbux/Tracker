@@ -210,7 +210,7 @@ export function SettingsScreen(p: SettingsProps) {
           {plus ? <SwitchRow icon="flame" label="Calorie estimate" value={settings.trackCalories === true} onChange={v => commit({ trackCalories: v })} last />
             : <Row icon="flame" label="Calorie estimate" value="Plus" onPress={() => openPaywall('calories')} hint="Part of Tidemark Plus" last />}
         </Group>
-        <Text style={s.groupFootOut}>{p.health ? 'Apple Health: weights from your scale or other apps come in by themselves, and weights you log here go to Health. A weight you type always wins for its day. ' : ''}Calorie estimate: enter how many calories you ate each day (not burned). After two weeks Tidemark compares that with your trend and works out how many you really burn.</Text>
+        <Text style={s.groupFootOut}>{p.health ? 'Apple Health: weights from your scale or other apps come in by themselves, and weights you log here go to Health. A weight you type always wins for its day. ' : ''}Calorie estimate: enter how many calories you ate each day (not burned). After two weeks Tidemark compares that with your trend and estimates how many you burn.</Text>
 
         <Group title="Display" footer="Hide my weight: Tidemark shows which way your trend is going and by how much, never the weight itself. Exports still hold the real numbers.">
           <Row icon="moon" label="Appearance" wide right={<AppearanceToggle value={p.appearance} onChange={p.onAppearanceChange} />} />
