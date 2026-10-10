@@ -11,7 +11,7 @@ import { FEATURES } from './features';
 import { PlusProvider } from './plus';
 import { plusActive, type PlusStatus } from './core/plus';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
-import { weightSeries } from './core/plan';
+import { historyStart, weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
 import { setWeightsHidden, showAmount, showWeight } from './core/units';
 import type { Settings } from './core/types';
@@ -233,7 +233,7 @@ function Main() {
             onSave={l => { t.setLifts(l); success(); setLift(null); show({ message: 'Session saved' }); }} />
         )}
         {log && (
-          <LogSheet key={log.n} initialKey={log.key} weights={state.weights} notes={state.notes} unit={state.unit} minKey={settings.plan.start} onClose={() => setLog(null)}
+          <LogSheet key={log.n} initialKey={log.key} weights={state.weights} notes={state.notes} unit={state.unit} minKey={historyStart(settings.plan)} onClose={() => setLog(null)}
             onSave={(k, kg, note) => { weighIn.save(log.key, k, kg, note); setLog(null); }}
             onDelete={k => { weighIn.remove(k); setLog(null); }} />
         )}

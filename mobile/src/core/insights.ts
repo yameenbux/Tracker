@@ -1,6 +1,7 @@
 // Consistency instead of streaks, honest habit insights, and calm milestones.
 import { addDays, dateKey, parseKey, startOfDay } from './dates';
 import type { HabitLog, Plan } from './types';
+import { historyStart } from './plan';
 import type { TrendPoint } from './trend';
 
 /** Days a habit was ticked in the last `days` days (never counting before `since`, e.g. the plan start). */
@@ -30,7 +31,7 @@ export const INSIGHT_MIN_GROUP = 3;     // each side of the comparison needs at 
  * It shows what happened alongside the habit, not that the habit caused it.
  */
 export function habitInsight(plan: Plan, series: TrendPoint[], log: HabitLog, habitId: string, today: Date = new Date(), threshold = 5): HabitInsight | null {
-  const start = parseKey(plan.start);
+  const start = parseKey(historyStart(plan));
   const weeks: { change: number; count: number }[] = [];
   for (let w = 0; ; w++) {
     const ws = addDays(start, w * 7), we = addDays(ws, 7);
@@ -51,7 +52,7 @@ export function habitInsight(plan: Plan, series: TrendPoint[], log: HabitLog, ha
 
 /** Completed weeks with weigh-ins so far, so the UI can say how long until insights appear. */
 export function weeksOfData(plan: Plan, series: TrendPoint[], today: Date = new Date()): number {
-  const start = parseKey(plan.start);
+  const start = parseKey(historyStart(plan));
   let n = 0;
   for (let w = 0; ; w++) {
     const ws = addDays(start, w * 7), we = addDays(ws, 7);

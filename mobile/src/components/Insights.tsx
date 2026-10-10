@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { DAY_ABBR, dateKey, parseKey, shortDate } from '../core/dates';
 import { consistency } from '../core/insights';
-import { toggleHabit, extent } from '../core/plan';
+import { toggleHabit, extent, historyStart } from '../core/plan';
 import { changeTable, habitGrid } from '../core/summary';
 import type { TrendPoint } from '../core/trend';
 import { showChange } from '../core/units';
@@ -110,8 +110,8 @@ export const HabitGrids = memo(function HabitGrids({ settings, habits }: { setti
       {/* The time axis: squares run oldest to newest, and today's is outlined */}
       <Text style={s.axis} maxFontSizeMultiplier={1.5}>{shortDate(parseKey(from))} → today, left to right</Text>
       {habitsShown(settings).map(h => {
-        const grid = habitGrid(habits, h.id, 30, now, settings.plan.start);
-        const m = consistency(habits, h.id, 30, now, settings.plan.start);
+        const grid = habitGrid(habits, h.id, 30, now, historyStart(settings.plan));
+        const m = consistency(habits, h.id, 30, now, historyStart(settings.plan));
         const pct = m.of ? Math.round(m.done / m.of * 100) : 0;
         return (
           <View key={h.id} style={s.gridRow} accessible accessibilityLabel={`${h.name}: done ${m.done} of the last ${m.of} days, ${pct} percent`}>

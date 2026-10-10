@@ -6,7 +6,7 @@ import { memo, useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { addDays, DAY_ABBR, dateKey, MON } from '../core/dates';
 import { consistency } from '../core/insights';
-import { mealTotals, toggleHabit, weekDays } from '../core/plan';
+import { historyStart, mealTotals, toggleHabit, weekDays } from '../core/plan';
 import type { HabitLog, Session, Settings } from '../core/types';
 import { tick } from '../feel';
 import { useReducedMotion } from '../motion';
@@ -83,7 +83,7 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
   // Page back through earlier weeks (to fix a missed tick), never past the plan's first week or into the future
   const [back, setBack] = useState(0);
   const days = weekDays(addDays(new Date(), -7 * back));
-  const canBack = dateKey(days[0]) > settings.plan.start;
+  const canBack = dateKey(days[0]) > historyStart(settings.plan);
   const todayKey = dateKey(new Date());
   const H = usableHabits(settings.habits, usePlus().plus);
   const hasMeals = settings.meals.items.length > 0;
@@ -167,8 +167,8 @@ export const HabitsCard = memo(function HabitsCard({ settings, habits, onChange,
         <View style={s.summary}>
           {/* Consistency over the last 7 and 30 days, not streaks: one missed day doesn't wipe out a good month */}
           {H.map(h => {
-            const w = consistency(habits, h.id, 7, new Date(), settings.plan.start);
-            const m = consistency(habits, h.id, 30, new Date(), settings.plan.start);
+            const w = consistency(habits, h.id, 7, new Date(), historyStart(settings.plan));
+            const m = consistency(habits, h.id, 30, new Date(), historyStart(settings.plan));
             const pct = m.of ? Math.round(m.done / m.of * 100) : 0;
             return (
               <View key={h.id} style={s.sumItem} accessible accessibilityLabel={`${h.name}: ${w.done} of the last ${w.of} days, ${pct}% over ${m.of} days`}>

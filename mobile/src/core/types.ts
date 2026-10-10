@@ -11,6 +11,8 @@ export interface Plan {
   targets: number[];  // one target per week, week 1 = start date
   breaks?: PlanBreak[];
   holdKg?: number;    // holding plans: how far either side of the goal still counts as holding (default 1 kg)
+  since?: string;     // when tracking began, if before `start`: a holding plan (or a new plan) starts today, but the
+                      // trend, history and habit grids carry on from here instead of starting again from nothing
 }
 
 export interface TrackerEvent { name: string; date: string; detail: string }

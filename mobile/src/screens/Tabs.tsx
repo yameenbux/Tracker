@@ -13,7 +13,7 @@ import { estimateExpenditure, kcalRange } from '../core/calories';
 import { describeAutoBackup } from '../core/autoBackup';
 import { addDays, DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
 import { consistency, milestoneQuarter } from '../core/insights';
-import { direction, sign } from '../core/plan';
+import { direction, historyStart, sign } from '../core/plan';
 import { milestonePlanKey } from '../core/storage';
 import { backupDue, changeTable, daysSince } from '../core/summary';
 import { projectedGoalDate, Rate, TrendPoint } from '../core/trend';
@@ -73,8 +73,8 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode; onLog: (d
   // A week's change needs weigh-ins in that week: someone who's had a break is told so, not asked for a week's data
   const lapsed = Object.keys(state.weights).some(k => k < dateKey(addDays(now, -7)));
   // Nothing ticked in 30 days (usually day one) shows a dash, not a 0% that reads like a mark
-  const ticked30 = H.some(h => consistency(state.habits, h.id, 30, now, settings.plan.start).done > 0);
-  const avg30 = H.length ? Math.round(H.reduce((a, h) => { const c = consistency(state.habits, h.id, 30, now, settings.plan.start); return a + (c.of ? c.done / c.of : 0); }, 0) / H.length * 100) : 0;
+  const ticked30 = H.some(h => consistency(state.habits, h.id, 30, now, historyStart(settings.plan)).done > 0);
+  const avg30 = H.length ? Math.round(H.reduce((a, h) => { const c = consistency(state.habits, h.id, 30, now, historyStart(settings.plan)); return a + (c.of ? c.done / c.of : 0); }, 0) / H.length * 100) : 0;
   const waist = measureSummary(state.measurements, 'waist');
   const tdee = settings.trackCalories ? estimateExpenditure(state.intake, series) : null;
   const week = changeTable(series, now, [7])[0].change;
