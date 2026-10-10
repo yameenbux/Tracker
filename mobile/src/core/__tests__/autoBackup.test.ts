@@ -1,4 +1,4 @@
-import { AUTO_KEEP, backupDay, backupName, cleanAutoBackup, describeAutoBackup, fingerprint, NO_AUTO_BACKUP, toPrune } from '../autoBackup';
+import { AUTO_KEEP, backupDay, backupName, cleanAutoBackup, describeAutoBackup, fingerprint, NO_AUTO_BACKUP, toPrune, withoutHealth } from '../autoBackup';
 
 describe('automatic backups', () => {
   test('one file per day, named so they sort by date and restore like any backup', () => {
@@ -47,5 +47,21 @@ describe('automatic backups', () => {
     expect(failed.text).toMatch(/can’t be reached/);
     // An old failure that a later save fixed is forgotten
     expect(describeAutoBackup({ ...on, lastAt: at(10), failedAt: at(9) }, now).warn).toBe(false);
+  });
+});
+
+describe('Apple Health readings stay out of automatic backups', () => {
+  const typed = { id: 'w1', at: '2026-10-08T06:00:00.000Z', day: '2026-10-08', kg: 88.4, source: 'manual' as const };
+  const scaleSameDay = { id: 'hA', at: '2026-10-08T05:00:00.000Z', day: '2026-10-08', kg: 88.9, source: 'health' as const };
+  const scaleOnly = { id: 'hB', at: '2026-10-09T05:00:00.000Z', day: '2026-10-09', kg: 88.2, source: 'health' as const };
+  test('Health readings and Health-only days are left out; typed weights and older record-less days stay', () => {
+    const out = withoutHealth({ weights: { '2026-10-07': 88.6, '2026-10-08': 88.4, '2026-10-09': 88.2 }, entries: [typed, scaleSameDay, scaleOnly] });
+    expect(out.entries).toEqual([typed]);
+    expect(out.weights).toEqual({ '2026-10-07': 88.6, '2026-10-08': 88.4 });
+    expect(JSON.stringify(out)).not.toMatch(/health/);
+  });
+  test('nothing from Health: the data is passed through unchanged', () => {
+    const st = { weights: { '2026-10-08': 88.4 }, entries: [typed] };
+    expect(withoutHealth(st)).toBe(st);
   });
 });

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Pressable, ScrollView, Text, View } from 'react-native';
 import { addDays, dateKey, mondayOf, validKey } from '../../core/dates';
-import { assessPlan, buildTargets, cleanBreaks, direction, MAX_BREAK_WEEKS, onlyBreaksChanged, planChanged, withBreaks } from '../../core/plan';
+import { assessPlan, buildTargets, cleanBreaks, direction, historyStart, MAX_BREAK_WEEKS, onlyBreaksChanged, planChanged, withBreaks } from '../../core/plan';
 import { fmt, toLbNum } from '../../core/units';
 import type { PlanBreak, Settings, Unit } from '../../core/types';
 import { DateInput, Field, WeightInput } from '../../components/Fields';
@@ -22,7 +22,9 @@ export function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsav
   const changed = planChanged(settings.plan, plan);
   const build = (): Settings['plan'] | null => {
     if (!verdict.ok) return null;
-    const full = { startKg: plan.startKg!, goalKg: plan.goalKg!, start: plan.start, goalDate: plan.goalDate, breaks: cleanBreaks(plan.breaks) };
+    // History carries on into a new plan from where it already began (a later start date doesn't hide it)
+    const since = historyStart(settings.plan) < plan.start ? historyStart(settings.plan) : undefined;
+    const full = { startKg: plan.startKg!, goalKg: plan.goalKg!, start: plan.start, goalDate: plan.goalDate, breaks: cleanBreaks(plan.breaks), ...(since ? { since } : {}) };
     return onlyBreaksChanged(settings.plan, plan)
       ? withBreaks(settings.plan, plan.breaks)           // keep past weeks (and any re-plan) as they are
       : { ...full, targets: buildTargets(full.startKg, full.goalKg, full.start, full.goalDate, full.breaks),
@@ -37,9 +39,6 @@ export function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsav
   const leave = async () => {
     if (!changed || await confirm('Discard plan changes?', 'Your current plan stays as it is.', 'Discard')) { skip(); onBack(); }
   };
-  // Moving the start later hides weigh-ins from before it (they stay in backups and the CSV)
-  const hidden = Object.keys(weights).filter(k => k < plan.start).length;
-  const hiddenBefore = Object.keys(weights).filter(k => k < settings.plan.start).length;
   const rate = verdict.ok ? (unit === 'kg' ? fmt(verdict.perWeek, 2) + ' kg' : toLbNum(verdict.perWeek).toFixed(1) + ' lb') : '';
   // VoiceOver doesn't read changes on its own: announce the plan check when it changes (after typing settles)
   const verdictText = !verdict.ok ? verdict.error : `${verdict.weeks} weeks, about ${rate} a week`;
@@ -67,7 +66,6 @@ export function PlanPage({ settings, unit, weights, onSave, onBack, onLeaveUnsav
                 (verdict.warn ? (plan.goalKg! > plan.startKg! ? '\nGaining faster than ~0.5% a week is mostly fat rather than muscle.' : "\nThat's faster than ~1% a week, which most people find hard to sustain.") : '')}
             </Text>
           </View>
-          {hidden > hiddenBefore && <Text style={[s.hint, { color: C.warnInk }]}>{hidden - hiddenBefore} weigh-in{hidden - hiddenBefore === 1 ? '' : 's'} before the new start date will be hidden from the trend and history. They stay in your backups and CSV, and come back if you move the start earlier again.</Text>}
           {changed && verdict.ok && <Text style={s.hint}>{onlyBreaksChanged(settings.plan, plan)
             ? 'Saving updates the line from this week on. Past weeks stay as they are.'
             : 'Saving rebuilds the target line from start to goal, flat during breaks. Your weigh-ins are kept.'}</Text>}

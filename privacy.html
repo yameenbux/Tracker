@@ -47,14 +47,14 @@
   <ul>
     <li><strong>Face ID / Touch ID</strong> (optional) locks the app. The check is done by iOS; Tidemark never sees your face or fingerprint data.</li>
     <li><strong>Camera and photos</strong> (optional) are used only when you add a progress photo. The photo is copied into Tidemark’s private storage.</li>
-    <li><strong>Apple Health</strong> (optional, off until you switch it on) reads your body weight from Health and saves the weights you log to it, so your scale and other health apps stay in step. Health data is read and written on your iPhone only; Tidemark never sends it anywhere, never uses it for advertising, and doesn't store it in iCloud.</li>
+    <li><strong>Apple Health</strong> (optional, off until you switch it on) reads your body weight from Health and saves the weights you log to it, so your scale and other health apps stay in step. Health data is read and written on your iPhone only; Tidemark never sends it to a server, never uses it for advertising, and never stores it in iCloud: automatic backups leave out readings that came from Health. A backup you export yourself includes them, because it's your copy to keep wherever you choose.</li>
     <li><strong>Notifications</strong> (optional) are used only for the daily weigh-in reminder and, if you turn it on, a dose-day reminder. Both are scheduled on your phone.</li>
   </ul>
 
   <h2>Backups and exports</h2>
   <p>When you tap Export, Tidemark creates a file and opens the iOS share sheet. Where that file goes (Files, iCloud Drive, email) is your choice,
      and it is then handled by that service. Photos are not included in backups.</p>
-  <p>If you turn on <strong>Automatic backup</strong> (Settings › Automatic backup), you choose a folder once, on your iPhone or in iCloud Drive, and Tidemark saves a backup file into it on each day your data changes, keeping the newest 14. Tidemark looks at the file names in that folder only to tidy its own “Tidemark backup” files, and never opens anything else there. These files aren’t password-protected. If the folder is in iCloud Drive, Apple stores them in your iCloud account like any other file of yours; Tidemark itself never connects to iCloud or any server. Turning automatic backup off, or deleting all your data, stops it; files already in the folder stay until you delete them.</p>
+  <p>If you turn on <strong>Automatic backup</strong> (Settings › Automatic backup), you choose a folder once, on your iPhone or in iCloud Drive, and Tidemark saves a backup file into it on each day your data changes, keeping the newest 14. These files leave out readings that came from Apple Health; Health keeps them, and restoring reads them from Health again. Tidemark looks at the file names in that folder only to tidy its own “Tidemark backup” files, and never opens anything else there. These files aren’t password-protected. If the folder is in iCloud Drive, Apple stores them in your iCloud account like any other file of yours; Tidemark itself never connects to iCloud or any server. Turning automatic backup off, or deleting all your data, stops it; files already in the folder stay until you delete them.</p>
   <p>The report for your doctor (a PDF) works the same way: it's made on your phone and goes only where you share it.</p>
 
   <h2>How your data is protected</h2>

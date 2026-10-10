@@ -1,0 +1,72 @@
+name: iOS build
+
+# Compiles the whole iPhone app for the simulator, with no signing: the Swift backup-folder module, the widget extension,
+# HealthKit, StoreKit and every config plugin. It proves the native code builds; it can't prove it behaves on a device
+# (that's the TestFlight checklist in mobile/README.md). Runs when anything native could have changed.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'mobile/modules/**'
+      - 'mobile/plugins/**'
+      - 'mobile/app.json'
+      - 'mobile/app.config.js'
+      - 'mobile/package.json'
+      - 'mobile/package-lock.json'
+      - 'mobile/src/widgets/**'
+      - '.github/workflows/ios-build.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  simulator:
+    runs-on: macos-26
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Xcode versions on the runner
+        run: ls -d /Applications/Xcode*.app
+      - run: npm ci
+      - name: Generate the iOS project (production config)
+        env:
+          EAS_BUILD_PROFILE: production
+        run: npx expo prebuild --platform ios --clean
+      - name: Build for the simulator
+        # Expo's prebuilt-module headers only compile with the Xcode its SDK targets, which isn't always the runner's
+        # newest or its default, so try each installed Xcode 26 release, newest first, and say which one built
+        run: |
+          WS=$(ls -d ios/*.xcworkspace | head -1)
+          SCHEME=$(basename "$WS" .xcworkspace)
+          for XC in $(ls -d /Applications/Xcode_2[6-9]*.app | grep -v -i beta | sort -V -r | head -3); do
+            sudo xcode-select -s "$XC"
+            echo "::group::Building $SCHEME with $(xcodebuild -version | head -1)"
+            rm -rf ~/Library/Developer/Xcode/DerivedData
+            xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build \
+              > build.log 2>&1 || true
+            echo "::endgroup::"
+            if grep -q "\*\* BUILD SUCCEEDED \*\*" build.log; then echo "BUILD SUCCEEDED with $XC"; exit 0; fi
+            echo "Failed with $XC:"; grep -n -B2 -A6 -E "error:" build.log | head -60
+          done
+          tail -60 build.log
+          exit 1
+      - name: Keep the build log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ios-build-log
+          path: mobile/build.log
+          if-no-files-found: ignore

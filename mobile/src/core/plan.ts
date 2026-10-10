@@ -164,6 +164,7 @@ export function normalizeSettings(s: any): Settings | null {
   const breaks = cleanBreaks(p.breaks);
   if (targets.length !== weeks + 1 || !targets.every(plausible)) targets = buildTargets(startKg, goalKg, p.start, p.goalDate, breaks);
   const plan: Plan = { start: p.start, startKg, goalKg, goalDate: p.goalDate, targets: [...targets], breaks };
+  if (validKey(p.since) && p.since < p.start) plan.since = p.since;
   const hold = numOrNull(p.holdKg);
   if (hold != null && hold >= MIN_HOLD_KG && hold <= MAX_HOLD_KG) plan.holdKg = Math.round(hold * 10) / 10;
 
@@ -248,8 +249,11 @@ export function targetAt(plan: Plan, d: Date): number {
 
 export interface WeightPoint { k: string; d: Date; kg: number }
 /** Logged weights from the plan's start onwards, oldest first. */
+/** Where the history begins: the plan's start, or earlier when an older plan's weigh-ins carry on into this one. */
+export const historyStart = (plan: Pick<Plan, 'start' | 'since'>): string => (plan.since && plan.since < plan.start ? plan.since : plan.start);
+
 export function weightSeries(plan: Plan, weights: Weights): WeightPoint[] {
-  const start = parseKey(plan.start).getTime();
+  const start = parseKey(historyStart(plan)).getTime();
   return Object.keys(weights)
     .map(k => ({ k, d: parseKey(k), kg: weights[k] }))
     .filter(p => p.d.getTime() >= start)
@@ -432,5 +436,5 @@ export function holdingPlan(plan: Plan, today: Date = new Date(), holdKg = DEFAU
   const start = dateKey(startOfDay(today));
   const goalDate = dateKey(addDays(startOfDay(today), HOLD_WEEKS * 7));
   return { start, startKg: plan.goalKg, goalKg: plan.goalKg, goalDate, targets: buildTargets(plan.goalKg, plan.goalKg, start, goalDate), breaks: [],
-           holdKg: Math.min(MAX_HOLD_KG, Math.max(MIN_HOLD_KG, holdKg)) };
+           holdKg: Math.min(MAX_HOLD_KG, Math.max(MIN_HOLD_KG, holdKg)), since: historyStart(plan) };
 }
