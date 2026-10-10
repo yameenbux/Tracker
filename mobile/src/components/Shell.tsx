@@ -100,7 +100,8 @@ export function Toast({ message, action, onAction, onHide }: { message: string; 
     AccessibilityInfo.isScreenReaderEnabled().catch(() => false).then(sr => {
       if (!alive) return;
       AccessibilityInfo.announceForAccessibility(action ? `${message}. ${action} available.` : message);
-      t = setTimeout(onHide, sr ? 12000 : 6000);
+      // Long enough to read: a longer message (a weigh-in explained) stays up longer, up to 12 s
+      t = setTimeout(onHide, sr ? 12000 : Math.min(12000, Math.max(6000, message.length * 70)));
     });
     return () => { alive = false; if (t) clearTimeout(t); };
   }, [y, reduced, onHide, message, action]);

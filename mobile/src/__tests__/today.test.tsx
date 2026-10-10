@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { heroWindow, HERO_DAYS } from '../components/HeroChart';
-import { HabitSummary } from '../components/Insights';
-import { WeekCard, weekDays } from '../components/WeekCard';
+import { HabitSummary, TodayHabits } from '../components/Insights';
+import { FirstWeekCard, firstWeek, WeekCard, weekDays } from '../components/WeekCard';
 import { addDays, dateKey, parseKey, startOfDay } from '../core/dates';
-import { buildTargets, targetAt } from '../core/plan';
+import { buildTargets, defaultSettings, DEFAULT_HABITS, targetAt } from '../core/plan';
 import type { TrendPoint } from '../core/trend';
 
 const today = startOfDay(new Date());
@@ -56,5 +56,46 @@ describe('habit summary', () => {
     expect(screen.getByRole('button', { name: 'Habits: 60 percent over the last 30 days' })).toBeTruthy();
     rerender(<HabitSummary pct={null} onPress={jest.fn()} />);
     expect(screen.getByText(/^— · 30 days/)).toBeTruthy();
+  });
+});
+
+describe('the day’s jobs', () => {
+  const settings = defaultSettings(plan, DEFAULT_HABITS);
+  test('weighing in is the first thing on today’s list, and opens the weigh-in sheet', () => {
+    const onPress = jest.fn();
+    const { rerender } = render(<TodayHabits settings={settings} habits={{}} onChange={jest.fn()} weigh={{ done: false, onPress }} />);
+    fireEvent.press(screen.getByRole('button', { name: 'Weigh in' }));
+    expect(onPress).toHaveBeenCalled();
+    rerender(<TodayHabits settings={settings} habits={{}} onChange={jest.fn()} weigh={{ done: true, onPress }} />);
+    expect(screen.getByRole('button', { name: 'Weighed in today' })).toBeTruthy();
+  });
+  test('with no habits set up, the weigh-in still has a place on Today', () => {
+    render(<TodayHabits settings={{ ...settings, habits: [] }} habits={{}} onChange={jest.fn()} weigh={{ done: false, onPress: jest.fn() }} />);
+    expect(screen.getByRole('button', { name: 'Weigh in' })).toBeTruthy();
+  });
+  test('the week card says where this pace leads, once, instead of a separate Pace tile repeating the number', () => {
+    const series = [pt(-6, 89, 89), pt(0, 88, 88.5)];
+    render(<WeekCard series={series} weights={{ [series[0].k]: 89, [series[1].k]: 88 }} unit="kg" value="−0.5 kg" valueColor="#000"
+      sub="trend change, last 7 days" onPress={jest.fn()} a11y="This week: trend changed −0.5 kg" foot="At this pace you’ll reach 84.0 kg around 18 Dec 2026." />);
+    expect(screen.getByText(/At this pace you’ll reach 84\.0 kg/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /At this pace you’ll reach 84\.0 kg around 18 Dec 2026\./ })).toBeTruthy();
+  });
+});
+
+describe('the first week', () => {
+  test('counts from the first weigh-in, marks the days weighed, and says when the weekly change appears', () => {
+    const weights = { [dateKey(addDays(today, -2))]: 90, [dateKey(today)]: 89.8 };
+    const w = firstWeek(weights, today)!;
+    expect(w.days[0].key).toBe(dateKey(addDays(today, -2)));
+    expect(w.days.map(d => d.weighed)).toEqual([true, false, true, false, false, false, false]);
+    expect(w.days[3].future).toBe(true);
+    expect(w.weekFrom).toBe(dateKey(addDays(today, 5)));
+    render(<FirstWeekCard weights={weights} today={today} />);
+    expect(screen.getByLabelText('2 of 7 days weighed in your first week')).toBeTruthy();
+    expect(screen.getByText(/before breakfast/)).toBeTruthy();
+    expect(screen.getByText(/Your first weekly change shows on/)).toBeTruthy();
+  });
+  test('nothing to show before any weigh-in', () => {
+    expect(firstWeek({}, today)).toBeNull();
   });
 });

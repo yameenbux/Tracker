@@ -146,17 +146,27 @@ export function HabitSummary({ pct, onPress }: { pct: number | null; onPress: ()
 }
 
 /** Today's habits as large tap targets, plus today's session if one is planned. */
-export function TodayHabits({ settings, habits, onChange, onOpenSession, summary }: {
+export function TodayHabits({ settings, habits, onChange, onOpenSession, summary, weigh }: {
   settings: Settings; habits: HabitLog; onChange: (h: HabitLog) => void; onOpenSession?: () => void; summary?: React.ReactNode;
+  weigh?: { done: boolean; onPress: () => void };   // today's weigh-in as the first thing on the list
 }) {
   const { plus } = usePlus();
   const habitsShown = (x: Settings) => usableHabits(x.habits, plus);   // free: the first few; the rest are kept
   const key = dateKey(new Date());
   const sess = settings.sessions[new Date().getDay()];
-  if (!habitsShown(settings).length && !sess.title && !sess.items.length) return null;
+  if (!weigh && !habitsShown(settings).length && !sess.title && !sess.items.length) return null;
   return (
     <Card title={`Today · ${DAY_ABBR[parseKey(key).getDay()]}`} right={summary}>
       <View style={s.chips}>
+        {weigh && (
+          // Opens the weigh-in sheet either way: to log today's, or to change it
+          <Tap onPress={weigh.onPress} style={[s.chip, weigh.done && s.chipOn]} accessibilityRole="button"
+            accessibilityLabel={weigh.done ? 'Weighed in today' : 'Weigh in'} accessibilityHint={weigh.done ? 'Opens today’s weigh-in to change it' : 'Opens the weigh-in sheet'}>
+            <Icon name="scale" size={18} color={weigh.done ? C.onDone : C.plum2} />
+            <Text style={[s.chipTxt, weigh.done && { color: C.onDone }]} numberOfLines={1}>{weigh.done ? 'Weighed in' : 'Weigh in'}</Text>
+            {weigh.done && <Icon name="check" size={16} color={C.onDone} strokeWidth={2.6} />}
+          </Tap>
+        )}
         {habitsShown(settings).map(h => {
           const on = !!habits[key]?.[h.id];
           return (

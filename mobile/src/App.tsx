@@ -13,8 +13,7 @@ import { plusActive, type PlusStatus } from './core/plus';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
 import { trendSeries, weeklyRate } from './core/trend';
-import { changeTable } from './core/summary';
-import { setWeightsHidden, showAmount, showWeight, showChange } from './core/units';
+import { setWeightsHidden, showAmount, showWeight } from './core/units';
 import type { Settings } from './core/types';
 import { CoverContext, CoverOverlay } from './components/Cover';
 import { LogSheet } from './components/Entries';
@@ -38,6 +37,7 @@ import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
 import { useHealth } from './useHealth';
 import { useAutoBackup } from './useAutoBackup';
+import { weighInMessage } from './core/feedback';
 import { shareReport } from './report';
 import { widgetProps } from './core/widgetData';
 import { syncWidgets } from './widgets/sync';
@@ -215,7 +215,7 @@ function Main() {
       <CoverContext.Provider value={lock.covered}>
       <DoneWindow>
       <View style={s.fill}>
-        {pane('today', <TodayTab {...props} scrollTop={top('today')} notices={
+        {pane('today', <TodayTab {...props} scrollTop={top('today')} onLog={day => setLog({ key: day ?? null, n: Date.now() })} notices={
           <TodayNotices t={t} lockLost={lock.lockLost} onLockLostDismiss={lock.dismissLockLost} backupHidden={backupHidden}
             onBackupHide={() => setBackupHidden(true)} onExport={data.exportData} onRestore={data.restore} onExportRescued={data.exportRescued}
             pendingPlan={pendingPlan} onSavePending={() => { if (pendingPlan) { t.setSettings({ ...settings, plan: pendingPlan }); success(); show({ message: 'Plan saved' }); } setPendingPlan(null); }}
@@ -244,9 +244,7 @@ function Main() {
               // Say what the weigh-in did to the trend, the number that matters, not just that it saved
               const after = { ...state.weights, [k]: kg };
               if (moved) delete after[moved.k];
-              const wk = changeTable(trendSeries(weightSeries(settings.plan, after)), new Date(), [7])[0].change;
-              show({ message: `${prefs.hide ? 'Weigh-in' : showWeight(kg, state.unit)} saved for ${k === today ? 'today' : longDate(k)}`
-                       + (wk != null ? ` · trend ${showChange(wk, state.unit, 1)} this week` : ''),
+              show({ message: weighInMessage({ series: trendSeries(weightSeries(settings.plan, after)), day: k, today: new Date(), unit: state.unit, hidden: prefs.hide }),
                      ...(replaced != null || moved ? { action: 'Undo', onAction: undo } : {}) });
             }}
             onDelete={k => {

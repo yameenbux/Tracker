@@ -142,15 +142,22 @@ describe('the hero', () => {
   const plan = { ...settings.plan, start: dateKey(addDays(today, -30)), goalDate: dateKey(addDays(today, 120)) };
   const s2 = { ...settings, plan: { ...plan, targets: buildTargets(90, 80, plan.start, plan.goalDate) } };
   const series = (n: number) => Array.from({ length: n }, (_, i) => ({ d: addDays(today, i - n + 1), k: dateKey(addDays(today, i - n + 1)), kg: 90, trend: 90 }));
+  test('“trend weight” explains itself in a sentence when tapped', () => {
+    render(<Hero settings={s2} weights={{}} unit="kg" trend={series(5)} />);
+    expect(screen.queryByText(/smoothed average/)).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'What is trend weight?' }));
+    expect(screen.getByText(/smoothed average of your weigh-ins/)).toBeTruthy();
+  });
   test('day one: says what comes next, not a verdict', () => {
     render(<Hero settings={s2} weights={{ [dateKey(today)]: 90 }} unit="kg" trend={series(1)} />);
     expect(screen.getByText(/First weigh-in logged/)).toBeTruthy();
-    expect(screen.queryByText('vs plan')).toBeNull();
+    expect(screen.queryByText('Plan')).toBeNull();
     expect(screen.queryByText('On track')).toBeNull();
   });
   test('with a few weigh-ins it uses the shared words, and kg users get no pounds line', () => {
     render(<Hero settings={s2} weights={{}} unit="kg" trend={series(5)} />);
-    expect(screen.getByText('vs plan')).toBeTruthy();
+    expect(screen.getByText('Plan')).toBeTruthy();
+    expect(screen.getByLabelText(/^Plan: (On track|Ahead|Behind)/)).toBeTruthy();
     expect(screen.getByText(/^(On track|Ahead|Behind)$/)).toBeTruthy();
     expect(screen.queryByText(/ lb$/)).toBeNull();
     expect(screen.getByText(/goal by/)).toBeTruthy();

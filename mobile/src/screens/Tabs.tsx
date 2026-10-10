@@ -7,17 +7,17 @@ import { EffectsSheet, MedicationToday, MedicationTrend } from '../components/Me
 import { isDue, missedDose } from '../core/medication';
 import { FEATURES } from '../features';
 import { cloneElement, isValidElement, useEffect, useState } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { LengthUnit, lengthUnitFor, measureSummary, showLength } from '../core/body';
 import { estimateExpenditure, kcalRange } from '../core/calories';
 import { describeAutoBackup } from '../core/autoBackup';
 import { addDays, DAY_FULL, MON, dateKey, longDate, parseKey, shortDate } from '../core/dates';
-import { consistency, lineWord, milestoneQuarter } from '../core/insights';
-import { direction, lineStatus, sign } from '../core/plan';
+import { consistency, milestoneQuarter } from '../core/insights';
+import { direction, sign } from '../core/plan';
 import { milestonePlanKey } from '../core/storage';
 import { backupDue, changeTable, daysSince } from '../core/summary';
 import { projectedGoalDate, Rate, TrendPoint } from '../core/trend';
-import { showChange, showAmount, showWeight } from '../core/units';
+import { showChange, showWeight } from '../core/units';
 import type { Settings } from '../core/types';
 import { BodyCard } from '../components/Body';
 import { EntriesList, EventCard } from '../components/Entries';
@@ -25,7 +25,7 @@ import { CaloriesCard, MilestoneBanner, PatternsCard } from '../components/Extra
 import { HabitsCard } from '../components/HabitsCard';
 import { Hero } from '../components/Hero';
 import { ChangeTable, HabitGrids, HabitSummary, Tile, TodayHabits } from '../components/Insights';
-import { WeekCard } from '../components/WeekCard';
+import { FirstWeekCard, WeekCard } from '../components/WeekCard';
 import { ProgressChart } from '../components/ProgressChart';
 import { Notice, SectionLabel, Tab, TabScreen } from '../components/Shell';
 import { TrendCard } from '../components/TrendCard';
@@ -52,8 +52,8 @@ function lengthChange(cm: number, unit: LengthUnit) {
   return sign + showLength(Math.abs(cm), unit);
 }
 
-export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
-  const { t, settings, series, rate, scrollTop, openSettings, go, notices } = props;
+export function TodayTab(props: TabProps & { notices: React.ReactNode; onLog: (day?: string) => void }) {
+  const { t, settings, series, rate, scrollTop, openSettings, go, notices, onLog } = props;
   const { state, prefs } = t;
   const { plus } = usePlus();
   const unit = state.unit, lu = lengthUnitFor(prefs.length, state.unit);
@@ -72,8 +72,6 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const H = usableHabits(settings.habits, plus);   // free: the first few; the rest are kept for Plus
   const last7 = Array.from({ length: 7 }, (_, i) => dateKey(addDays(now, -i)));
   const weighIns7 = last7.filter(k => state.weights[k] != null).length;
-  // At the largest text sizes two tiles can't share a row without breaking words: one per row instead
-  const stack = useWindowDimensions().fontScale > 1.35;
   // A week's change needs weigh-ins in that week: someone who's had a break is told so, not asked for a week's data
   const lapsed = Object.keys(state.weights).some(k => k < dateKey(addDays(now, -7)));
   // Nothing ticked in 30 days (usually day one) shows a dash, not a 0% that reads like a mark
@@ -81,12 +79,11 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
   const avg30 = H.length ? Math.round(H.reduce((a, h) => { const c = consistency(state.habits, h.id, 30, now, settings.plan.start); return a + (c.of ? c.done / c.of : 0); }, 0) / H.length * 100) : 0;
   const waist = measureSummary(state.measurements, 'waist');
   const tdee = settings.trackCalories ? estimateExpenditure(state.intake, series) : null;
-  const status = trendNow != null ? lineStatus(settings.plan, trendNow) : null;   // same answer as the hero's "vs plan"
   const week = changeTable(series, now, [7])[0].change;
+  // New, not back from a break: there's no week to show yet, so show the first week filling in instead
+  const firstWeekNow = week == null && !lapsed && Object.keys(state.weights).length > 0;
   const d = sign(direction(settings.plan));
-  const word = status ? lineWord(status, d) : null;
-  // On a dose day the card goes straight under the hero; otherwise it sits with the other daily items
-  // On a dose day, or when a dose looks missed, the card goes straight under the hero; otherwise it sits lower.
+  // On a dose day, or when a dose looks missed, the card goes straight under today's list; otherwise it sits lower.
   // It stays put once taken, so Undo doesn't jump away.
   const med = FEATURES.medication ? settings.medication : null, doseLog = state.doses ?? {};   // dose logging is free
   const [feel, setFeel] = useState(false);
@@ -96,56 +93,52 @@ export function TodayTab(props: TabProps & { notices: React.ReactNode }) {
     <TabScreen eyebrow={`${DAY_FULL[now.getDay()]} ${now.getDate()} ${MON[now.getMonth()]}`} title="Today" onSettings={() => openSettings()} scrollTop={scrollTop}>
       {notices}
       <CardBoundary name="Your weight"><Hero settings={settings} weights={state.weights} unit={unit} today={props.today} trend={series} /></CardBoundary>
+      {/* The day's jobs come before the reading: weigh in, tick habits, then look at the charts */}
+      <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')}
+        weigh={{ done: state.weights[todayKey] != null, onPress: () => onLog(state.weights[todayKey] != null ? todayKey : undefined) }}
+        summary={H.length ? <HabitSummary pct={ticked30 ? avg30 : null} onPress={() => go('habits')} /> : undefined} /></CardBoundary>
+      {/* A dose due today is the next job after the daily ticks (weekly, so it doesn't push the list down) */}
       {med && doseToday && <CardBoundary name="Medication"><MedicationToday med={med} doses={doseLog} onChange={t.setDoses} onHistory={() => openSettings('medication')} plus={plus} onEffects={() => setFeel(true)} /></CardBoundary>}
       {quarter > celebrated && trendNow != null && (
         <MilestoneBanner quarter={quarter} settings={settings} trendNow={trendNow} unit={unit} onDismiss={() => t.setPrefs({ milestone: quarter, milestoneFor: planKey })} />
       )}
       {/* This week across the full width: the trend through each of the last seven days, each labelled */}
       <CardBoundary name="This week">
-        <WeekCard series={series} weights={state.weights} unit={unit} onPress={() => go('trend')}
+        {firstWeekNow ? <FirstWeekCard weights={state.weights} /> : <WeekCard series={series} weights={state.weights} unit={unit} onPress={() => go('trend')}
           value={week != null ? showChange(week, unit, 1) : '—'}
           valueColor={week == null || d === 0 ? C.ink : week * d > 0.05 ? C.mintInk : week * d < -0.05 ? C.coralInk : C.ink}
-          sub={week != null ? 'trend change, last 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
-          a11y={week != null ? `This week: trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'This week: needs a week of weigh-ins'} />
+          sub={week != null ? 'change in your trend, last 7 days' : lapsed ? 'No weigh-in in the last 7 days' : 'Needs a week of weigh-ins'}
+          a11y={week != null ? `This week: trend changed ${showChange(week, unit, 1)} in the last 7 days` : 'This week: needs a week of weigh-ins'}
+          foot={eta ? `At this pace you’ll reach ${prefs.hide ? 'your goal' : showWeight(settings.plan.goalKg, unit)} around ${longDate(eta)}.` : undefined} />}
       </CardBoundary>
-      <View style={[s.tiles, stack && s.tilesStacked]}>
-        <Tile icon="target" label="Pace" onPress={() => go('trend')} wide={stack}
-          value={rate ? showChange(rate.perWeek, unit, 1) : '—'}
-          valueColor={rate ? (d === 0 ? C.ink : rate.perWeek * d > 0.05 ? C.mintInk : rate.perWeek * d < -0.05 ? C.coralInk : C.ink) : C.inkSoft}
-          sub={rate ? (eta ? `a week · at this pace: goal ${shortDate(parseKey(eta))}` : 'a week') : 'Needs 4 weigh-ins over 10 days'}
-          a11y={(rate ? `Pace ${showChange(rate.perWeek, unit, 1)} a week${eta ? ', at this pace the goal is around ' + longDate(eta) : ''}` : 'Pace, needs 4 weigh-ins over 10 days')
-            + (status && rate && word ? `, ${word}${status.onLine ? '' : ' by ' + showAmount(status.off, unit)}` : '')}>
-          {/* Same words as the hero: On track / Ahead / Behind (or Off, when holding) */}
-          {status && rate && word ? <Text style={[s.tileNote, (status.onLine || status.ahead) && { color: C.mintInk }]}>{word}{status.onLine ? '' : ` by ${showAmount(status.off, unit)}`}</Text> : null}
-        </Tile>
+      {/* In the first week the free tile would only repeat the first-week dots */}
+      {!(firstWeekNow && !plus && !settings.trackCalories) && <View style={s.tiles}>
         {settings.trackCalories && plus ? (
-          <Tile icon="flame" label="Calories" onPress={() => go('body')} wide={stack}
+          <Tile icon="flame" label="Calories" onPress={() => go('body')}
             value={tdee ? kcalRange(tdee.low, tdee.high) : state.intake[todayKey] != null ? `${state.intake[todayKey].toLocaleString()} kcal` : 'Log food'}
             sub={tdee ? 'kcal you burn a day' : state.intake[todayKey] != null ? 'eaten today' : 'Calories eaten today'}
             a11y={tdee ? `Estimated burn ${tdee.low} to ${tdee.high} kcal a day` : 'Calories'} />
         ) : (
           // Free: a real number about their own data, not an advert in data's clothing
-          !plus ? <Tile icon="scale" label="Weigh-ins" onPress={() => go('trend')} wide={stack}
+          !plus ? <Tile icon="scale" label="Weigh-ins" onPress={() => go('trend')}
             value={`${weighIns7} of 7`} sub="days weighed, last 7 days"
             a11y={`Weigh-ins: ${weighIns7} of the last 7 days`} /> :
-          <Tile icon="ruler" label="Body" onPress={() => go('body')} wide={stack}
+          <Tile icon="ruler" label="Body" onPress={() => go('body')}
             value={waist && waist.first.k !== waist.latest.k ? lengthChange(waist.change, lu) : waist ? showLength(waist.latest.cm, lu) : 'Measure'}
             sub={waist && waist.first.k !== waist.latest.k ? `waist since ${shortDate(parseKey(waist.first.k))} · now ${showLength(waist.latest.cm, lu)}`
               : waist ? 'waist · measure again in a few weeks' : 'Waist and photos show what the scale can’t'}
             a11y={waist ? `Waist ${showLength(waist.latest.cm, lu)}${waist.first.k !== waist.latest.k ? `, ${lengthChange(waist.change, lu)} since ${longDate(waist.first.k)}` : ''}` : 'Body measurements, none yet'} />
         )}
-      </View>
+      </View>}
       {/* No habits yet: the invitation stays where the habit figures would be */}
       {!H.length && (
         <View style={s.tiles}>
-          <Tile icon="habits" label="Habits" onPress={() => openSettings('habits')} wide
+          <Tile icon="habits" label="Habits" onPress={() => openSettings('habits')}
             value="Add habits" sub="Small daily ticks, no streaks" a11y="Habits, none set up. Opens habit settings." />
         </View>
       )}
       {med && !doseToday && <CardBoundary name="Medication"><MedicationToday med={med} doses={doseLog} onChange={t.setDoses} onHistory={() => openSettings('medication')} plus={plus} onEffects={() => setFeel(true)} /></CardBoundary>}
       {feel && <EffectsSheet day={props.today} effects={state.effects ?? {}} onSave={t.setEffects} onClose={() => setFeel(false)} />}
-      <CardBoundary name="Today’s habits"><TodayHabits settings={settings} habits={state.habits} onChange={t.setHabits} onOpenSession={() => go('habits')}
-        summary={H.length ? <HabitSummary pct={ticked30 ? avg30 : null} onPress={() => go('habits')} /> : undefined} /></CardBoundary>
       {plus && settings.protein?.on && trendNow != null && <CardBoundary name="Protein"><ProteinCard settings={settings} trendKg={trendNow} log={state.protein ?? {}} onChange={t.setProtein} /></CardBoundary>}
       <CardBoundary name="Your event"><EventCard settings={settings} /></CardBoundary>
       {isValidElement<{ part?: string }>(notices) ? cloneElement(notices, { part: 'nudge' }) : null}
@@ -266,7 +259,5 @@ export function TodayNotices({ part = 'urgent', t, lockLost, onLockLostDismiss, 
 
 const s = themed(() => StyleSheet.create({
   tiles: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  tilesStacked: { flexDirection: 'column' },
   dotsCap: { fontFamily: F.body, fontSize: 11.5, color: C.inkSoft, marginTop: 5 },
-  tileNote: { fontFamily: F.bodySemi, fontSize: 13, color: C.warnInk },
 }));
