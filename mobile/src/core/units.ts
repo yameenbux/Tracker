@@ -20,8 +20,15 @@ export function stepWeight(kg: number, unit: Unit, dir: 1 | -1): number {
 export function rangeText(unit: Unit): string {
   return 'Enter a weight between ' + (unit === 'kg' ? `${MIN_KG} and ${MAX_KG} kg` : unit === 'lb' ? 'about 55 and 770 lb' : 'about 4 and 55 stone') + '.';
 }
-/** Only complain once a typed number is clearly finished but out of range (not while "1" is on the way to "150"). */
-export const showRangeError = (kg: number | null) => kg != null && !plausible(kg) && (kg > MAX_KG || kg >= 10);
+/**
+ * Only complain once a typed number is clearly finished but out of range (not while "1" is on the way to "150"). A
+ * decimal point, in the unit being typed, means it's finished: "8.6" kg will never become a real weight.
+ */
+export const showRangeError = (kg: number | null, unit: Unit = 'kg') => {
+  if (kg == null || plausible(kg)) return false;
+  const typed = unit === 'kg' ? kg : toLbNum(kg);
+  return kg > MAX_KG || kg >= 10 || Math.abs(typed - Math.round(typed)) > 0.01;
+};
 
 /** parseFloat that accepts a decimal comma ("82,4"), which the iOS decimal pad types in many regions. */
 export function num(t: string): number {

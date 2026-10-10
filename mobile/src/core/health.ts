@@ -12,6 +12,26 @@ export const BUNDLE_ID = 'com.yameenbux.tidemark';
 /** The parts of a Health body-mass sample this needs. */
 export interface HealthReading { uuid: string; kg: number; at: Date; bundleId?: string; metadata?: Record<string, unknown> }
 
+/**
+ * The calendar day a reading belongs to: where it was taken, when the scale recorded its time zone (HealthKit's
+ * HKTimeZone), so a morning weigh-in in Tokyo synced back in London stays on that morning. Otherwise this phone's day.
+ */
+export function readingDay(r: Pick<HealthReading, 'at' | 'metadata'>): string {
+  const tz = r.metadata?.HKTimeZone;
+  if (typeof tz === 'string' && tz.length < 64) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(r.at);
+      const get = (t: string) => parts.find(p => p.type === t)?.value;
+      const k = `${get('year')}-${get('month')}-${get('day')}`;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(k)) return k;
+    } catch { /* an unknown zone name: fall back to this phone's day */ }
+  }
+  return dateKey(r.at);
+}
+
+/** The id Tidemark gives the reading it writes to Health for a day: one per day, so an edit replaces it. */
+export const tidemarkSampleId = (day: string) => 't' + day;
+
 /** Record id for a Health reading: stable, so syncing the same reading twice never makes two records. */
 export const healthId = (uuid: string) => ('h' + uuid).slice(0, 40);
 
@@ -38,7 +58,7 @@ export function mergeHealth(entries: WeighIn[], added: HealthReading[], deletedU
     const id = healthId(r.uuid);
     if (isOurs(r) || have.has(id) || gone.has(id) || !plausible(r.kg) || isNaN(r.at.getTime())) continue;
     have.add(id);
-    fresh.push({ id, at: r.at.toISOString(), day: dateKey(r.at), kg: round2(r.kg), source: 'health' });
+    fresh.push({ id, at: r.at.toISOString(), day: readingDay(r), kg: round2(r.kg), source: 'health' });
   }
   const all = [...kept, ...fresh].sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
   return { entries: all, added: fresh.length, removed };

@@ -157,4 +157,31 @@ describe('saved data', () => {
     expect(saved.unit).toBe('lb');
     expect(saved.entries).toHaveLength(4);
   });
+
+  test('Undo puts a day back exactly: a scale\'s reading stays the scale\'s, not a typed one', async () => {
+    await AsyncStorage.setItem('tracker_state_v1', JSON.stringify(goodState));
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    act(() => { result.current.addHealth([{ uuid: 'S1', kg: 89.12, at: new Date('2026-01-13T07:00:00') }], []); });
+    const before = result.current.state.entries!.filter(e => e.day === '2026-01-13');
+    expect(before).toEqual([expect.objectContaining({ source: 'health', kg: 89.12 })]);
+    act(() => { result.current.setWeight('2026-01-13', null); });          // deleted…
+    expect(result.current.state.weights['2026-01-13']).toBeUndefined();
+    act(() => { result.current.putDay('2026-01-13', before); });          // …and undone
+    expect(result.current.state.entries!.filter(e => e.day === '2026-01-13')).toEqual(before);
+    expect(result.current.state.weights['2026-01-13']).toBe(89.12);
+  });
+
+  test('readings from Apple Health are saved straight away, not left waiting', async () => {
+    await AsyncStorage.setItem('tracker_state_v1', JSON.stringify(goodState));
+    const { result } = renderHook(() => useTracker());
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    const set = AsyncStorage.setItem as jest.Mock; set.mockClear();
+    jest.useFakeTimers();
+    try {
+      act(() => { result.current.addHealth([{ uuid: 'S2', kg: 88.8, at: new Date('2026-01-14T07:00:00') }], []); });
+      await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+      expect(set.mock.calls.some(c => c[0] === 'tracker_state_v1')).toBe(true);   // before the 250 ms debounce
+    } finally { jest.useRealTimers(); }
+  });
 });

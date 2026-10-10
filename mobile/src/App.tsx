@@ -242,10 +242,22 @@ function Main() {
               // Remember what this replaces (another day's value, or the old date of a moved entry) so it can be undone
               const moved = log.key && log.key !== k ? { k: log.key, kg: state.weights[log.key] } : null;
               const replaced = state.weights[k], oldNote = state.notes?.[k] ?? null;
-              if (moved) t.setWeight(moved.k, null);
-              t.setWeight(k, kg); t.setNote(k, note); success(); setLog(null);
+              // The day's records as they were, so Undo gives back a scale's reading as the scale's, not as a typed one
+              const dayRecords = (d: string) => (state.entries ?? []).filter(e => e.day === d);
+              const before = dayRecords(k), movedBefore = moved ? dayRecords(moved.k) : [];
+              // What Tidemark itself had written to Health for a day: only a typed weigh-in is ever shared
+              const typed = (recs: typeof before) => recs.find(e => e.source === 'manual')?.kg;
+              const reshare = (d: string, recs: typeof before) => { const v = typed(recs); if (v != null) health.shareWeighIn(d, v); else health.unshareWeighIn(d); };
+              if (moved) { t.setWeight(moved.k, null); health.unshareWeighIn(moved.k); }
+              if (kg !== replaced) t.setWeight(k, kg);
+              t.setNote(k, note); success(); setLog(null);
               if (kg !== replaced) health.shareWeighIn(k, kg);
-              const undo = () => { t.setWeight(k, replaced ?? null); t.setNote(k, oldNote); if (moved) t.setWeight(moved.k, moved.kg); };
+              const undo = () => {
+                t.putDay(k, before); t.setNote(k, oldNote);
+                if (moved) t.putDay(moved.k, movedBefore);
+                if (kg !== replaced) reshare(k, before);
+                if (moved) reshare(moved.k, movedBefore);
+              };
               // Say what the weigh-in did to the trend, the number that matters, not just that it saved
               const after = { ...state.weights, [k]: kg };
               if (moved) delete after[moved.k];
@@ -260,9 +272,9 @@ function Main() {
               }
             }}
             onDelete={k => {
-              const kg = state.weights[k];
-              t.setWeight(k, null); setLog(null);
-              show({ message: 'Weigh-in deleted', action: 'Undo', onAction: () => t.setWeight(k, kg) });
+              const before = (state.entries ?? []).filter(e => e.day === k), typed = before.find(e => e.source === 'manual')?.kg;
+              t.setWeight(k, null); health.unshareWeighIn(k); setLog(null);
+              show({ message: 'Weigh-in deleted', action: 'Undo', onAction: () => { t.putDay(k, before); if (typed != null) health.shareWeighIn(k, typed); } });
             }} />
         )}
 

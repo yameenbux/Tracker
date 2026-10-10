@@ -49,11 +49,25 @@ export async function readHealth(anchor: string | null): Promise<{ added: Health
   } catch { return null; }
 }
 
-/** Writes one weigh-in typed in Tidemark to Health (marked as Tidemark's, so it's never imported back). */
+/** Deletes the reading Tidemark wrote with this id (only ever its own: HealthKit won't let an app delete others'). */
+export async function removeHealth(id: string): Promise<boolean> {
+  const m = load();
+  if (!m) return false;
+  try {
+    await m.deleteObjects(BODY_MASS, { metadata: { withMetadataKey: TIDEMARK_KEY, operatorType: 4 /* equalTo */, value: id } });
+    return true;
+  } catch { return false; }
+}
+
+/**
+ * Writes one weigh-in typed in Tidemark to Health (marked as Tidemark's, so it's never imported back), replacing the
+ * one it wrote before under the same id, so correcting a typo doesn't leave two readings for the day.
+ */
 export async function writeHealth(id: string, kg: number, at: Date): Promise<boolean> {
   const m = load();
   if (!m) return false;
   try {
+    await removeHealth(id);
     await m.saveQuantitySample(BODY_MASS, 'kg', kg, at, at, { HKWasUserEntered: true, [TIDEMARK_KEY]: id } as never);
     return true;
   } catch { return false; }

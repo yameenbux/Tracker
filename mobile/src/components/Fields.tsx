@@ -84,7 +84,8 @@ export function WeightInput({ unit, kg, onChange, live, small, big, label, sync,
     setTxt(t);
     if (live) report(t);
   };
-  const end = () => { setFocused(false); report(txt); };
+  // Leaving the field unchanged keeps the exact value: a Health reading of 80.12 isn't rounded to the 80.1 on screen
+  const end = () => { setFocused(false); const shown = textsFor(unit, kg); if (txt[0] !== shown[0] || txt[1] !== shown[1]) report(txt); };
   const box: TextStyle[] = [s.wIn, small ? s.wInSmall : null, big ? s.wInBig : null].filter(Boolean) as TextStyle[];
   const w = (n: number, sm: number, bg: number) => ({ width: big ? bg : small ? sm : n });
 

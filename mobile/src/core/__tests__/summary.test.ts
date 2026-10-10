@@ -192,9 +192,11 @@ describe('stepWeight', () => {
     expect(U.fmt(lb(U.stepWeight(Math.round(kg * 100) / 100, 'imp', 1)))).toBe('148.5');
   });
   test('out-of-range message only once the number is clearly wrong', () => {
-    expect(U.showRangeError(6.8)).toBe(false);          // "15" lb on the way to 150
+    expect(U.showRangeError(15 * U.KG_PER_LB, 'lb')).toBe(false);   // "15" lb on the way to 150
     expect(U.showRangeError(22)).toBe(true);
     expect(U.showRangeError(80)).toBe(false);
+    expect(U.showRangeError(8.6)).toBe(true);                // a decimal point: finished, and too light
+    expect(U.showRangeError(8)).toBe(false);                 // "8" may still become "86"
     expect(U.rangeText('lb')).toContain('lb');
   });
 });

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { stampFor } from './core/entries';
-import { connectHealth, healthAvailable, onHealthChange, readHealth, writeHealth } from './health';
+import { tidemarkSampleId } from './core/health';
+import { connectHealth, healthAvailable, onHealthChange, readHealth, removeHealth, writeHealth } from './health';
 import type { Tracker } from './store';
 
 /**
@@ -14,6 +15,9 @@ export function useHealth(t: Tracker) {
   const anchor = useRef(prefs.health.anchor);
   useEffect(() => { anchor.current = prefs.health.anchor; }, [prefs.health.anchor]);
   const busy = useRef(false);
+
+  // A restore clears the anchor: read everything from Health again (readings already here are never added twice)
+  const reread = prefs.health.anchor == null;
 
   const sync = useCallback(async () => {
     if (busy.current) return;
@@ -33,7 +37,7 @@ export function useHealth(t: Tracker) {
     const sub = AppState.addEventListener('change', st => { if (st === 'active') sync(); });
     const off = onHealthChange(() => { sync(); });
     return () => { sub.remove(); off(); };
-  }, [ready, on, sync]);
+  }, [ready, on, sync, reread]);
 
   /** Switching it on asks iOS for permission (its own sheet), then reads everything once. */
   const setHealth = useCallback(async (want: boolean) => {
@@ -46,8 +50,14 @@ export function useHealth(t: Tracker) {
   /** A weigh-in typed in Tidemark goes to Health too (marked as Tidemark's own, so it never comes back in). */
   const shareWeighIn = useCallback((day: string, kg: number) => {
     if (!on) return;
-    writeHealth('t' + day + '-' + Date.now().toString(36), kg, new Date(stampFor(day)));   // now if today, else 7am that day
+    writeHealth(tidemarkSampleId(day), kg, new Date(stampFor(day)));   // now if today, else 7am that day
   }, [on]);
 
-  return { available: healthAvailable(), on, setHealth, shareWeighIn };
+  /** A weigh-in deleted in Tidemark leaves Health too (only the reading Tidemark wrote; a scale's stays). */
+  const unshareWeighIn = useCallback((day: string) => {
+    if (!on) return;
+    removeHealth(tidemarkSampleId(day));
+  }, [on]);
+
+  return { available: healthAvailable(), on, setHealth, shareWeighIn, unshareWeighIn };
 }
