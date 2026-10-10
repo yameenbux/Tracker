@@ -12,9 +12,6 @@ import { PlusProvider } from './plus';
 import { plusActive, type PlusStatus } from './core/plus';
 import { addDays, dateKey, longDate, parseKey, startOfDay } from './core/dates';
 import { weightSeries } from './core/plan';
-import { asked, shouldAskForReview } from './core/reviewAsk';
-import { requestReview } from './review';
-import { marketingVersion } from './support';
 import { trendSeries, weeklyRate } from './core/trend';
 import { setWeightsHidden, showAmount, showWeight } from './core/units';
 import type { Settings } from './core/types';
@@ -39,8 +36,8 @@ import { C, themed, useScheme } from './theme';
 import { useDataActions } from './useDataActions';
 import { useLock } from './useLock';
 import { useHealth } from './useHealth';
+import { useWeighIn } from './useWeighIn';
 import { useAutoBackup } from './useAutoBackup';
-import { weighInMessage } from './core/feedback';
 import { shareReport } from './report';
 import { widgetProps } from './core/widgetData';
 import { syncWidgets } from './widgets/sync';
@@ -51,8 +48,6 @@ setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 6000);   // safety ne
 interface ToastMsg { id: number; message: string; action?: string; onAction?: () => void }
 
 /** Re-renders when the app comes back to the foreground and at midnight, so "today" is never yesterday. */
-const REVIEW_DELAY_MS = 2500;   // the rating prompt waits until the save message has been read
-
 function useToday(): string {
   const [day, setDay] = useState(() => dateKey(new Date()));
   useEffect(() => {
@@ -90,6 +85,7 @@ function Main() {
   const autoBackup = useAutoBackup(t);
 
   const show = useCallback((m: Omit<ToastMsg, 'id'>) => setToast({ ...m, id: Date.now() }), []);
+  const weighIn = useWeighIn(t, health, show);
   const hideToast = useCallback(() => setToast(null), []);
   const closeSettings = useCallback(() => setShowSettings(false), []);
   const data = useDataActions(t, show, closeSettings, plusOn);
@@ -238,44 +234,8 @@ function Main() {
         )}
         {log && (
           <LogSheet key={log.n} initialKey={log.key} weights={state.weights} notes={state.notes} unit={state.unit} minKey={settings.plan.start} onClose={() => setLog(null)}
-            onSave={(k, kg, note) => {
-              // Remember what this replaces (another day's value, or the old date of a moved entry) so it can be undone
-              const moved = log.key && log.key !== k ? { k: log.key, kg: state.weights[log.key] } : null;
-              const replaced = state.weights[k], oldNote = state.notes?.[k] ?? null;
-              // The day's records as they were, so Undo gives back a scale's reading as the scale's, not as a typed one
-              const dayRecords = (d: string) => (state.entries ?? []).filter(e => e.day === d);
-              const before = dayRecords(k), movedBefore = moved ? dayRecords(moved.k) : [];
-              // What Tidemark itself had written to Health for a day: only a typed weigh-in is ever shared
-              const typed = (recs: typeof before) => recs.find(e => e.source === 'manual')?.kg;
-              const reshare = (d: string, recs: typeof before) => { const v = typed(recs); if (v != null) health.shareWeighIn(d, v); else health.unshareWeighIn(d); };
-              if (moved) { t.setWeight(moved.k, null); health.unshareWeighIn(moved.k); }
-              if (kg !== replaced) t.setWeight(k, kg);
-              t.setNote(k, note); success(); setLog(null);
-              if (kg !== replaced) health.shareWeighIn(k, kg);
-              const undo = () => {
-                t.putDay(k, before); t.setNote(k, oldNote);
-                if (moved) t.putDay(moved.k, movedBefore);
-                if (kg !== replaced) reshare(k, before);
-                if (moved) reshare(moved.k, movedBefore);
-              };
-              // Say what the weigh-in did to the trend, the number that matters, not just that it saved
-              const after = { ...state.weights, [k]: kg };
-              if (moved) delete after[moved.k];
-              const series = trendSeries(weightSeries(settings.plan, after)), now = new Date();
-              show({ message: weighInMessage({ series, day: k, today: now, unit: state.unit, hidden: prefs.hide }),
-                     ...(replaced != null || moved ? { action: 'Undo', onAction: undo } : {}) });
-              // On a good week, after weeks of use, Apple's rating prompt, once the save message has been read
-              const version = marketingVersion();
-              if (k === dateKey(now) && !moved && shouldAskForReview({ plan: settings.plan, weights: after, series, today: now, hidden: prefs.hide, effects: state.effects, ask: prefs.reviewAsk, version })) {
-                t.setPrefs({ reviewAsk: asked(prefs.reviewAsk, version, now) });
-                setTimeout(() => { requestReview(); }, REVIEW_DELAY_MS);
-              }
-            }}
-            onDelete={k => {
-              const before = (state.entries ?? []).filter(e => e.day === k), typed = before.find(e => e.source === 'manual')?.kg;
-              t.setWeight(k, null); health.unshareWeighIn(k); setLog(null);
-              show({ message: 'Weigh-in deleted', action: 'Undo', onAction: () => { t.putDay(k, before); if (typed != null) health.shareWeighIn(k, typed); } });
-            }} />
+            onSave={(k, kg, note) => { weighIn.save(log.key, k, kg, note); setLog(null); }}
+            onDelete={k => { weighIn.remove(k); setLog(null); }} />
         )}
 
         <Modal visible={showSettings} animationType="slide" presentationStyle="pageSheet" onRequestClose={closeSettings}>
