@@ -2,7 +2,7 @@
 // loaded only on iOS/Android. Transactions are checked by StoreKit on the device; nothing goes to a server of ours.
 import { Platform } from 'react-native';
 import type { SubscriptionOffer } from 'expo-iap';
-import { ALL_PLUS_IDS, PLUS_PRODUCTS, PlusPlan, plusFrom, PlusStatus, StorePurchase, SUBSCRIPTIONS } from './core/plus';
+import { ALL_PLUS_IDS, IntroPrice, PLUS_PRODUCTS, PlusPlan, plusFrom, PlusStatus, StorePurchase, SUBSCRIPTIONS } from './core/plus';
 
 type Iap = typeof import('expo-iap');
 let iap: Iap | null | undefined;   // null once it failed to load (Expo Go has no StoreKit module)
@@ -17,10 +17,11 @@ function store(): Iap | null {
 export const storeAvailable = store() != null;
 
 /**
- * What the paywall shows for a plan: Apple's localised price, and whether it starts with a free trial. `amount` and
- * `currency` are the same price as a number, for working out the yearly saving; null if the store leaves them out.
+ * What the paywall shows for a plan: Apple's localised price, and whether it starts with a free trial or a lower
+ * introductory price (Apple allows one or the other). `amount` and `currency` are the same price as a number, for
+ * working out the yearly saving; null if the store leaves them out.
  */
-export interface PlanOffer { plan: PlusPlan; id: string; price: string; trialDays: number | null; amount: number | null; currency: string | null }
+export interface PlanOffer { plan: PlusPlan; id: string; price: string; trialDays: number | null; intro: IntroPrice | null; amount: number | null; currency: string | null }
 
 let connected: Promise<boolean> | null = null;
 export function connect(): Promise<boolean> {
@@ -39,6 +40,23 @@ const trialDays = (p: Record<string, unknown>): number | null => {
   if (o?.period) return days(o.period.unit, o.period.value * (o.periodCount ?? o.numberOfPeriodsIOS ?? 1));
   if (p.introductoryPricePaymentModeIOS !== 'free-trial') return null;
   return days(p.introductoryPriceSubscriptionPeriodIOS, Number(p.introductoryPriceNumberOfPeriodsIOS ?? 1));
+};
+
+const UNITS = ['day', 'week', 'month', 'year'] as const;
+const unitOf = (u: unknown): IntroPrice['unit'] | null => (UNITS as readonly unknown[]).includes(u) ? u as IntroPrice['unit'] : null;
+/** A paid introductory price ("£11.99 for the first year"), from the subscription's offers or the older intro fields. */
+const introPrice = (p: Record<string, unknown>): IntroPrice | null => {
+  const offers = (Array.isArray(p.subscriptionOffers) ? p.subscriptionOffers : []) as SubscriptionOffer[];
+  const o = offers.find(x => x.type === 'introductory' && (x.paymentMode === 'pay-up-front' || x.paymentMode === 'pay-as-you-go'));
+  if (o) {
+    const unit = unitOf(o.period?.unit), count = Number(o.periodCount ?? o.numberOfPeriodsIOS ?? 1);
+    return unit && o.displayPrice && o.period && o.period.value > 0 && count > 0
+      ? { price: o.displayPrice, mode: o.paymentMode as IntroPrice['mode'], unit, value: o.period.value, count } : null;
+  }
+  const mode = p.introductoryPricePaymentModeIOS, unit = unitOf(p.introductoryPriceSubscriptionPeriodIOS);
+  const count = Number(p.introductoryPriceNumberOfPeriodsIOS ?? 1);
+  if ((mode !== 'pay-up-front' && mode !== 'pay-as-you-go') || !unit || typeof p.introductoryPriceIOS !== 'string' || !(count > 0)) return null;
+  return { price: p.introductoryPriceIOS, mode, unit, value: 1, count };
 };
 
 /** The three plans with Apple's prices (in the person's own currency). Empty if the store can't be reached. */
@@ -64,7 +82,10 @@ export async function loadOffers(): Promise<PlanOffer[]> {
     const amount = typeof p.price === 'number' && isFinite(p.price) ? p.price : null;
     const currency = typeof p.currency === 'string' && p.currency ? p.currency : null;
     const trial = plan === 'lifetime' ? null : trialDays(p);
-    return { plan, id: p.id, price: p.displayPrice, trialDays: trial && (await mayTrial(p.subscriptionGroupIdIOS)) ? trial : null, amount, currency };
+    const intro = plan === 'lifetime' || trial ? null : introPrice(p);
+    // Both are introductory offers, so the same once-per-person rule applies: someone who's had one pays the plain price
+    const eligible = (trial || intro) ? await mayTrial(p.subscriptionGroupIdIOS) : false;
+    return { plan, id: p.id, price: p.displayPrice, trialDays: trial && eligible ? trial : null, intro: intro && eligible ? intro : null, amount, currency };
   }));
   return offers.filter((o): o is PlanOffer => o != null);
 }

@@ -264,16 +264,32 @@ installs packages, gets read access only, and every action is pinned to a commit
 | | |
 | :--- | :--- |
 | **Tidemark** | Free |
-| **Plus, monthly** | £1.99 a month, 7 days free |
-| **Plus, yearly** | £11.99 a year, 7 days free |
-| **Plus, lifetime** | £19.99 once |
+| **Plus, monthly** | £2.99 a month |
+| **Plus, yearly** | £19.99 a year, 7 days free (44% less than monthly) |
+| **Plus, lifetime** | £49.99 once |
+| **Launch offer** | yearly at £11.99 for the first year, then £19.99, for the first 90 days |
+
+Why these prices (checked against the UK App Store on 10 Oct 2026): Happy Scale
+charges £1.99/£11.49/£39.99 lifetime for a trend-only app, Libra £1.99/£17.99,
+and Shotsy £29.99–£39.99 a year for GLP-1 tracking. Plus includes the dose
+analysis and doctor report, so it sits above the trend apps and below Shotsy.
+Lifetime is 2.5× yearly so it doesn't undercut the subscription.
 
 **The prices live in App Store Connect, not in the code.** The paywall shows
-whatever Apple returns, in the person's own currency. The "Save 49%" badge and
-the "£1.00 a month" line are worked out from those prices at runtime, and the
+whatever Apple returns, in the person's own currency. The "Save 44%" badge and
+the "£1.67 a month" line are worked out from those prices at runtime, and the
 percentage is rounded down so it can never overstate the saving. Change a price
-in App Store Connect and the paywall follows. Then update the table above,
-`privacy.html` and `mobile/README.md` by hand, because they quote it.
+in App Store Connect and the paywall follows. Then update the table above and
+the prices in `site/index.html` (the Free and Plus section) by hand, because
+they quote it.
+
+**The launch offer and the trial can't run at the same time.** Apple allows one
+introductory offer per subscription. For the first 90 days, set yearly's
+introductory offer to *Pay up front, £11.99, 1 year*; after that, change it to a
+*Free trial, 1 week*. The paywall reads whichever is set and words it ("£11.99
+for the first year, then £19.99 a year"), and someone who has already had an
+offer sees the plain price. When raising a subscription price later, choose
+"keep the current price for existing subscribers".
 
 Rules that hold whatever the price:
 
@@ -326,8 +342,9 @@ In App Store Connect, once the developer account is approved:
 2. **Apply for the Small Business Program** (15% commission instead of 30%).
 3. **Create the app** with bundle ID `com.yameenbux.tidemark`.
 4. **Create the products**: a subscription group with
-   `com.yameenbux.tidemark.plus.monthly` and `.yearly`, each with a one-week free
-   trial, and the non-consumable `com.yameenbux.tidemark.plus.lifetime`.
+   `com.yameenbux.tidemark.plus.monthly` (£2.99, no trial) and `.yearly` (£19.99,
+   with the launch offer above, then a one-week free trial), and the
+   non-consumable `com.yameenbux.tidemark.plus.lifetime` (£49.99).
 5. **Build and test**: `npx eas-cli build -p ios --profile production`, then
    `npx eas-cli submit -p ios --latest`, then buy, restore and cancel in
    TestFlight with a sandbox tester.
@@ -351,8 +368,8 @@ Three more that catch people out:
 - **Never claim a feature that isn't built.** Apple Health, iCloud sync and
   widgets are *in development* in this file, in the app and on the App Store,
   until they are real.
-- **Never round a saving up.** £11.99 against twelve months at £1.99 is 49.8%,
-  so the badge says 49%. A rounded-up discount is a misleading price under UK
+- **Never round a saving up.** £19.99 against twelve months at £2.99 is 44.3%,
+  so the badge says 44%. A rounded-up discount is a misleading price under UK
   consumer law.
 - **"Data Not Collected" is a commitment, not a description.** It stays true
   only while nothing in the app sends data anywhere. Check it whenever a

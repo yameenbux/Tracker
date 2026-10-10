@@ -1,7 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { perMonth, PLUS_PERKS, PlusFeature, PlusPlan, yearlySaving } from '../core/plus';
+import { introText, perMonth, PLUS_PERKS, PlusFeature, PlusPlan, yearlySaving } from '../core/plus';
 import { buy, loadOffers, PlanOffer, storeAvailable } from '../purchases';
 import { notify } from '../dialogs';
 import { PRIVACY_URL, TERMS_URL } from '../support';
@@ -23,6 +23,7 @@ const open = (url: string) => WebBrowser.openBrowserAsync(url, { controlsColor: 
 
 /** The line under a plan card's price: yearly as a monthly figure when the store gives a number, else the period. */
 function cardNote(o: PlanOffer): string {
+  if (o.intro) return `${o.intro.price} to start`;
   if (o.plan === 'yearly') { const m = perMonth(o.amount, o.currency); return m ? `${m} a month` : 'a year'; }
   return o.plan === 'monthly' ? 'a month' : 'pay once';
 }
@@ -31,6 +32,7 @@ function cardNote(o: PlanOffer): string {
 function summary(o: PlanOffer): string {
   if (o.plan === 'lifetime') return `${o.price} once. No subscription.`;
   const per = PLAN_TEXT[o.plan].per;
+  if (o.intro) return `${introText(o.intro, o.price, per)} Cancel any time.`;
   return o.trialDays ? `Free for ${o.trialDays} days, then ${o.price} ${per}. Cancel any time.` : `${o.price} ${per}. Cancel any time.`;
 }
 
@@ -59,6 +61,7 @@ export function Paywall({ reason, onClose, onRestore }: { reason: PlusFeature | 
   };
   const cta = !chosen ? 'Continue'
     : chosen.trialDays ? `Try free for ${chosen.trialDays} days`
+    : chosen.intro ? `Subscribe for ${chosen.intro.price}${chosen.intro.mode === 'pay-as-you-go' && chosen.intro.count > 1 ? ` a ${chosen.intro.unit}` : ''}`
     : plan === 'lifetime' ? `Buy for ${chosen.price}` : `Subscribe for ${chosen.price} ${PLAN_TEXT[plan].per}`;
 
   const links = (
@@ -109,7 +112,7 @@ export function Paywall({ reason, onClose, onRestore }: { reason: PlusFeature | 
             const on = p === plan, t = PLAN_TEXT[p], badge = p === 'yearly' && saving ? `Save ${saving}%` : null;
             return (
               <Tap key={p} onPress={() => setPlan(p)} style={[s.card, stacked && s.cardStacked, on && s.cardOn]} accessibilityRole="radio" accessibilityState={{ checked: on }}
-                accessibilityLabel={`${t.name}, ${o.price} ${t.per}${o.trialDays ? `, ${o.trialDays}-day free trial` : ''}${badge ? `, ${badge.toLowerCase()}` : ''}`}>
+                accessibilityLabel={`${t.name}, ${o.price} ${t.per}${o.trialDays ? `, ${o.trialDays}-day free trial` : ''}${o.intro ? `, ${introText(o.intro, o.price, t.per)}` : ''}${badge ? `, ${badge.toLowerCase()}` : ''}`}>
                 {badge && <View style={s.badge}><Text style={s.badgeTxt}>{badge}</Text></View>}
                 <Text style={s.cardName}>{t.name}</Text>
                 <Text style={s.cardPrice} numberOfLines={1} adjustsFontSizeToFit>{o.price}</Text>
@@ -122,7 +125,7 @@ export function Paywall({ reason, onClose, onRestore }: { reason: PlusFeature | 
         <Text style={s.terms}>
           {plan === 'lifetime'
             ? 'A single payment, charged to your Apple ID. No renewal. '
-            : `${chosen?.trialDays ? 'After the free trial, ' : ''}${chosen?.price ?? 'The price'} ${PLAN_TEXT[plan].per} is charged to your Apple ID. It renews automatically unless you cancel at least 24 hours before the end of the current period. Cancel any time in Settings → your name → Subscriptions. `}
+            : `${chosen?.trialDays ? 'After the free trial, ' : chosen?.intro ? 'After the introductory price, ' : ''}${chosen?.price ?? 'The price'} ${PLAN_TEXT[plan].per} is charged to your Apple ID. It renews automatically unless you cancel at least 24 hours before the end of the current period. Cancel any time in Settings → your name → Subscriptions. `}
           Plus works on any iPhone signed in to the same Apple ID.
         </Text>
       </>)}

@@ -1,4 +1,4 @@
-import { cleanPlus, NO_PLUS, OFFLINE_GRACE_MS, PLUS_PRODUCTS, perMonth, plusActive, plusFrom, usableHabits, yearlySaving } from '../plus';
+import { cleanPlus, introText, NO_PLUS, OFFLINE_GRACE_MS, PLUS_PRODUCTS, perMonth, plusActive, plusFrom, usableHabits, yearlySaving } from '../plus';
 
 const now = Date.UTC(2026, 9, 8);
 const day = 86400000;
@@ -64,6 +64,20 @@ describe('paywall prices', () => {
     expect(yearlySaving(1.99, 23.88)).toBeNull();                // no saving, no badge
     expect(yearlySaving(null, 11.99)).toBeNull();
     expect(yearlySaving(1.99, 0)).toBeNull();
+  });
+  test('the prices Tidemark sells at: £2.99 a month against £19.99 a year is a 44% saving', () => {
+    expect(yearlySaving(2.99, 19.99)).toBe(44);                  // 44.3%: rounded down
+    expect(perMonth(19.99, 'GBP')).toMatch(/£1\.67/);
+  });
+  test('an introductory price says exactly what is paid, for how long, and what comes after', () => {
+    expect(introText({ price: '£11.99', mode: 'pay-up-front', unit: 'year', value: 1, count: 1 }, '£19.99', 'a year'))
+      .toBe('£11.99 for the first year, then £19.99 a year.');
+    expect(introText({ price: '£9.99', mode: 'pay-up-front', unit: 'month', value: 6, count: 1 }, '£19.99', 'a year'))
+      .toBe('£9.99 for the first 6 months, then £19.99 a year.');
+    expect(introText({ price: '£0.99', mode: 'pay-as-you-go', unit: 'month', value: 1, count: 3 }, '£2.99', 'a month'))
+      .toBe('£0.99 a month for the first 3 months, then £2.99 a month.');
+    expect(introText({ price: '£0.99', mode: 'pay-as-you-go', unit: 'month', value: 1, count: 1 }, '£2.99', 'a month'))
+      .toBe('£0.99 for the first month, then £2.99 a month.');
   });
   test('a yearly price as a monthly figure, in the store’s currency', () => {
     expect(perMonth(11.99, 'GBP')).toMatch(/£1\.00/);

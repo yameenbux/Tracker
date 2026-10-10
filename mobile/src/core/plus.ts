@@ -1,6 +1,6 @@
 // Tidemark Plus: what it unlocks, and whether this phone has it. Plain logic only (no store calls), so it's testable.
-// Plus is sold through Apple only: a monthly or yearly subscription (each with a 7-day free trial set up in App Store
-// Connect) or a one-off lifetime purchase. There's no account: Apple ties purchases to the person's Apple ID.
+// Plus is sold through Apple only: a monthly or yearly subscription (yearly starts with a free trial or a launch price
+// set up in App Store Connect) or a one-off lifetime purchase. There's no account: Apple ties purchases to the person's Apple ID.
 
 export const PLUS_PRODUCTS = {
   monthly: 'com.yameenbux.tidemark.plus.monthly',
@@ -84,7 +84,7 @@ export function cleanPlus(v: unknown): PlusStatus {
 
 /**
  * Whole percent saved by paying yearly rather than 12 months of monthly, rounded down so it never overstates
- * (£1.99 a month and £11.99 a year is 49.8%, so "Save 49%"). Null when there's no real saving or a price is missing.
+ * (£2.99 a month and £19.99 a year is 44.3%, so "Save 44%"). Null when there's no real saving or a price is missing.
  */
 export function yearlySaving(monthly: number | null | undefined, yearly: number | null | undefined): number | null {
   if (!monthly || !yearly || monthly <= 0 || yearly <= 0) return null;
@@ -92,11 +92,31 @@ export function yearlySaving(monthly: number | null | undefined, yearly: number 
   return pct >= 1 ? pct : null;
 }
 
-/** A yearly price as a monthly figure in the store's currency (£11.99 → "£1.00"). Null if it can't be formatted. */
+/** A yearly price as a monthly figure in the store's currency (£19.99 → "£1.67"). Null if it can't be formatted. */
 export function perMonth(yearly: number | null | undefined, currency: string | null | undefined): string | null {
   if (!yearly || yearly <= 0 || !currency) return null;
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(yearly / 12); }
   catch { return null; }
+}
+
+/**
+ * An introductory price set in App Store Connect (one per subscription, instead of a free trial): paid once up front
+ * for its whole length ("£11.99 for the first year"), or per period for a number of periods ("£0.99 a month for 3").
+ */
+export interface IntroPrice { price: string; mode: 'pay-up-front' | 'pay-as-you-go'; unit: 'day' | 'week' | 'month' | 'year'; value: number; count: number }
+
+const span = (unit: IntroPrice['unit'], n: number) => {
+  if (unit === 'month' && n % 12 === 0) { unit = 'year'; n /= 12; }
+  return n === 1 ? unit : `${n} ${unit}s`;
+};
+
+/** One plain sentence: what's paid, for how long, then the normal price ("£11.99 for the first year, then £19.99 a year."). */
+export function introText(intro: IntroPrice, price: string, per: string): string {
+  const total = intro.value * intro.count;
+  const lead = intro.mode === 'pay-as-you-go' && intro.count > 1
+    ? `${intro.price} a ${span(intro.unit, intro.value)} for the first ${span(intro.unit, total)}`
+    : `${intro.price} for the first ${span(intro.unit, total)}`;
+  return `${lead}, then ${price} ${per}.`;
 }
 
 /** Habits that are in use: all of them with Plus, otherwise the first FREE_HABITS (the rest are kept, not deleted). */
