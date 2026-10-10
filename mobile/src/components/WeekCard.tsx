@@ -26,8 +26,9 @@ export function weekDays(series: TrendPoint[], weights: Weights, today: Date = n
 }
 
 /** This week as a labelled seven-day chart: the trend line through each day, with that day's weigh-in as a dot. */
-export function WeekCard({ series, weights, unit, value, valueColor, sub, onPress, a11y }: {
+export function WeekCard({ series, weights, unit, value, valueColor, sub, onPress, a11y, foot }: {
   series: TrendPoint[]; weights: Weights; unit: Unit; value: string; valueColor: string; sub: string; onPress: () => void; a11y: string;
+  foot?: string;   // one line under the chart: where this pace leads
 }) {
   const [w, setW] = useState(0);
   const days = weekDays(series, weights);
@@ -42,7 +43,7 @@ export function WeekCard({ series, weights, unit, value, valueColor, sub, onPres
   const weighed = days.filter(x0 => x0.kg != null).length;
   const chartA11y = days.map(x0 => `${DAY_FULL[x0.d.getDay()]}: ${x0.kg != null ? showWeight(x0.kg, unit) : 'no weigh-in'}`).join('. ');
   return (
-    <Tap onPress={onPress} style={s.card} accessibilityRole="button" accessibilityLabel={`${a11y}. ${weighed} weigh-ins this week. ${chartA11y}`} accessibilityHint="Opens Trend">
+    <Tap onPress={onPress} style={s.card} accessibilityRole="button" accessibilityLabel={`${a11y}.${foot ? ' ' + foot + '.' : ''} ${weighed} weigh-ins this week. ${chartA11y}`} accessibilityHint="Opens Trend">
       <View style={s.head}>
         <Icon name="trend" size={16} color={C.inkSoft} />
         <Text style={s.label} numberOfLines={1}>This week</Text>
@@ -70,6 +71,7 @@ export function WeekCard({ series, weights, unit, value, valueColor, sub, onPres
           </Svg>
         )}
       </View>
+      {foot ? <Text style={s.foot} maxFontSizeMultiplier={1.5}>{foot}</Text> : null}
     </Tap>
   );
 }
@@ -77,6 +79,7 @@ export function WeekCard({ series, weights, unit, value, valueColor, sub, onPres
 const s = themed(() => StyleSheet.create({
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 14, marginBottom: 12 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  foot: { fontFamily: F.body, fontSize: 13, color: C.inkSoft, lineHeight: 18, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line },
   label: { flex: 1, fontFamily: F.bodySemi, fontSize: 13, color: C.inkSoft },
   valueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 10, marginTop: 8, flexWrap: 'wrap' },
   value: { fontFamily: F.display, fontSize: 24, letterSpacing: -0.3 },

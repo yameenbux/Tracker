@@ -51,10 +51,13 @@ test('daily use: log a weigh-in from Today, see the trend change, and move betwe
   render(<App />);
   expect(await screen.findByText('Trend weight')).toBeTruthy();
   expect(screen.getByText('This week')).toBeTruthy();
+  expect(screen.queryByText('Pace')).toBeNull();                       // folded into This week, not a second copy
+  expect(screen.getByRole('button', { name: 'Weigh in' })).toBeTruthy();   // not weighed yet today
   fireEvent.press(screen.getByLabelText('Log weight'));
   fireEvent.press(await screen.findByLabelText('Increase by 0.1 kilograms'));
   fireEvent.press(screen.getByText(/^Save/));
-  expect(await screen.findByText(/saved for today · trend/)).toBeTruthy();
+  expect(await screen.findByText(/^Saved\. Your trend: [0-9.]+ kg, (down|up) [0-9.]+ kg this week\.$/)).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Weighed in today' })).toBeTruthy();
   fireEvent.press(screen.getByRole('tab', { name: 'Trend' }));
   expect(await screen.findByText('Your trend')).toBeTruthy();
   fireEvent.press(screen.getByRole('tab', { name: 'Habits' }));
