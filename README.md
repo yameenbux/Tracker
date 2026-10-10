@@ -81,9 +81,10 @@ extras for people who want them.
 > Plus, iOS file encryption while the phone is locked, and the production
 > hardening plugin.
 >
-> **Apple Health, iCloud sync and widgets are not built.** They stay tagged "in
-> development" here until they are real. Do not describe them anywhere,
-> including the App Store listing, as features.
+> **Apple Health sync and the widgets are built but unproven on a device**, like
+> the rest of the native code (the automatic-backup folder module has never
+> been compiled). **iCloud sync and an Apple Watch app are not built.** Don't
+> describe them anywhere, including the App Store listing, as features.
 
 ---
 

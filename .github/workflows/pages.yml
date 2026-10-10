@@ -39,7 +39,8 @@ jobs:
         run: npx expo export --platform web --output-dir dist
         env:
           WEB_BASE_URL: /app
-          EXPO_PUBLIC_WEB_PLUS: '1'   # the web test build is the full app (nothing can be bought on the web)
+          # Plus in the web test build is the owner's preview: it opens only with the passphrase this is the SHA-256 of
+          EXPO_PUBLIC_WEB_PLUS_HASH: '4fc8ec9e7917f8e0c683bff7d9f1910a5c3ea7245e473b79673b28be062ae9aa'
       - name: Assemble the site
         run: node scripts/pages-site.js dist ../_site "" https://tidemark.ysbdesigns.uk
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1

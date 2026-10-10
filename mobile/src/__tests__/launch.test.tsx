@@ -32,11 +32,11 @@ describe('launch switches', () => {
     jest.isolateModules(() => { expect(require('../features').FEATURES).toEqual({ medication: true, protectedBackups: true, webPlus: false }); });
   });
   test('the web preview switch can never unlock Plus in the iPhone app', () => {
-    process.env.EXPO_PUBLIC_WEB_PLUS = '1';
+    process.env.EXPO_PUBLIC_WEB_PLUS_HASH = 'a'.repeat(64);
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       jest.isolateModules(() => { expect(require('../features').FEATURES.webPlus).toBe(false); });   // tests run as iOS
-    } finally { delete process.env.EXPO_PUBLIC_WEB_PLUS; }
+    } finally { delete process.env.EXPO_PUBLIC_WEB_PLUS_HASH; }
   });
   test('a build can turn each risky feature off', () => {
     process.env.EXPO_PUBLIC_DISABLE_MEDICATION = '1';
