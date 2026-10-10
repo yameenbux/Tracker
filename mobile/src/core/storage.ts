@@ -5,6 +5,7 @@ import { dailyWeights, entriesFor, fromWeights } from './entries';
 import { cleanDoses, cleanEffects } from './medication';
 import { cleanNotes } from './notes';
 import { cleanProtein } from './protein';
+import { cleanReviewAsk, NO_REVIEW_ASK, type ReviewAsk } from './reviewAsk';
 import { cleanMeasurements, cleanPhotos } from './body';
 import { cleanIntake } from './calories';
 import { cleanHabits, cleanWeights, normalizeSettings } from './plan';
@@ -26,8 +27,9 @@ export interface Prefs {
   hide: boolean;                // "hide my weight": show how the trend moves, never the number
   health: { on: boolean; anchor: string | null };   // Apple Health sync, and where the last read got to
   autoBackup: AutoBackup;      // automatic backups into a picked folder (iOS)
+  reviewAsk: ReviewAsk;        // when Apple's rating prompt was last asked for, so it's never asked too often
 }
-export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system', length: null, plus: NO_PLUS, hide: false, health: { on: false, anchor: null }, autoBackup: NO_AUTO_BACKUP };
+export const DEFAULT_PREFS: Prefs = { lock: false, milestone: 0, milestoneFor: null, reminder: { on: false, hour: 7, minute: 30 }, lastBackup: null, appearance: 'system', length: null, plus: NO_PLUS, hide: false, health: { on: false, anchor: null }, autoBackup: NO_AUTO_BACKUP, reviewAsk: NO_REVIEW_ASK };
 
 /** Milestones are quarters of the way from the start weight to the goal, so they belong to those numbers. */
 export const milestonePlanKey = (p: { start: string; startKg: number; goalKg: number }) => `${p.start}|${p.startKg}|${p.goalKg}`;
@@ -49,6 +51,7 @@ export function cleanPrefs(p: any): Prefs {
     hide: p.hide === true,
     health: { on: p.health?.on === true, anchor: typeof p.health?.anchor === 'string' && p.health.anchor.length < 20000 ? p.health.anchor : null },
     autoBackup: cleanAutoBackup(p.autoBackup),
+    reviewAsk: cleanReviewAsk(p.reviewAsk),
   };
 }
 

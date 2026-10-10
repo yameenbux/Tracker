@@ -4,11 +4,19 @@ import { Platform } from 'react-native';
 
 export const SUPPORT_EMAIL = 'yameen@ysbdesigns.uk';
 export const PRIVACY_URL = 'https://tidemark.ysbdesigns.uk/privacy.html';
+/**
+ * The app's numeric App Store ID (App Store Connect → the app → App Information → Apple ID). It only exists once the
+ * app has been created there; until it's filled in, Settings has no "Rate Tidemark" row rather than a broken one.
+ */
+export const APP_STORE_ID: string | null = null;
 /** Apple's standard licence agreement, which Tidemark uses as its terms of use (linked from the paywall, as Apple requires). */
 export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
+/** The version people see ("1.2.0"), without the build number. */
+export const marketingVersion = () => Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
+
 export const appVersion = () => {
-  const v = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? '1.0.0';
+  const v = marketingVersion();
   const b = Application.nativeBuildVersion ?? Constants.expoConfig?.ios?.buildNumber;
   return b ? `${v} (${b})` : v;
 };
