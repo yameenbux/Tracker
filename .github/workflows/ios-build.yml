@@ -37,6 +37,11 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: mobile/package-lock.json
+      - name: Use the newest Xcode on the runner
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
       - run: npm ci
       - name: Generate the iOS project (production config)
         env:
@@ -50,8 +55,11 @@ jobs:
           echo "Building $SCHEME"
           xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO build \
-            | tee build.log | grep -E "error:|warning: .*BackupFolder|\*\* BUILD" || true
-          grep -q "\*\* BUILD SUCCEEDED \*\*" build.log
+            > build.log 2>&1 || true
+          if grep -q "\*\* BUILD SUCCEEDED \*\*" build.log; then echo "BUILD SUCCEEDED"; exit 0; fi
+          echo "::group::Errors with context"; grep -n -B3 -A12 -E "error:|fatal|Failed|failed with" build.log | head -300; echo "::endgroup::"
+          tail -80 build.log
+          exit 1
       - name: Keep the build log
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
